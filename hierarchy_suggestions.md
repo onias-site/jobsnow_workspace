@@ -1,0 +1,574 @@
+# Sugestões de Correções na Hierarquia de Skills
+
+_Gerado automaticamente por process_skills.py_
+
+
+## 1. Ciclos Detectados e Removidos
+
+- Nenhum ciclo detectado. ✓
+
+## 2-3. Mirrors Fundidos como Sinônimos
+
+- **STARBURST** fundido com **TRINO** (filho único de parent com filho único)
+- **FIBER** fundido com **FASTHTTP** (filho único de parent com filho único)
+- **AWS API GATEWAY** fundido com **GATEWAYAWS** (filho único de parent com filho único)
+- **UBUNTU** fundido com **DEBIAN** (filho único de parent com filho único)
+- **CENTOS** fundido com **RHEL** (filho único de parent com filho único)
+- **ROCKY LINUX** fundido com **CENTOS** (filho único de parent com filho único)
+- **GPO** fundido com **ACTIVE DIRECTORY** (filho único de parent com filho único)
+- **SAP GRC** fundido com **GRC** (filho único de parent com filho único)
+- **VECTORWISE** fundido com **MONETDB** (filho único de parent com filho único)
+- **STARROCKS** fundido com **DORIS** (filho único de parent com filho único)
+- **THREE.JS** fundido com **WEBGL** (filho único de parent com filho único)
+- **CLOUDFLARE WORKERS** fundido com **CLOUDFLARE** (filho único de parent com filho único)
+- **EXPO** fundido com **REACTNATIVE** (filho único de parent com filho único)
+
+## 4. Duplas de Parents Fundidas (iterativo)
+
+- `COLUNAR` + `OLAP` → **COLUNAROLAP**  (15 skills: BIGQUERY, SYNAPSE, SNOWFLAKE, DATABRICKS, FIREBOLT, ROCKSET, VERTICA, REDSHIFT...)
+- `DEVOPS` + `MONITOR123` → **DEVOPSMONITOR123**  (10 skills: AIRFLOW, SRE, AIOPS, DAGSTER, APPCENTER, OPENTELEMETRY, JAEGER, LOKI...)
+- `COLUNAROLAP` + `NOSQLDATABASE` → **COLUNAROLAPNOSQLDATABASE**  (9 skills: FIREBOLT, ROCKSET, VERTICA, PARQUET, MONETDB, DORIS, CLICKHOUSE, DRUID...)
+- `DOTNET` + `FRONTEND` → **DOTNETFRONTEND**  (5 skills: SILVERLIGHT, BLAZOR, WINFORMS, MAUI, UWP)
+- `MACHINELEARNING` + `PYTHON` → **MACHINELEARNINGPYTHON**  (5 skills: TENSORFLOW, PYTORCH, KERAS, SCIKITLEARN, DASK)
+- `CLOUD` + `DEVOPS` → **CLOUDDEVOPS**  (4 skills: FINOPS, NOMAD, VERCEL, NETLIFY)
+- `HTTP SERVER` + `JAVASCRIPT` → **HTTP SERVERJAVASCRIPT**  (3 skills: NODE, BUN, DENO)
+- `HTTP SERVERJAVASCRIPT` + `REST` → **HTTP SERVERJAVASCRIPTREST**  (3 skills: NODE, BUN, DENO)
+- `FRONTEND` + `RPA` → **FRONTENDRPA**  (3 skills: WEBDRIVER, UIPATH, BLUE PRISM)
+- `MPP` + `OLTP` → **MPPOLTP**  (3 skills: TERADATA, EXASOL, YELLOWBRICK)
+- `MPPOLTP` + `SQL` → **MPPOLTPSQL**  (3 skills: TERADATA, EXASOL, YELLOWBRICK)
+- `COLUNAROLAP` + `DW` → **COLUNAROLAPDW**  (2 skills: BIGQUERY, SNOWFLAKE)
+- `DATALAKE` + `HADOOP` → **DATALAKEHADOOP**  (2 skills: SPARK, TRINO)
+- `GCP` + `KUBERNETES` → **GCPKUBERNETES**  (2 skills: GKE, CLOUD RUN)
+- `DEVOPS` + `IAC` → **DEVOPSIAC**  (2 skills: TERRAFORM, PULUMI)
+- `GATEWAY` + `LOADBALANCE` → **GATEWAYLOADBALANCE**  (2 skills: HAPROXY, F5)
+- `DEVOPS` + `GIT` → **DEVOPSGIT**  (2 skills: CODECOMMIT, GITOPS)
+- `IDE` + `SQLDATABASE` → **IDESQLDATABASE**  (2 skills: TOAD, DBEAVER)
+- `DEVOPSMONITOR123` + `PYTHON` → **DEVOPSMONITOR123PYTHON**  (2 skills: AIRFLOW, DAGSTER)
+- `DW` + `MPPOLTPSQL` → **DWMPPOLTPSQL**  (2 skills: TERADATA, EXASOL)
+- `FRONTEND` + `MOBILE` → **FRONTENDMOBILE**  (2 skills: WEBVIEW, DART)
+- `CLOUD` + `SECURITY123` → **CLOUDSECURITY123**  (2 skills: QUALYS, ZSCALER)
+- `MONITOR123` + `SECURITY123` → **MONITOR123SECURITY123**  (2 skills: WAZUH, FALCO)
+- `MAINFRAME` + `SO` → **MAINFRAMESO**  (2 skills: MVS, Z/OS)
+- `VIRTUALIZATION` + `WINDOWS` → **VIRTUALIZATIONWINDOWS**  (2 skills: RDS, TSPLUS)
+- `DOTNET` + `ERP` → **DOTNETERP**  (2 skills: DYNAMICS AX, BUSINESS CENTRAL)
+- `B.I` + `CLOUD` → **B.ICLOUD**  (2 skills: OAC, LOOKER)
+- `CLOUD` + `INTEGRATION123` → **CLOUDINTEGRATION123**  (2 skills: OIC, IPAAS)
+- `DATABASE` + `PATTERNS` → **DATABASEPATTERNS**  (2 skills: CQRS, SAGA)
+- `DEVOPS` + `MACHINELEARNING` → **DEVOPSMACHINELEARNING**  (2 skills: MLOPS, MLFLOW)
+- `DEVOPS` + `MOBILE` → **DEVOPSMOBILE**  (2 skills: BITRISE, FASTLANE)
+- `BACKEND` + `DEVOPS` → **BACKENDDEVOPS**  (2 skills: TEMPORAL, CONDUCTOR)
+- `DEVOPS` + `PYTHON` → **DEVOPSPYTHON**  (2 skills: LUIGI, PREFECT)
+- `LLM` + `PYTHON` → **LLMPYTHON**  (2 skills: CREWAI, LLAMAINDEX)
+- `MOBILE` + `TDD` → **MOBILETDD**  (2 skills: APPCENTER, DETOX)
+- `BIGDATA` + `MENSAGERIA` → **BIGDATAMENSAGERIA**  (2 skills: FLINK, PULSAR)
+- `AUTOMATION` + `DEVOPS` → **AUTOMATIONDEVOPS**  (2 skills: CHEF, SALTSTACK)
+- `DEVOPS` + `JAVASCRIPT` → **DEVOPSJAVASCRIPT**  (2 skills: TURBOREPO, NX)
+
+## 5. Novas Skills Sem Descrição
+
+_(Descrições genéricas foram geradas automaticamente)_
+
+- **COLUNAROLAP**: Combinação de `COLUNAR` e `OLAP`
+- **DEVOPSMONITOR123**: Combinação de `DEVOPS` e `MONITOR123`
+- **COLUNAROLAPNOSQLDATABASE**: Combinação de `COLUNAROLAP` e `NOSQLDATABASE`
+- **DOTNETFRONTEND**: Combinação de `DOTNET` e `FRONTEND`
+- **MACHINELEARNINGPYTHON**: Combinação de `MACHINELEARNING` e `PYTHON`
+- **CLOUDDEVOPS**: Combinação de `CLOUD` e `DEVOPS`
+- **HTTP SERVERJAVASCRIPT**: Combinação de `HTTP SERVER` e `JAVASCRIPT`
+- **HTTP SERVERJAVASCRIPTREST**: Combinação de `HTTP SERVERJAVASCRIPT` e `REST`
+- **FRONTENDRPA**: Combinação de `FRONTEND` e `RPA`
+- **MPPOLTP**: Combinação de `MPP` e `OLTP`
+- **MPPOLTPSQL**: Combinação de `MPPOLTP` e `SQL`
+- **COLUNAROLAPDW**: Combinação de `COLUNAROLAP` e `DW`
+- **DATALAKEHADOOP**: Combinação de `DATALAKE` e `HADOOP`
+- **GCPKUBERNETES**: Combinação de `GCP` e `KUBERNETES`
+- **DEVOPSIAC**: Combinação de `DEVOPS` e `IAC`
+- **GATEWAYLOADBALANCE**: Combinação de `GATEWAY` e `LOADBALANCE`
+- **DEVOPSGIT**: Combinação de `DEVOPS` e `GIT`
+- **IDESQLDATABASE**: Combinação de `IDE` e `SQLDATABASE`
+- **DEVOPSMONITOR123PYTHON**: Combinação de `DEVOPSMONITOR123` e `PYTHON`
+- **DWMPPOLTPSQL**: Combinação de `DW` e `MPPOLTPSQL`
+- **FRONTENDMOBILE**: Combinação de `FRONTEND` e `MOBILE`
+- **CLOUDSECURITY123**: Combinação de `CLOUD` e `SECURITY123`
+- **MONITOR123SECURITY123**: Combinação de `MONITOR123` e `SECURITY123`
+- **MAINFRAMESO**: Combinação de `MAINFRAME` e `SO`
+- **VIRTUALIZATIONWINDOWS**: Combinação de `VIRTUALIZATION` e `WINDOWS`
+- **DOTNETERP**: Combinação de `DOTNET` e `ERP`
+- **B.ICLOUD**: Combinação de `B.I` e `CLOUD`
+- **CLOUDINTEGRATION123**: Combinação de `CLOUD` e `INTEGRATION123`
+- **DATABASEPATTERNS**: Combinação de `DATABASE` e `PATTERNS`
+- **DEVOPSMACHINELEARNING**: Combinação de `DEVOPS` e `MACHINELEARNING`
+- **DEVOPSMOBILE**: Combinação de `DEVOPS` e `MOBILE`
+- **BACKENDDEVOPS**: Combinação de `BACKEND` e `DEVOPS`
+- **DEVOPSPYTHON**: Combinação de `DEVOPS` e `PYTHON`
+- **LLMPYTHON**: Combinação de `LLM` e `PYTHON`
+- **MOBILETDD**: Combinação de `MOBILE` e `TDD`
+- **BIGDATAMENSAGERIA**: Combinação de `BIGDATA` e `MENSAGERIA`
+- **AUTOMATIONDEVOPS**: Combinação de `AUTOMATION` e `DEVOPS`
+- **DEVOPSJAVASCRIPT**: Combinação de `DEVOPS` e `JAVASCRIPT`
+
+## 6. Skills Sem Sinônimos (entrada mínima adicionada)
+
+- `2FA`
+- `ACTIX`
+- `ADW`
+- `AIOPS`
+- `AIRBYTE`
+- `ALPINEJS`
+- `APACHE BEAM`
+- `APACHE HUDI`
+- `APACHE SUPERSET`
+- `APPCENTER`
+- `APPIAN`
+- `ARANGODB`
+- `ARGOCD`
+- `AS400`
+- `ASANA`
+- `ASTRO`
+- `AUTH0`
+- `AUTOGEN`
+- `AUTOMATION ANYWHERE`
+- `AVRO`
+- `AWS GLUE`
+- `AWS STEP FUNCTIONS`
+- `AXUM`
+- `AZURE FUNCTIONS`
+- `AZURE SERVICE BUS`
+- `BGP`
+- `BITRISE`
+- `BLAZOR`
+- `BLUE PRISM`
+- `BUN`
+- `BUSINESS CENTRAL`
+- `CAPACITOR`
+- `CDN`
+- `CEPH`
+- `CHEF`
+- `CHROMADB`
+- `CIRCLECI`
+- `CLEAN ARCHITECTURE`
+- `CLICKHOUSE`
+- `CLICKUP`
+- `CLOJURE`
+- `CLOUD RUN`
+- `COCKROACHDB`
+- `CONDUCTOR`
+- `COPILOT`
+- `CQRS`
+- `CREWAI`
+- `CROSSPLANE`
+- `CROWDSTRIKE`
+- `CYBERARK`
+- `DAGSTER`
+- `DASK`
+- `DATA MESH`
+- `DATAOPS`
+- `DBEAVER`
+- `DBT`
+- `DELTA LAKE`
+- `DENO`
+- `DETOX`
+- `DIFY`
+- `DIRECTUS`
+- `DNS`
+- `DREMIO`
+- `DRIZZLE`
+- `DRUID`
+- `DUCKDB`
+- `DYNAMICS 365`
+- `DYNAMICS AX`
+- `ECHO`
+- `EDGEDB`
+- `ELM`
+- `ELYSIA`
+- `EPM`
+- `ESB`
+- `ESXI`
+- `EVENT DRIVEN`
+- `EVENT SOURCING`
+- `EXASOL`
+- `F5`
+- `FAISS`
+- `FALCO`
+- `FASTAPI`
+- `FASTLANE`
+- `FEAST`
+- `FI-AA`
+- `FIDO2`
+- `FINOPS`
+- `FIREBOLT`
+- `FIREWALL`
+- `FIVETRAN`
+- `FLINK`
+- `FLUX`
+- `FRAMER`
+- `FRESHDESK`
+- `FSHARP`
+- `GDPR`
+- `GENERATIVEAI`
+- `GIN`
+- `GITOPS`
+- `GOCD`
+- `GODOT`
+- `GPT`
+- `GREENPLUM`
+- `HAPI`
+- `HEXAGONAL ARCHITECTURE`
+- `HONE`
+- `HTAP`
+- `HTMX`
+- `HTTP`
+- `HTTPGO`
+- `HUGGINGFACE`
+- `IAAS`
+- `IBM MQ`
+- `ICEBERG`
+- `IMS`
+- `INFERNO`
+- `INFLUXDB`
+- `IP`
+- `IPAAS`
+- `ISO27001`
+- `ISOLATION FOREST`
+- `ISPF`
+- `ISTIO`
+- `JAEGER`
+- `JETPACK COMPOSE`
+- `KDB`
+- `KEDA`
+- `KERAS`
+- `KNIME`
+- `KOA`
+- `KUBEFLOW`
+- `KYLIN`
+- `LAKEHOUSE`
+- `LANCEDB`
+- `LANGCHAIN`
+- `LANGGRAPH`
+- `LGPD`
+- `LINKERD`
+- `LINUX`
+- `LIQUID`
+- `LIT`
+- `LLAMAINDEX`
+- `LOKI`
+- `LOOKER`
+- `LOOKER STUDIO`
+- `LORA`
+- `LUIGI`
+- `MARQO`
+- `MAUI`
+- `MENDIX`
+- `METABASE`
+- `MFA`
+- `MFCS`
+- `MICRO FRONTEND`
+- `MILVUS`
+- `MINIO`
+- `MIRO`
+- `MISTRAL`
+- `MITHRIL`
+- `MLFLOW`
+- `MLOPS`
+- `MODULE FEDERATION`
+- `MONDAY.COM`
+- `MONDRIAN`
+- `MS PROJECT`
+- `MVCNODE`
+- `MVCPYTHON`
+- `MVS`
+- `N8N`
+- `NATS`
+- `NETEZZA`
+- `NETLIFY`
+- `NEWGL`
+- `NOMAD`
+- `NOTION`
+- `NUXT`
+- `NX`
+- `NZSQL`
+- `OAC`
+- `OCEANBASE`
+- `OIC`
+- `OIDC`
+- `OKTA`
+- `OLLAMA`
+- `OMS`
+- `OPENAI`
+- `OPENTELEMETRY`
+- `OPENVPN`
+- `ORACLE ANALYTICS`
+- `ORACLE COMMERCE`
+- `ORACLE CPQ`
+- `ORACLE EBS`
+- `ORACLE FUSION`
+- `ORACLE HCM`
+- `ORACLE OLAP`
+- `ORACLE RETAIL`
+- `ORACLE SCM`
+- `ORACLEERP`
+- `OTM`
+- `PAAS`
+- `PACKER`
+- `PALO ALTO`
+- `PARQUET`
+- `PAYLOAD`
+- `PEGA`
+- `PINECONE`
+- `PINIA`
+- `PINOT`
+- `PLANETSCALE`
+- `POCKETBASE`
+- `POLARS`
+- `PORTAINER`
+- `PREACT`
+- `PREFECT`
+- `PROXMOX`
+- `PULSAR`
+- `PULUMI`
+- `PYDANTIC`
+- `PYTORCH`
+- `QDRANT`
+- `QUALYS`
+- `QUESTDB`
+- `QWIK`
+- `RACF`
+- `RAG`
+- `RDS`
+- `RECOIL`
+- `REDASH`
+- `REMIX`
+- `REPORT PAINTER`
+- `REXX`
+- `RFM`
+- `RGPD`
+- `ROCKSET`
+- `RPG`
+- `SAAS`
+- `SAGA`
+- `SAGEMAKER`
+- `SAILPOINT`
+- `SALTSTACK`
+- `SANIC`
+- `SAP BPC`
+- `SAP CAR`
+- `SAP CLM`
+- `SAP GTS`
+- `SAP MDG`
+- `SAP PS`
+- `SAP TRM`
+- `SCIKITLEARN`
+- `SCYLLADB`
+- `SHOPIFY`
+- `SHOPIFY FUNCTIONS`
+- `SIGNOZ`
+- `SINGLESTORE`
+- `SKAFFOLD`
+- `SNYK`
+- `SOLIDJS`
+- `SONARCLOUD`
+- `SRE`
+- `SSR`
+- `STABLE DIFFUSION`
+- `STENCIL`
+- `STIMULUS`
+- `STITCH`
+- `STRAPI`
+- `SUPABASE`
+- `SURREALDB`
+- `SWC`
+- `SWIFTUI`
+- `TCP`
+- `TDENGINE`
+- `TEAMCITY`
+- `TEMPO`
+- `TEMPORAL`
+- `TIDB`
+- `TIMESCALEDB`
+- `TLS`
+- `TRPC`
+- `TSO`
+- `TSPLUS`
+- `TURBOREPO`
+- `TWILIO`
+- `TYPEORM`
+- `UDP`
+- `UNITY`
+- `UNREAL`
+- `UWP`
+- `VAULT`
+- `VERCEL`
+- `VERTEXAI`
+- `VERTICA`
+- `VESPA`
+- `VETORIALDB`
+- `VICTORIAMETRICS`
+- `VITE`
+- `VLAN`
+- `VSAM`
+- `VTEX`
+- `VTEX IO`
+- `VTEX MASTER DATA`
+- `VTEX SCRIPT`
+- `WAF`
+- `WAZUH`
+- `WEAVIATE`
+- `WEBFLOW`
+- `WINDOWS`
+- `WINDOWS SERVER`
+- `WINFORMS`
+- `WIREGUARD`
+- `WMS`
+- `XGBOOST`
+- `XSTORE`
+- `YELLOWBRICK`
+- `YUGABYTEDB`
+- `Z/OS`
+- `ZEPLIN`
+- `ZILLIZ`
+- `ZIMBRA`
+- `ZOD`
+- `ZSCALER`
+- `ZUSTAND`
+
+## 7. Skills Sem Descrição no report_skills.json
+
+Total: 43
+
+- `SPRING`
+- `BACKEND`
+- `B.I`
+- `HTTP SERVER`
+- `VERSIONING`
+- `DATABASE`
+- `APOLLO`
+- `CISCO`
+- `SERVERLESS`
+- `DEPLOY`
+- `NOSQL`
+- `AWSMONITOR`
+- `NODEMVC`
+- `PYTHONMVC`
+- `QA`
+- `SCHEDULE`
+- `SERVERLESSDATA`
+- `SQL`
+- `AMPQ`
+- `AUTOMATION`
+- `BFF`
+- `BUCKET`
+- `CRYPTOGRAPHY`
+- `FULLTEXT`
+- `RX`
+- `STOMP`
+- `VSHERE`
+- `AZ104`
+- `AZ900`
+- `BIGQUERY`
+- `CAMUNDA`
+- `CLOUDFLARE API GATEWAY`
+- `DATABRICKS`
+- `GKE`
+- `PRIMENG`
+- `PRIMEREACT`
+- `REDSHIFT`
+- `RMAN`
+- `SNOWFLAKE`
+- `SPRING XML CONFIGURATION`
+- `TERADATA`
+- `TESTCOMPLETE`
+- `VBA`
+
+## 8. Parents Não Definidos como Skills
+
+_Estes tokens aparecem como parents mas não têm linha própria em ajustes_synonyms.txt_
+
+- `AGIL` → usado por: ASANA, CLICKUP, COBIT, JIRA, MIRO...
+- `AMPQ` → usado por: SPRING AMPQ
+- `AOP` → usado por: ASPECTJ, SPRING AOP
+- `APOLLO` → usado por: APOLLO CACHE CONTROL, APOLLO GATEWAY, APOLLO GRAPH OS, APOLLO STUDIO
+- `AUTOMATION` → usado por: AUTOMATIONDEVOPS
+- `AWSMONITOR` → usado por: CLOUDWATCH, KINESIS
+- `BACKEND` → usado por: AS400, ASSEMBLER, BACKENDDEVOPS, C ANSI, CAMUNDA...
+- `BACKENDEDGEDB` → usado por: SUPABASE
+- `BFF` → usado por: WUNDER GRAPH
+- `BUCKET` → usado por: S3
+- `CISCO` → usado por: APPDYNAMICS, CCNA, CCNP, MERAKI
+- `CLOUD` → usado por: ADW, ALIBABA, APOLLO GRAPH OS, ATLAS, AWS...
+- `COLUNAR` → usado por: COLUNAROLAP
+- `COMPLIANCE` → usado por: GDPR, LGPD, RGPD
+- `CRYPTOGRAPHY` → usado por: BLOCKCHAIN
+- `CSS` → usado por: BOOTSTRAP, BULMA, CHAKRA UI, FLEXBOX, FOUNDATION...
+- `CUBO` → usado por: KYLIN, MONDRIAN, ORACLE OLAP, SSAS
+- `DATABASE` → usado por: ADW, BLOCKCHAIN, CACHE, DATABASEPATTERNS, DATABASEVERSIONER...
+- `DATALAKE` → usado por: DATALAKEHADOOP, DREMIO, HIVE, IMPALA, LAKEHOUSE
+- `DEPLOY` → usado por: ANT, DEPENDENCY MANAGER, DEVOPS
+- `DOCUMENTATION123` → usado por: ALM, BUGZILLA, CONFLUENCE, FRESHDESK, MANTIS...
+- `DW` → usado por: COLUNAROLAPDW, DBT, DWMPPOLTPSQL, LAKEHOUSE
+- `ECOMERCE` → usado por: HYBRIS, MAGENTO, ORACLE COMMERCE, SHOPIFY, VTEX
+- `ERP` → usado por: BENNER, DATASUL, DOTNETERP, DYNAMICS 365, JDE...
+- `FGPA` → usado por: NETEZZA
+- `FULLTEXT` → usado por: LUCENE
+- `GAME` → usado por: GODOT, UNITY, UNREAL
+- `GATEWAY` → usado por: APOLLO GATEWAY, AXWAY API MANAGEMENT, AZURE API MANAGEMENT, GATEWAYAWS, GATEWAYCLOUD...
+- `GRAPHQL` → usado por: APOLLO IOS, APOLLO KOTLIN, DGRAPH, DJANGO GRAPHENE, DOTNETGRAPHQL...
+- `HTTP SERVER` → usado por: ASP, CITRIX, GOLANG, HTTP SERVERJAVASCRIPT, IIS...
+- `IDE` → usado por: GRAPHQL CODE GENERATOR, IDESQLDATABASE, JAVAIDE, LOOKER STUDIO, NOTEPAD++...
+- `INTEGRATION123` → usado por: AIRBYTE, CLOUDINTEGRATION123, MENSAGERIA, RMI, WEBSOCKET...
+- `IREPORT` → usado por: JASPER
+- `JAVASCRIPT` → usado por: CAPACITOR, DEVOPSJAVASCRIPT, FRONTEND, GRAPHQLJS, HTTP SERVERJAVASCRIPT...
+- `JVM` → usado por: CLOJURE, GROOVY, JAVA, JRUBY, JYTHON...
+- `LOADBALANCE` → usado por: GATEWAYLOADBALANCE, SPRING CLOUD LOADBALANCER
+- `LOWCODE` → usado por: ALTERYX, APPIAN, CHERWELL, DIFY, MENDIX...
+- `MOBILE` → usado por: ANDROID, APPIUM, CAPACITOR, DEVOPSMOBILE, FRONTENDMOBILE...
+- `MOCK` → usado por: MOCK SERVICE WORKER, MOCKITO, PERFORMANCEMOCK, POWERMOCK, SPRING CLOUD CONTRACT TEST...
+- `MONITOR123` → usado por: APPDYNAMICS, BUGZILLA, CLOUDMONITOR, CONSUL, DEVOPSMONITOR123...
+- `MPP` → usado por: GREENPLUM, MPPOLTP, NETEZZA, VERTICA
+- `MVC` → usado por: FASTAPI, JSF, MVCJAVA, MVCNODE, MVCPHP...
+- `NOSQL` → usado por: BIGDATA, HASURA, NOSQLDATABASE
+- `OLTP` → usado por: HTAP, MPPOLTP
+- `PMI` → usado por: MS PROJECT, PMBOOK, PMO, PMP
+- `POO` → usado por: DDD, GOF, PATTERNS, SOLID, TYPESCRIPT...
+- `PROTOCOL` → usado por: BGP, DNS, HTTP, IP, TCP...
+- `QA` → usado por: BDDQA, PERFORMANCEQA
+- `REACT` → usado por: VTEX IO
+- `REPORT` → usado por: ITEXT
+- `RPA` → usado por: AUTOMATION ANYWHERE, FRONTENDRPA, N8N, PEGA
+- `RX` → usado por: NETTY, SPRING WEBFLUX
+- `SCHEDULE` → usado por: QUARTZ, SPRING BATCH
+- `SECURITY123` → usado por: AUTENTICATION, CISSP, CITRIX, CLOUDSECURITY123, CROWDSTRIKE...
+- `SERVERLESS` → usado por: AZURE FUNCTIONS, CLOUD RUN, GRAPHQLSERVERLESS, LAMBDA, SERVERLESSDATA
+- `SMARTCONTRACT` → usado por: SOLIDITY, SUBSTRATE
+- `SO` → usado por: LINUX, MAINFRAMESO, WINDOWS
+- `SPRING` → usado por: SPRING AMPQ, SPRING AOP, SPRING ASYNC, SPRING BATCH, SPRING BEANS...
+- `SQL` → usado por: DORIS, HASURA, MPPOLTPSQL, NZSQL, SQLDATABASE
+- `STOMP` → usado por: SPRING STOMP
+- `TDD` → usado por: BDD, ENZYME, ESPRESSO, FAKER, JEST...
+- `TIMESERIES` → usado por: INFLUXDB, KDB, QUESTDB, TDENGINE, TIMESCALEDB
+- `UX` → usado por: ADOBEXD, BALSAMIQ, FIGMA, FRAMER, MIRO...
+- `VERSIONING` → usado por: CLEARCASE, CVS, DATABASEVERSIONER, GIT, MERCURIAL...
+- `VIRTUALIZATION` → usado por: CITRIX, HYPERV, PACKER, PROXMOX, VIRTUALBOX...
+- `VSHERE` → usado por: VCENTER
+- `XML` → usado por: HTML, OXM, SAML, WSDL, XAML...
+
+## 9. Definições Duplicadas no Arquivo Original
+
+- **TIDB** — linhas 522, 532, 533 (somente a primeira é usada)
+- **GRAPHQL MESH** — linhas 929, 931, 932 (somente a primeira é usada)
+- **AWS** — linhas 329, 350 (somente a primeira é usada)
+- **FIBER** — linhas 692, 1221 (somente a primeira é usada)
+- **BUN** — linhas 1229, 1294 (somente a primeira é usada)
+- **DENO** — linhas 1230, 1295 (somente a primeira é usada)
+- **INFLUXDB** — linhas 528, 1238 (somente a primeira é usada)
+- **SPRING WEBFLUX** — linhas 688, 691 (somente a primeira é usada)
+- **GRAPHQLNODE** — linhas 884, 954 (somente a primeira é usada)
+- **AWS API GATEWAY** — linhas 968, 979 (somente a primeira é usada)
+
+## 10. Possíveis Erros Tipográficos Detectados
+
+- `GRAPPHQL` → possivelmente `GRAPHQL`: aparece em MICROPROFILE GRAPPHQL, HEDION GRAPPHQL, ECLIPSE MICROPROFILE GRAPPHQL
+- `GROOVYBDD` → possivelmente `GROOVYBDD`: linha 787 tem espaços extras: ' GROOVYBDD,  GROOVY, BDD'
+- `ASSEERTJ` → possivelmente `ASSERTJ`: provavelmente erro de digitação
+- `HACURA` → possivelmente `HASURA`: verificar se HASURA CLOUD referencia corretamente HASURA
+- `VCENTER` → possivelmente `VCENTER`: linha 603: 'VSHERE' provavelmente deveria ser 'VSPHERE'
+- `READMINE` → possivelmente `REDMINE`: linha 278: READMINE, deveria ser REDMINE

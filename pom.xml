@@ -1,0 +1,60 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>com.ccp</groupId>
+	<artifactId>jobsnow-parent</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<java.version>17</java.version>
+		<maven.compiler.source>17</maven.compiler.source>
+		<maven.compiler.target>17</maven.compiler.target>
+	</properties>
+
+	<modules>
+		<!-- Layer 0: sem dependências internas -->
+		<module>ccp_commons_jobsnow</module>
+
+		<!-- Layer 1: dependem apenas de ccp_commons_jobsnow -->
+		<module>ccp_json_gson</module>
+		<module>ccp_cache_gcp-memcache</module>
+		<module>ccp_cron-tasks_jobsnow</module>
+		<module>ccp_db-bulk_elasticsearch</module>
+		<module>ccp_db-crud_elasticsearch</module>
+		<module>ccp_db-utils_elasticsearch</module>
+		<module>ccp_email_sendgrid</module>
+		<module>ccp_file-bucket_gcp</module>
+		<module>ccp_http_apache-mime</module>
+		<module>ccp_instant-messenger_telegram</module>
+		<module>ccp_main-authentication_gcp-oauth</module>
+		<module>ccp_mensageria-consumer_gcp-pubsub-pull_dependency-chooser</module>
+		<module>ccp_mensageria-sender_gcp-pubsub</module>
+		<module>ccp_password_mindrot</module>
+		<module>ccp_text-extractor_apache-tika</module>
+		<module>jn_business_jobsnow</module>
+		<module>ccp_rest-api-handler-exception_spring</module>
+
+		<!-- Layer 2: dependem de módulos da Layer 1 -->
+		<module>ccp_db-query_elasticsearch</module>
+		<module>vis_business_jobsnow</module>
+		<module>jb_business_jobsnow</module>
+		<module>jn_mensageria-consumer_gcp-pubsub-push-spring_dependency</module>
+
+		<!-- Layer 3: depende de ccp_db-query_elasticsearch e vários da Layer 1 -->
+		<module>ccp_mocking_jobsnow</module>
+
+		<!-- Layer 4: depende de jb_business_jobsnow e ccp_mocking_jobsnow -->
+		<module>jb_instant-messenger-listener_jobsnow_dependency-chooser</module>
+
+		<!-- Layer 5: suite de testes completa -->
+		<module>jn_rest-api_spring_jobsnow_dependency-chooser</module>
+		<module>vis_rest-api_spring_jobsnow_dependency-chooser</module>
+		<module>ccp_rest-api-tests_jobsnow</module>
+	</modules>
+
+</project>

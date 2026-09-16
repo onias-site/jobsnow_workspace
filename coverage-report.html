@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Relatório de Cobertura de Testes — jobsnow</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.3rem;
+      color: #f1f5f9;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 2rem;
+    }
+
+    /* ── Summary Cards ── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+    }
+
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      margin-bottom: 0.4rem;
+    }
+
+    .card-value {
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .card-sub {
+      font-size: 0.78rem;
+      color: #475569;
+      margin-top: 0.3rem;
+    }
+
+    .card--total   .card-value { color: #94a3b8; }
+    .card--covered .card-value { color: #34d399; }
+    .card--missed  .card-value { color: #f87171; }
+    .card--pct     .card-value { color: #60a5fa; }
+
+    /* ── Donut ── */
+    .card--donut {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .donut-wrap {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+    }
+
+    .donut-wrap svg { transform: rotate(-90deg); }
+
+    .donut-circle-bg { fill: none; stroke: #1e3a5f; stroke-width: 10; }
+    .donut-circle-fg { fill: none; stroke: #3b82f6; stroke-width: 10; stroke-linecap: round; transition: stroke-dashoffset 0.6s; }
+
+    .donut-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #60a5fa;
+    }
+
+    /* ── Note ── */
+    .note {
+      font-size: 0.78rem;
+      color: #475569;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-left: 3px solid #3b82f6;
+      border-radius: 6px;
+      padding: 0.6rem 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* ── Table ── */
+    .table-wrapper {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    thead {
+      background: #0f172a;
+    }
+
+    th {
+      padding: 0.9rem 1.1rem;
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    th.right, td.right { text-align: right; }
+
+    td {
+      padding: 0.75rem 1.1rem;
+      border-top: 1px solid #1e3a5f;
+      vertical-align: middle;
+    }
+
+    tr:hover td { background: #243049; }
+
+    .module-name {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+    }
+
+    .module-name .prefix { color: #475569; }
+
+    /* ── Badge (layer) ── */
+    .badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 0.15em 0.45em;
+      border-radius: 4px;
+      background: #1e3a5f;
+      color: #93c5fd;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+
+    /* ── Coverage bar ── */
+    .bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .bar-bg {
+      flex: 1;
+      height: 8px;
+      background: #0f172a;
+      border-radius: 99px;
+      overflow: hidden;
+      min-width: 80px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.4s;
+    }
+
+    .pct-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      width: 44px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    /* colour ramps */
+    .c-zero   { background: #374151; }
+    .c-low    { background: #dc2626; }
+    .c-mid    { background: #d97706; }
+    .c-good   { background: #059669; }
+    .c-great  { background: #10b981; }
+    .c-full   { background: #34d399; }
+
+    .t-zero   { color: #6b7280; }
+    .t-low    { color: #f87171; }
+    .t-mid    { color: #fbbf24; }
+    .t-good   { color: #34d399; }
+    .t-great  { color: #34d399; }
+    .t-full   { color: #6ee7b7; }
+
+    /* ── Excluded row ── */
+    .row-excluded td { opacity: 0.4; }
+    .row-excluded .module-name { text-decoration: line-through; color: #6b7280; }
+    .excluded-pill {
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.15em 0.5em;
+      border-radius: 4px;
+      background: #292524;
+      color: #78716c;
+      border: 1px solid #44403c;
+      margin-left: 0.4rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: #334155;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Cobertura de Testes — jobsnow</h1>
+<p class="subtitle">Relatório gerado em 31/07/2026 · JaCoCo · Java 17</p>
+
+<!-- ── Summary Cards ── -->
+<div class="summary-grid">
+
+  <div class="card card--donut">
+    <div class="donut-wrap">
+      <!-- circumference of r=31 ≈ 194.78; 37.1% → dashoffset = 194.78 * (1 - 0.371) = 122.6 -->
+      <svg viewBox="0 0 72 72" width="72" height="72">
+        <circle class="donut-circle-bg" cx="36" cy="36" r="31"/>
+        <circle class="donut-circle-fg" cx="36" cy="36" r="31"
+                stroke-dasharray="194.78"
+                stroke-dashoffset="122.6"/>
+      </svg>
+      <span class="donut-label">37,1%</span>
+    </div>
+    <div>
+      <div class="card-label">Cobertura Geral</div>
+      <div class="card-value" style="font-size:1.4rem;color:#60a5fa">37,1 %</div>
+      <div class="card-sub">excl. ccp_rest-api-tests</div>
+    </div>
+  </div>
+
+  <div class="card card--total">
+    <div class="card-label">Total de Instruções</div>
+    <div class="card-value">109.603</div>
+    <div class="card-sub">20 módulos avaliados</div>
+  </div>
+
+  <div class="card card--covered">
+    <div class="card-label">Instruções Cobertas</div>
+    <div class="card-value">40.618</div>
+    <div class="card-sub">executadas pelos testes</div>
+  </div>
+
+  <div class="card card--missed">
+    <div class="card-label">Instruções Não Cobertas</div>
+    <div class="card-value">68.985</div>
+    <div class="card-sub">sem cobertura de teste</div>
+  </div>
+
+</div>
+
+<p class="note">
+  ⓘ O módulo <strong>ccp_rest-api-tests_jobsnow</strong> foi excluído do totalizador por ser o próprio executor dos testes de integração (não representa código de produção a ser coberto).
+</p>
+
+<!-- ── Table ── -->
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Módulo</th>
+        <th class="right">Cobertas</th>
+        <th class="right">Não Cobertas</th>
+        <th class="right">Total</th>
+        <th style="min-width:200px">Cobertura</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- 45.2% -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>commons_jobsnow</span>
+          <span class="badge">L0</span>
+        </td>
+        <td class="right">27.727</td>
+        <td class="right">33.672</td>
+        <td class="right">61.399</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-mid" style="width:45.2%"></div></div>
+            <span class="pct-label t-mid">45,2%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 55.6% -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">jn_</span>business_jobsnow</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">10.155</td>
+        <td class="right">8.109</td>
+        <td class="right">18.264</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-good" style="width:55.6%"></div></div>
+            <span class="pct-label t-good">55,6%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0.0% vis -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">vis_</span>business_jobsnow</span>
+          <span class="badge">L2</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">12.910</td>
+        <td class="right">12.910</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0.0% jb -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">jb_</span>business_jobsnow</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">7.669</td>
+        <td class="right">7.669</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- EXCLUDED -->
+      <tr class="row-excluded">
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>rest-api-tests_jobsnow</span>
+          <span class="excluded-pill">excluído do total</span>
+        </td>
+        <td class="right">13.171</td>
+        <td class="right">10.886</td>
+        <td class="right">24.057</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-good" style="width:54.7%"></div></div>
+            <span class="pct-label t-good">54,7%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 85.4% -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>db-utils_elasticsearch</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">742</td>
+        <td class="right">127</td>
+        <td class="right">869</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-great" style="width:85.4%"></div></div>
+            <span class="pct-label t-great">85,4%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 81.2% -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>db-bulk_elasticsearch</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">557</td>
+        <td class="right">129</td>
+        <td class="right">686</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-great" style="width:81.2%"></div></div>
+            <span class="pct-label t-great">81,2%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 79.7% -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>db-crud_elasticsearch</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">541</td>
+        <td class="right">138</td>
+        <td class="right">679</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-great" style="width:79.7%"></div></div>
+            <span class="pct-label t-great">79,7%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 55.5% -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>http_apache-mime</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">352</td>
+        <td class="right">282</td>
+        <td class="right">634</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-good" style="width:55.5%"></div></div>
+            <span class="pct-label t-good">55,5%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 29.6% -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>mocking_jobsnow</span>
+          <span class="badge">L3</span>
+        </td>
+        <td class="right">401</td>
+        <td class="right">954</td>
+        <td class="right">1.355</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-low" style="width:29.6%"></div></div>
+            <span class="pct-label t-low">29,6%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 100% json -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>json_gson</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">118</td>
+        <td class="right">0</td>
+        <td class="right">118</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-full" style="width:100%"></div></div>
+            <span class="pct-label t-full">100%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 100% password -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>password_mindrot</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">25</td>
+        <td class="right">0</td>
+        <td class="right">25</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-full" style="width:100%"></div></div>
+            <span class="pct-label t-full">100%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0% rest-api-handler -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>rest-api-handler-exception_spring</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">1.836</td>
+        <td class="right">1.836</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0% db-query -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>db-query_elasticsearch</span>
+          <span class="badge">L2</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">886</td>
+        <td class="right">886</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0% email -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>email_sendgrid</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">587</td>
+        <td class="right">587</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0% pubsub sender -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>mensageria-sender_gcp-pubsub</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">521</td>
+        <td class="right">521</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0% telegram -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>instant-messenger_telegram</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">459</td>
+        <td class="right">459</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0% file-bucket -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>file-bucket_gcp</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">412</td>
+        <td class="right">412</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0% memcache -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>cache_gcp-memcache</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">240</td>
+        <td class="right">240</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- 0% tika -->
+      <tr>
+        <td>
+          <span class="module-name"><span class="prefix">ccp_</span>text-extractor_apache-tika</span>
+          <span class="badge">L1</span>
+        </td>
+        <td class="right">0</td>
+        <td class="right">54</td>
+        <td class="right">54</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill c-zero" style="width:0%"></div></div>
+            <span class="pct-label t-zero">0,0%</span>
+          </div>
+        </td>
+      </tr>
+
+      <!-- ── TOTAL ROW ── -->
+      <tr style="background:#0f172a; border-top: 2px solid #3b82f6;">
+        <td style="font-weight:700; color:#f1f5f9; font-size:0.9rem;">
+          TOTAL GERAL
+          <span style="font-size:0.7rem; font-weight:400; color:#475569; margin-left:0.5rem;">(20 módulos · excl. ccp_rest-api-tests)</span>
+        </td>
+        <td class="right" style="font-weight:700; color:#34d399;">40.618</td>
+        <td class="right" style="font-weight:700; color:#f87171;">68.985</td>
+        <td class="right" style="font-weight:700; color:#94a3b8;">109.603</td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg" style="height:10px;">
+              <div class="bar-fill c-mid" style="width:37.1%; height:10px;"></div>
+            </div>
+            <span class="pct-label t-mid" style="font-size:0.9rem; font-weight:700;">37,1%</span>
+          </div>
+        </td>
+      </tr>
+
+    </tbody>
+  </table>
+</div>
+
+<footer>jobsnow · Relatório de Cobertura JaCoCo · 31/07/2026</footer>
+
+</body>
+</html>

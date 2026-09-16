@@ -1,0 +1,315 @@
+{
+  "domain": "jb",
+  "module": "jb_business_jobsnow",
+  "packageOfEntities": "com.jb.entities",
+  "description": "Consultas 'search all' unificadas de todos os indices do Elasticsearch do dominio JB (bots do JobsNow). O nome do indice e derivado do nome da classe configuradora pelo CcpEntityFactory.mainEntityNameProducer: simpleName -> snake_case -> remove o prefixo ate 'entity_' (ex: JbEntityBotCommandStep -> jb_entity_bot_command_step -> bot_command_step).",
+  "totalOfIndexes": 12,
+  "unifiedSearchAll": {
+    "comment": "Uma unica requisicao que varre TODOS os indices do dominio JB de uma vez. O campo _index no retorno identifica de qual entidade veio cada documento.",
+    "method": "POST",
+    "url": "/bot,bot_allowed_user,bot_command,bot_command_explanation,bot_command_name,bot_command_step,bot_command_step_end_message,bot_command_step_explanation,bot_command_step_flow_message,bot_command_step_session,bot_command_step_start_message,bot_explanation/_search",
+    "body": {
+      "size": 10000,
+      "track_total_hits": true,
+      "query": {
+        "match_all": {}
+      },
+      "sort": [
+        { "_index": "asc" },
+        { "_doc": "asc" }
+      ]
+    }
+  },
+  "countByIndex": {
+    "comment": "Contagem de documentos por indice do dominio JB, util para conferir se o search all trouxe tudo.",
+    "method": "POST",
+    "url": "/bot,bot_allowed_user,bot_command,bot_command_explanation,bot_command_name,bot_command_step,bot_command_step_end_message,bot_command_step_explanation,bot_command_step_flow_message,bot_command_step_session,bot_command_step_start_message,bot_explanation/_search",
+    "body": {
+      "size": 0,
+      "track_total_hits": true,
+      "query": {
+        "match_all": {}
+      },
+      "aggs": {
+        "por_indice": {
+          "terms": {
+            "field": "_index",
+            "size": 100
+          }
+        }
+      }
+    }
+  },
+  "indexes": [
+    {
+      "index": "bot",
+      "entityClass": "com.jb.entities.JbEntityBot",
+      "description": "Bot cadastrado no sistema, com o nome do bot e a lista de comandos disponiveis.",
+      "cacheInSeconds": 3600,
+      "versionable": false,
+      "disposable": false,
+      "primaryKeys": ["botName"],
+      "fields": ["botName", "commandName"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_allowed_user",
+      "entityClass": "com.jb.entities.JbEntityBotAllowedUser",
+      "description": "Usuarios (chatId) autorizados a usar um bot restrito.",
+      "cacheInSeconds": 3600,
+      "versionable": false,
+      "disposable": false,
+      "primaryKeys": ["botName"],
+      "fields": ["botName", "allowedUser"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_allowed_user/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_command",
+      "entityClass": "com.jb.entities.JbEntityBotCommand",
+      "description": "Comando de bot com seus parametros nomeados.",
+      "cacheInSeconds": 3600,
+      "versionable": true,
+      "disposable": false,
+      "primaryKeys": ["commandName"],
+      "fields": ["commandName", "parameterName"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_command/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_command_explanation",
+      "entityClass": "com.jb.entities.JbEntityBotCommandExplanation",
+      "description": "Explicacao de um comando de bot em um idioma especifico.",
+      "cacheInSeconds": 3600,
+      "versionable": true,
+      "disposable": false,
+      "primaryKeys": ["commandName", "language"],
+      "fields": ["commandName", "language", "message"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_command_explanation/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_command_name",
+      "entityClass": "com.jb.entities.JbEntityBotCommandName",
+      "description": "Nome localizado de um comando de bot para cada idioma.",
+      "cacheInSeconds": 3600,
+      "versionable": true,
+      "disposable": false,
+      "primaryKeys": ["commandName", "language"],
+      "fields": ["commandName", "language", "message"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_command_name/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_command_step",
+      "entityClass": "com.jb.entities.JbEntityBotCommandStep",
+      "description": "Passo de um comando de bot: engine de negocio, proximo passo e mapeamento de status de erro para passos alternativos.",
+      "cacheInSeconds": 3600,
+      "versionable": true,
+      "disposable": false,
+      "primaryKeys": ["stepName"],
+      "fields": ["stepName", "stepFlow", "engine", "nextStep"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_command_step/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_command_step_end_message",
+      "entityClass": "com.jb.entities.JbEntityBotCommandStepEndMessage",
+      "description": "Mensagem enviada ao usuario ao final da execucao bem sucedida de um passo do bot.",
+      "cacheInSeconds": 3600,
+      "versionable": true,
+      "disposable": false,
+      "primaryKeys": ["stepName", "language"],
+      "fields": ["stepName", "language", "message", "instantMessageType", "caption", "contentType", "fileName"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_command_step_end_message/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_command_step_explanation",
+      "entityClass": "com.jb.entities.JbEntityBotCommandStepExplanation",
+      "description": "Explicacao exibida ao usuario quando ocorre erro de validacao durante a execucao de um passo do bot.",
+      "cacheInSeconds": 3600,
+      "versionable": false,
+      "disposable": false,
+      "primaryKeys": ["stepName", "language"],
+      "fields": ["stepName", "language", "message"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_command_step_explanation/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_command_step_flow_message",
+      "entityClass": "com.jb.entities.JbEntityBotCommandStepFlowMessage",
+      "description": "Mensagens associadas a status especificos de fluxo de erro (CcpErrorFlowDisturb).",
+      "cacheInSeconds": 3600,
+      "versionable": true,
+      "disposable": false,
+      "primaryKeys": ["stepName", "status", "language"],
+      "fields": ["stepName", "status", "language", "message", "instantMessageType", "caption", "contentType", "fileName"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_command_step_flow_message/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_command_step_session",
+      "entityClass": "com.jb.entities.JbEntityBotCommandStepSession",
+      "description": "Sessao corrente de um usuario em um passo de um comando de bot. Descartavel diariamente.",
+      "cacheInSeconds": 3600,
+      "versionable": false,
+      "disposable": true,
+      "expurgTime": "daily",
+      "primaryKeys": ["chatId", "botName"],
+      "fields": ["chatId", "botName", "commandName", "stepName", "json"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_command_step_session/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_command_step_start_message",
+      "entityClass": "com.jb.entities.JbEntityBotCommandStepStartMessage",
+      "description": "Mensagem enviada ao usuario ao iniciar um passo do bot.",
+      "cacheInSeconds": 3600,
+      "versionable": true,
+      "disposable": false,
+      "primaryKeys": ["stepName", "language"],
+      "fields": ["stepName", "language", "message", "instantMessageType", "caption", "contentType", "fileName"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_command_step_start_message/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    },
+    {
+      "index": "bot_explanation",
+      "entityClass": "com.jb.entities.JbEntityBotExplanation",
+      "description": "Descricao geral de um bot em cada idioma.",
+      "cacheInSeconds": 3600,
+      "versionable": false,
+      "disposable": false,
+      "primaryKeys": ["botName", "language"],
+      "fields": ["botName", "language", "message"],
+      "searchAll": {
+        "method": "POST",
+        "url": "/bot_explanation/_search",
+        "body": {
+          "size": 10000,
+          "track_total_hits": true,
+          "query": { "match_all": {} },
+          "sort": [{ "_doc": "asc" }]
+        }
+      }
+    }
+  ],
+  "observacoes": [
+    "Nenhuma entidade do dominio JB usa @CcpEntityTwin, portanto nao existem indices gemeos (twin) para o dominio.",
+    "Os decorators @CcpEntityVersionable e @CcpEntityDisposable NAO criam indices no dominio JB: eles gravam nos indices do dominio JN (JnEntityVersionable -> 'versionable' e JnEntityDisposableRecord -> 'disposable_record'). Para auditar o historico dos indices JB, consulte o indice 'versionable' filtrando pelo campo 'entity'.",
+    "O 'size' de 10000 e o limite padrao de 'index.max_result_window' do Elasticsearch. Para indices que possam ultrapassar esse volume (tipicamente 'bot_command_step_session'), use search_after com o sort por _doc ou a API de scroll/PIT.",
+    "As URLs sao relativas ao host do Elasticsearch configurado no modulo ccp_db-query_elasticsearch."
+  ],
+  "auditoriaDoDominioJbNoIndiceVersionable": {
+    "comment": "Traz todo o historico de versoes gerado pelas entidades versionaveis do dominio JB.",
+    "method": "POST",
+    "url": "/versionable/_search",
+    "body": {
+      "size": 10000,
+      "track_total_hits": true,
+      "query": {
+        "terms": {
+          "entity": [
+            "bot_command",
+            "bot_command_explanation",
+            "bot_command_name",
+            "bot_command_step",
+            "bot_command_step_end_message",
+            "bot_command_step_flow_message",
+            "bot_command_step_start_message"
+          ]
+        }
+      },
+      "sort": [{ "timestamp": "desc" }]
+    }
+  }
+}

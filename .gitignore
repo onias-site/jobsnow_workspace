@@ -1,0 +1,27 @@
+# ============================================================================
+# Repositorio da pasta de trabalho (workspace) do jobsnow.
+#
+# Guarda apenas os arquivos GLOBAIS, comuns a todos os projetos:
+# o pom.xml agregador, os scripts .bat, o CLAUDE.md, as skills do Claude Code
+# e as notas de raiz.
+#
+# Cada subdiretorio da raiz e um repositorio git proprio e NAO entra aqui.
+# ============================================================================
+
+# Ignora todos os diretorios da raiz -- cada um deles tem o seu proprio .git
+# (regra por diretorio, e nao por nome, para que novos modulos ja nascam fora).
+/*/
+
+# ... exceto os diretorios que guardam conteudo global do workspace
+!/.claude/
+!/documentation/
+
+# Estado interno do Eclipse: 300+ MB de cache especifico desta maquina
+/.metadata/
+
+# Configuracao local de permissoes do Claude Code (por maquina, nao compartilhada)
+/.claude/settings.local.json
+
+# Saidas de build, caso apareçam dentro dos diretorios globais
+target/
+node_modules/

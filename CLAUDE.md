@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**jobsnow** is a multi-module Java backend framework paired with a legacy React frontend. The backend is built around a custom decorator/DI pattern framework with Elasticsearch as the primary database. All 23 modules live together under a single aggregator `pom.xml` at the root and are managed as one IntelliJ project.
+**jobsnow** is a multi-module Java backend framework paired with a legacy React frontend. The backend is built around a custom decorator/DI pattern framework with Elasticsearch as the primary database. All 27 modules live together under a single aggregator `pom.xml` at the root and are managed as one Eclipse workspace (`C:\eclipse-workspaces\ccp`), each module being a separate Eclipse project.
 
 ## Module Structure
 
@@ -32,9 +32,29 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 | 1 | `ccp_rest-api-handler-exception_spring` | Spring Boot exception handler (has own Spring parent) |
 | 2 | `ccp_db-query_elasticsearch` | Elasticsearch query builder |
 | 2 | `vis_business_jobsnow` | Visualization business logic |
-| 2 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app |
+| 2 | `jb_business_jobsnow` | BackOffice business logic |
+| 2 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app (has own Spring parent) |
 | 3 | `ccp_mocking_jobsnow` | Test mocks and DI wiring |
-| 4 | `ccp_rest-api-tests_jobsnow` | Integration/API test suite |
+| 4 | `jb_instant-messenger-listener_jobsnow_dependency-chooser` | BackOffice bot listener |
+| 5 | `jn_rest-api_spring_jobsnow_dependency-chooser` | jobsnow REST API / Spring Boot app |
+| 5 | `vis_rest-api_spring_jobsnow_dependency-chooser` | Visualization REST API / Spring Boot app |
+| 5 | `ccp_rest-api-tests_jobsnow` | Integration/API test suite |
+
+## Repository Layout
+
+This workspace is **not** a monorepo. Every module directory is its own git repository (28 of them, counting `jn_frontend_calistrato-react`, which is not a Maven module). Above them sits an umbrella repository for the workspace root itself:
+
+- **`onias-site/jobsnow_workspace`** versions only what is shared by every project: the aggregator `pom.xml`, the `.bat` scripts, this `CLAUDE.md`, `.claude/` (slash commands and skills), `documentation/`, and the root-level notes.
+- Its `.gitignore` excludes **every directory at the root** through a single `/*/` rule, so a new module is left out automatically with no edit needed; only `.claude/` and `documentation/` are re-included. Eclipse's `.metadata/` (~300 MB of machine-specific state) and `.claude/settings.local.json` are excluded as well.
+
+Two scripts at the root drive all repositories at once. Both handle the workspace repository first, then every module repository beneath it:
+
+```bash
+fazPullEmTodosProjetosLocais.bat   # git reset --hard + git pull in each repository
+fazPushEmTodosProjetosLocais.bat   # asks for one commit message, then add/commit/push in each repository
+```
+
+Both anchor themselves to the script's own directory, so they work from any working directory. Note that the pull script resets hard: uncommitted work in any repository — the workspace root included — is discarded.
 
 ## Build & Run Commands
 
@@ -109,7 +129,8 @@ Legacy React + Redux stack (React 15–16, Webpack 2, Bootstrap 3). Deployed to 
 ## Key Conventions
 
 - Field names in JSON are defined as enums and passed to `CcpJsonRepresentation` accessors — avoid bare string keys.
-- Java target version is **17** across all modules. JDK 17 must be configured in IntelliJ (File → Project Structure → SDK).
+- Cost centers follow a strict dependency order: **ccp → jn → vis/jb**. A `com.ccp` class must never import `com.jn`, `com.vis` or `com.jb`; a `com.jn` class must never import `com.vis` or `com.jb`. `ccp_rest-api-tests_jobsnow` is the only module exempt from the rule. Module prefix and root package always agree (`ccp_*` → `com.ccp`, `jn_*` → `com.jn`, and so on), so a class that would violate the rule belongs in a different module.
+- Java target version is **17** across all modules. JDK 17 must be registered in Eclipse (Window → Preferences → Java → Installed JREs) and selected as the project's JRE System Library.
 - JUnit 4 (not 5) is used throughout.
 - Two modules use `spring-boot-starter-parent` as their own parent (`ccp_rest-api-handler-exception_spring` and `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency`) — they are included in the aggregator but do not inherit from the root POM.
 - `instanceof` pattern matching against a variable already declared as the same type (e.g., `CcpBusiness x instanceof CcpBusiness y`) is rejected by the compiler — replace with a `!= null` check.

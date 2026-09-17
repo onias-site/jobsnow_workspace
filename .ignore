@@ -1,0 +1,17 @@
+# Lido por ripgrep (e pelas buscas do Claude Code), NUNCA pelo git.
+#
+# O .gitignore da raiz exclui todos os diretorios via "/*/" para que cada modulo,
+# que e um repositorio git proprio, fique fora do repositorio guarda-chuva. O efeito
+# colateral e que as ferramentas de busca que respeitam .gitignore param de enxergar
+# os fontes dos modulos -- inclusive o autocompletar de arquivo com "@".
+#
+# Aqui os diretorios voltam para as buscas, sem afetar em nada o git. A ordem importa:
+# em regras de ignore, a ultima que casa e a que vale.
+
+# 1) devolve todos os diretorios da raiz
+!/*/
+
+# 2) e torna a excluir o que nao interessa buscar
+/.metadata/
+target/
+node_modules/

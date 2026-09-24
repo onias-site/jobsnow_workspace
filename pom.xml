@@ -43,13 +43,13 @@
 		<module>ccp_db-query_elasticsearch</module>
 		<module>vis_business_jobsnow</module>
 		<module>jb_business_jobsnow</module>
-		<module>jn_mensageria-consumer_gcp-pubsub-push-spring_dependency</module>
 
 		<!-- Layer 3: depende de ccp_db-query_elasticsearch e vários da Layer 1 -->
 		<module>ccp_mocking_jobsnow</module>
 
 		<!-- Layer 4: depende de jb_business_jobsnow e ccp_mocking_jobsnow -->
 		<module>jb_instant-messenger-listener_jobsnow_dependency-chooser</module>
+		<module>jn_mensageria-consumer_gcp-pubsub-push-spring_dependency</module>
 
 		<!-- Layer 5: suite de testes completa -->
 		<module>jn_rest-api_spring_jobsnow_dependency-chooser</module>

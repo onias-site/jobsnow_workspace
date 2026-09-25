@@ -1,0 +1,17 @@
+{
+  "theme": "default",
+  "themeVariables": {
+    "fontFamily": "Segoe UI, Arial, sans-serif",
+    "fontSize": "15px"
+  },
+  "sequence": {
+    "useMaxWidth": false,
+    "wrap": false,
+    "actorFontSize": 15,
+    "noteFontSize": 14,
+    "messageFontSize": 14
+  },
+  "flowchart": {
+    "useMaxWidth": false
+  }
+}

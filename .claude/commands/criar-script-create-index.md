@@ -12,8 +12,9 @@ Este é o script consumido por `CcpRandomScripts.createEntities(systemName)` →
 
 1. Ler a classe Java informada. Ela deve implementar `CcpEntityConfigurator` e declarar `public static enum Fields implements CcpJsonFieldName`. Se não implementar, é entidade virtual (ignorada pelo setup) — avisar e parar.
 
-2. Derivar o **nome da entidade** aplicando a mesma regra de `CcpEntityFactory.mainEntityNameProducer`: converter o simple name para snake_case e cortar tudo até depois de `entity_`.
-   - `JbEntityBotUpdateId` → `jb_entity_bot_update_id` → `bot_update_id`
+2. Derivar o **nome da entidade** aplicando a mesma regra de `CcpEntityFactory.mainEntityNameProducer`: converter o simple name para snake_case e remover só o marcador `_entity_`, mantendo o prefixo do centro de custo.
+   - `JbEntityBotUpdateId` → `jb_entity_bot_update_id` → `jb_bot_update_id`
+   - O `twinEntityName` de `@CcpEntityTwin` é literal e segue a mesma convenção (`jn_login_token_locked`).
 
 3. Derivar o **sistema** pelo prefixo do nome da classe antes de `Entity` (`Jn`, `Jb`, `Vis`), em minúsculas. O arquivo é gravado em:
 

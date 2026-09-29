@@ -120,7 +120,7 @@ Tests extend template base classes (`JnTemplateDeTestes`, `VisTemplateDeTestes`,
 3. Provide HTTP testing utilities (port 8080 assumed for local API)
 4. Log full request/response for debugging
 
-Business test class names follow Portuguese BDD conventions (e.g., `AoEntrarNaTelaDoCadastroDeSenha`).
+Business test class names follow English BDD-style conventions (e.g., `OnEnteringPasswordRegistrationScreen`, `PasswordLoginScreen`).
 
 ### Frontend
 
@@ -128,6 +128,7 @@ Legacy React + Redux stack (React 15–16, Webpack 2, Bootstrap 3). Deployed to 
 
 ## Key Conventions
 
+- The project is internationalizable: class, method, variable and field names, Javadoc, comments, OpenAPI texts and exception messages are written in English. Local variables get names that describe the value (`jsonWithInstantMessageType`, never `put10`). User-facing message templates are seeded per `JnLanguage` (Portuguese and English records side by side). Persisted field names, JSON keys and URL paths are contracts and are not renamed for translation purposes.
 - Field names in JSON are defined as enums and passed to `CcpJsonRepresentation` accessors — avoid bare string keys.
 - Cost centers follow a strict dependency order: **ccp → jn → vis/jb**. A `com.ccp` class must never import `com.jn`, `com.vis` or `com.jb`; a `com.jn` class must never import `com.vis` or `com.jb`. `ccp_rest-api-tests_jobsnow` is the only module exempt from the rule. Module prefix and root package always agree (`ccp_*` → `com.ccp`, `jn_*` → `com.jn`, and so on), so a class that would violate the rule belongs in a different module.
 - Java target version is **17** across all modules. JDK 17 must be registered in Eclipse (Window → Preferences → Java → Installed JREs) and selected as the project's JRE System Library.

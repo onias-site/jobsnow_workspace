@@ -248,7 +248,7 @@ sequenceDiagram
         API-->>C: 4xx
     else senha errada, 3ª tentativa
         Note over API,ES: lockUsing → delete em JnEntityLoginPassword<br/>SÍNCRONO — a entidade NÃO é async-writer
-        API->>ES: B4 · union-all da gêmea jn_login_password_locked
+        API->>ES: B4 · union-all da gêmea login_password_locked
         API->>ES: B4 · _bulk da transferência
         API->>ES: B10 · getRecordToAudit (versionável)
         API->>MC: deleteAll
@@ -318,7 +318,7 @@ sequenceDiagram
 
     MQ->>LIS: save de JnEntityLoginToken, sem o decorator de prioridade 8
     Note over LIS: beforeSave → JnBusinessPrepareLoginTokenBeforeSave — sem saída
-    LIS->>ES: B4 · union-all da gêmea jn_login_token_locked
+    LIS->>ES: B4 · union-all da gêmea login_token_locked
     LIS->>ES: B4 · _bulk
     LIS->>MC: B4 · deleteAll
 
@@ -427,7 +427,7 @@ sequenceDiagram
         LIS->>MQ: publish no tópico VisBusinessPositionResumesSend
     end
 
-    LIS->>ES: B4 · union-all da gêmea vis_inactive_resume
+    LIS->>ES: B4 · union-all da gêmea inactive_resume
     LIS->>ES: B4 · _bulk
     LIS->>MC: B4 · deleteAll
     LIS->>ES: B10 · getRecordToAudit

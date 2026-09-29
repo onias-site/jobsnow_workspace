@@ -299,13 +299,13 @@
       "query": {
         "terms": {
           "entity": [
-            "jb_bot_command",
-            "jb_bot_command_explanation",
-            "jb_bot_command_name",
-            "jb_bot_command_step",
-            "jb_bot_command_step_end_message",
-            "jb_bot_command_step_flow_message",
-            "jb_bot_command_step_start_message"
+            "bot_command",
+            "bot_command_explanation",
+            "bot_command_name",
+            "bot_command_step",
+            "bot_command_step_end_message",
+            "bot_command_step_flow_message",
+            "bot_command_step_start_message"
           ]
         }
       },

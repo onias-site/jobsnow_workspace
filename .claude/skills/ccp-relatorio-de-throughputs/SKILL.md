@@ -1,5 +1,5 @@
 ---
-name: relatorio-de-throughputs
+name: ccp-relatorio-de-throughputs
 description: Desenha por onde um fluxo sai do processo — banco, cache, fila, e-mail, mensageiro, bucket, disco — em diagramas de sequência onde cada raia é um sistema externo. Segue o consumidor quando o fluxo entra numa fila, e mapeia os ramos de exceção junto com o caminho feliz. Use quando pedirem "relatório de throughputs", "quantas vezes esse fluxo vai ao banco", "onde esse endpoint sai do processo", "qual endpoint é mais caro", "custo de I/O do fluxo X", "o que acontece quando esse fluxo falha", ou antes de otimizar/mexer em um endpoint.
 ---
 

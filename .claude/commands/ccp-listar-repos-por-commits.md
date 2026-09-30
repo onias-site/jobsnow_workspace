@@ -7,8 +7,8 @@ Lista todos os repositórios de uma organização (ou usuário) do GitHub ordena
 O nome da organização (ou usuário) do GitHub. Se nenhum argumento for informado, usar `onias-site` como padrão.
 
 Exemplos:
-- `/listar-repos-por-commits` → usa `onias-site`
-- `/listar-repos-por-commits minha-org`
+- `/ccp-listar-repos-por-commits` → usa `onias-site`
+- `/ccp-listar-repos-por-commits minha-org`
 
 ## Passos
 

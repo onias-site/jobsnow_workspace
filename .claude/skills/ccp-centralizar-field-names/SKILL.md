@@ -1,5 +1,5 @@
 ---
-name: centralizar-field-names
+name: ccp-centralizar-field-names
 description: Troca referências a itens de enum de field name locais (Fields de entidade, JsonFieldNames de endpoint, enums validadores) pelos enums centralizadores globais de cada centro de custo (JnJsonCommonsFields, JnJsonInstantMessengerFields, VisJsonCommonsFields). Use quando pedirem para "centralizar field names", "usar o enum centralizador", "trocar X.Fields.campo por JnJsonCommonsFields.campo" ou ao criar/revisar código que declare nomes de campo já existentes nos centralizadores.
 ---
 
@@ -83,7 +83,7 @@ Depois de trocar os **usos**, a declaração do item no enum local segue esta re
 ## Procedimento
 
 ```bash
-cd .claude/skills/centralizar-field-names/scripts
+cd .claude/skills/ccp-centralizar-field-names/scripts
 node survey.js enums.json     # cataloga todos os enums e suas constantes
 node analyze.js               # lista enums com constantes homônimas dos centralizadores
 node copyfrom.js              # confirma campo -> centralizador pelas anotações reais

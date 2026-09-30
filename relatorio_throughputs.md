@@ -712,7 +712,7 @@ foram confirmadas pré-existentes por `git stash` e reexecução).
 
 ## 9. Como reproduzir
 
-Use a skill `relatorio-de-throughputs` (`.claude/skills/relatorio-de-throughputs/`).
+Use a skill `ccp-relatorio-de-throughputs` (`.claude/skills/ccp-relatorio-de-throughputs/`).
 
 **Os diagramas também existem como imagem** em `documentation/throughputs/*.svg`, com as instruções
 de regeração no `README.md` de lá. São derivados: **este markdown é a fonte da verdade**, e os SVG

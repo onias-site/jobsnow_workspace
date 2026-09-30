@@ -1,5 +1,5 @@
 ---
-name: relatorio-de-testes
+name: ccp-relatorio-de-testes
 description: Relatório da suíte de testes do workspace — quantos testes existem, como estão distribuídos por pacote, quais o Surefire não alcança, quais estão desativados por comentário, e o resultado da última execução lido de target/surefire-reports (com os nomes dos testes que quebraram). Use quando pedirem "quantos testes eu tenho", "relatório de testes", "como está a suíte", "quais testes estão falhando", "o que quebrou depois da minha mudança", ou antes/depois de mexer em algo para comparar o antes e o depois.
 ---
 
@@ -49,7 +49,7 @@ Nenhum obrigatório.
 1. Executar o script:
 
    ```powershell
-   & "<raiz>\.claude\skills\relatorio-de-testes\scripts\test-report.ps1"
+   & "<raiz>\.claude\skills\ccp-relatorio-de-testes\scripts\test-report.ps1"
    ```
 
 2. Apresentar, nesta ordem:

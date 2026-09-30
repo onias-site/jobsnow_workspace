@@ -67,4 +67,4 @@ Este é o script consumido por `CcpRandomScripts.createEntities(systemName)` →
 - Entidades com `@CcpEntityTwin` **não** precisam de um segundo arquivo: `recreateEntityTwin` reaproveita o mesmo script para o índice gêmeo.
 - Não incluir bloco `settings`, `aliases` nem `_source` — nenhum script existente usa, e o body é enviado tal e qual no `PUT`.
 - Não alterar a classe Java. Se o enum `Fields` estiver inconsistente (ex.: `@CcpEntityFieldsValidator` apontando para as `Fields` de outra entidade), apenas avisar.
-- Esta skill gera **somente o script**. Para criar a entidade completa (classe Java + script, agnóstico de banco), use a skill `criar-entidade`.
+- Esta skill gera **somente o script**. Para criar a entidade completa (classe Java + script, agnóstico de banco), use a skill `ccp-criar-entidade`.

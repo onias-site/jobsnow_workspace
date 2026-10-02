@@ -1,0 +1,144 @@
+ONIAS VIEIRA JUNIOR
+EMAIL: onias85@gmail.com NASCIDO EM: 22/06/1985. CONTACTO: (11) 966-058-642.
+LOCALIZAÇÃO: Jabaquara  – SÃO PAULO.
+
+FORMAÇÃO ACADÊMICA / ESCOLARIDADE:
+GRADUADO EM TECNOLOGIA DA INFORMAÇÃO PELO CENTRO UNIVERSITÁRIO LUSÍADA, SANTOS – SP em 2007.
+MBA EM JAVA COM SOA PELA FIAP, SÃO PAULO – SP em 2014.
+
+RESUMO DO CURRÍCULO:
+Programador Java desde junho de 2010.
+Programador desde abril de 2009.
+Certificação de Programador Java sun scjp 6 (em 2010).
+Certificação de Programador Java oracle ocjp 7 (em 2015).
+Certificação Associate Java oracle ocjp 5 e 6 (em 2015).
+Inglês intermediário (conversação), avançado (leitura).
+Espanhol avançado (conversação), avançado (leitura).
+
+RESUMO DAS FERRAMENTAS JÁ TRABALHADAS:
+CLOUD: Google Cloud (BigQuery, DataStore, App Engine(SAAS), Compute Engine(PAAS), Cloud Sql, Pub/Sub, Cloud Sql, MemCache).
+DATABASES: Oracle, Sql Server, MySql, elasticsearch.
+METODOLOGIA: Scrum, TDD, DDD.
+ARQUITETURA: EJB 2 e 3, Spring 3 e 4, Design Patterns, Reflection, UML, JAB.
+WS: AXIS, Restlet, Jersey,  JMS, JSON, XML, XSD, Xpath.
+LINGUAGENS: Delphi, C#, Java, Javascript.
+IDE: Eclipse, Visual Studio, RTC.
+SERVIDORES: Tomcat, Jboss, Weblogic E Websphere.
+WEB: Html 5, CSS 3, Bootstrap, primeng.
+MOBILE: CORDOVA, IONIC 2.
+JS: Jquery, Jquery Ui, Ext JS, AngularJs(1,2 e 5), TypeScript, reactjs.
+MVC: JSF 1 e 2, Primefaces 3, JSP, Vraptor 4, Spring MVC, Servlets, Struts 1 e 2.
+ORM: Hibernate, JPA, JDBC.
+TESTES: Junit, Jmeter, Soap UI, Teste NG, Mockito.
+S.O: Windows, Linux.
+DEPLOY: Ant, Maven, Jenkins.
+VERSIONADOR: TFS, GIT, SVN, CVS, VSS. 
+AOP: ASPECTJ.
+PORTLETS: Wem(VCM), Liferay, Fluig (Totvs).
+OUTROS: Applet, Swing, IBM Maximo, Java FX.
+
+
+EXPERIENCIA PROFISSIONAL:
+
+CLIENTE: Sicoob
+PERÍODO:  09/2024 ao  momento.
+FERRAMENTAS:  Oracle, DB2, Angular 7, EJB 3.
+CARGO: Consultor de Tecnologia.
+ATIVIDADES:  Processamento de boletos.
+
+CLIENTE: WeConnect.
+PERÍODO:  09/2023 a 09/2024.
+FERRAMENTAS:  Oracle, Sql Server, Vrpator, java, ExtJs.
+CARGO: Consultor de Tecnologia.
+ATIVIDADES:  Sistema de recursos humanos (ponto, feedback, etc).
+
+CLIENTE: NoxxonSatt.
+PERÍODO:  01/2018 a 07/2024.
+FERRAMENTAS:  Google Cloud (BigQuery, DataStore, MemCache, PUB/SUB, CloudSql, App engine(SAAS), Compute Engine (PAAS)), react Js, eclipse, java 8, springboot, JPA, maven, git, css, html, javascript, visual studio code, APIs javascript e java para georeferencia / geolocalização.
+CARGO: Consultor de Tecnologia.
+ATIVIDADES:  Monitoramento e geolocalização de 6 mil ônibus intermunicipais geridos pela EMTU, manutenção desse sistema em ambiente de nuvem (Google). Gerenciamento tecnico e tecnologico de um sistema que recebia 300 requisiçoes de pacotes grandes por segundo.
+
+CLIENTE: JobsNow.
+CONSULTORIA ALOCADORA:  Meu Hobby.
+PERÍODO:  10/2018 ao momento atual
+FERRAMENTAS:  Google Cloud (MemCache, PUB/SUB, App engine(SAAS), Compute Engine (PAAS)), react Js, eclipse, java 8, springboot, elasticsearch (construi API  Java para ele), maven, git, css, html, javascript, visual studio code, APIs javascript.
+CARGO: Consultor de Tecnologia (aos finais de semana e fora do horário).
+ATIVIDADES:  Cadastro, estatísticas e buscas  (no estilo google) inteligentes de currículo.
+
+CLIENTE: Santander.
+CONSULTORIA ALOCADORA:  Itera Consultoria.
+PERÍODO: 03/2017 a 01/2018
+FERRAMENTAS:  Java, Jab(Java Arquitetura Brasil), SQL, Springboot, Eclipse, Jenkins, RTC, IBM Broker
+CARGO: Consultor de Tecnologia.
+ATIVIDADES:  Exposição de dados de PL/SQL em rest (projeto KiPrev), guarda dos dados de arquivos sequenciais em banco de dados(Projeto Reinf).
+
+CLIENTE: CERTISIGN, NETSHOES, SEFAZ, TOTVS
+CONSULTORIA ALOCADORA: TOTVS SERRA DO MAR.
+PERÍODO: 09/2013 até 07/2016
+FERRAMENTAS:  Javascript, html, css, spring, oracle, hibernate, jboss, tomcat, eclipse, Visual Studio, Java 4, 6 e 7,  C#, jenkins, ANT deploy, Maven, JMeeter,  Velocity, TFS, SVN, Junit, JMS, SOAP, JSF, Primefaces, SVN, Linux, JSON, JQUERY, JQUERY UI, Fluig
+CARGO: Consultor de Tecnologia Java
+ATIVIDADES:  Front end Jquery para sistema Fluig (TOTVS), substituição de scriptlet [java com html] em JSPs por SPA em jquery e criação de framework próprio para trabalhar json(SEFAZ). Criação do portal do fornecedor em jsf/primefaces e sua especificação de webservice e seu framework de comunicação SOAP com SAP, criação de comunicação com JMS (Netshoes). Sustentação de sistemas web para gerenciamento de certificado digital, sustentação de framework de assinador digital (Certisign)
+
+
+CLIENTE: BRADESCO
+CONSULTORIA ALOCADORA: IFACTORY SOLUTIONS.
+PERÍODO: 04/2013 a 09/2013
+PROJETO: NPORTALBRA
+REGRA DE NEGÓCIO: Site de conteúdo / Portal.
+OBJETIVO: Mover todo o conteúdo do portal em html estático para o gestor de conteúdo WEM (VCM).
+FERRAMENTAS: JSP, WEM (VCM), SCRUM, SVN, HTML, JAVASCRIPT, CSS, HTML.
+CARGO: Analista / programador Pleno
+ATIVIDADES:  Criação de componentes em JSP para portar conteúdo estático em templates do WEM [Web Experience Management] (Bradesco)
+CLIENTE: CCR/ODDEBRECHT
+CONSULTORIA ALOCADORA: CAPITAL AMBIENTAL.
+PERÍODO: 09/2012 a 04/2013
+PROJETO: CERENSA
+REGRA DE NEGÓCIO: Gestão ambiental.
+OBJETIVO: Prover software com interface web para inventariado de impactos ambientais.
+FERRAMENTAS:  JAVA 6, Vraptor, ExtJS, Spring, Hibernate, My sql, Tomcat, GIT, CSS, HTML.
+CARGO: Analista / programador Pleno
+ATIVIDADES:  Construção de front end em ExtJs e back end em java com spring
+
+CLIENTE: VOLKSWAGEN
+CONSULTORIA ALOCADORA: CSI SISTEMAS E ENGENHARIA.
+PERÍODO: 02/2012 a 09/2012
+PROJETO: PICK BY LIGHT
+REGRA DE NEGÓCIO: Automação Industrial.
+OBJETIVO: Prover software de automação com biometria de impressão digital que informe as etiquetas que devem ser colocadas no carro que está sendo montado e avisar caso seja usada a etiqueta errada.
+FERRAMENTAS:  JAVA, 6, Swing, reflection, SVN, Design Pattern State machine, AMGSTROM (LINUX EMBARCADO).
+CARGO: Analista / programador Junior
+ATIVIDADES:  Criaçaõ de sistema de automação na linha da Volkswagen que permitia ao operador saber quais etquetas colar em um carro.
+
+CLIENTE: PMSBC (PREFEITURA MUNICIPAL DE SÃO BERNARDO DO CAMPO)
+CONSULTORIA ALOCADORA: G & P SISTEMAS.
+PERÍODO: 01/2011 a 01/2012
+PROJETO: SIGOM (SISTEMA DE GESTÃO ORÇAMENTÁRIA MUNICIPAL)
+REGRA DE NEGÓCIO: Gestão Orçamentária Municipal.
+OBJETIVO: Manutenção em software que tem por função automatizar a gestão orçamentária municipal.
+FERRAMENTAS:  JAVA 6, EJB2, Struts 1, Oracle, JBOSS, SVN, HTML, CSS, JAVASCRIPT, DDD.
+CARGO: Analista / programador Junior
+ATIVIDADES:  Sustentação de sistema de orçamento municipal em seu back end e front end.
+
+CLIENTE: SHOPPING RECIFE E AVON.
+CONSULTORIA ALOCADORA: NRB SOLUTIONS.
+PERÍODO: 06/2010 a 01/2011
+PROJETO: CUSTOMIZAÇÃO DO IBM MAXIMO.
+REGRA DE NEGÓCIO: EAM (Enterprise Asset Management).
+OBJETIVO: Prover customização de classes Java do software IBM MAXIMO.
+FERRAMENTAS:  Java 6, Struts 2, Javascript, html, css, oracle, IBM MAXIMO.
+CARGO: Analista / programador Junior
+ATIVIDADES:  Customização em java de ferramenta da IBM para clientes.
+
+CLIENTE: EXPORTADORA AGRÍCOLA CARCON, PLANIM LOGÍSTICA.
+CONSULTORIA ALOCADORA: MBM SYSTEMS.
+PERÍODO: 04/2009 a 06/2010
+PROJETO: CARCON.
+REGRA DE NEGÓCIO: Exportação agrícola.
+OBJETIVO: Prover software web com a finalidade de gerir todo ciclo da cadeia de exportação de algodão.
+FERRAMENTAS:  C sharp,Visual Studio, Linq, Visual source Safe, SQL Server, Delphi 2009.
+CARGO: Analista / programador Junior
+ATIVIDADES:  Construção de front e back end para módulos do sistema de exportação agrícola da Carcon
+
+
+
+

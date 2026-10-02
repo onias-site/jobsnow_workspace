@@ -1,5 +1,5 @@
 ---
-name: ccp-mapear-subtipos
+name: ccp-mapear-ccpbusiness
 description: Lista o fecho transitivo de subtipos de um tipo Java do workspace — filhos diretos e indiretos, em qualquer profundidade, com nível, tipo de declaração, módulo e arquivo. Use quando pedirem "quem implementa X", "quantos filhos de X existem", "quem estende X direta ou indiretamente", "todas as implementações de CcpBusiness / CcpService / CcpEntityConfigurator", ou ao avaliar o impacto de mexer numa interface base.
 ---
 
@@ -38,7 +38,7 @@ Nenhum obrigatório.
 1. Executar o script que acompanha a skill:
 
    ```powershell
-   & "<raiz>\.claude\skills\ccp-mapear-subtipos\scripts\map-subtypes.ps1" -Type CcpBusiness
+   & "<raiz>\.claude\skills\ccp-mapear-ccpbusiness\scripts\map-subtypes.ps1" -Type CcpBusiness
    ```
 
 2. Apresentar ao usuário, nesta ordem:

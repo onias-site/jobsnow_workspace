@@ -93,12 +93,6 @@ call mvn clean install
 popd
 
 echo ######################
-echo Buildando o projeto: ccp_text-extractor_apache-tika
-pushd "%BASE%ccp_text-extractor_apache-tika"
-call mvn clean install
-popd
-
-echo ######################
 echo Buildando o projeto: jn_business_jobsnow
 pushd "%BASE%jn_business_jobsnow"
 call mvn clean install

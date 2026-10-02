@@ -35,7 +35,6 @@
 		<module>ccp_mensageria-consumer_gcp-pubsub-pull_dependency-chooser</module>
 		<module>ccp_mensageria-sender_gcp-pubsub</module>
 		<module>ccp_password_mindrot</module>
-		<module>ccp_text-extractor_apache-tika</module>
 		<module>jn_business_jobsnow</module>
 		<module>ccp_rest-api-handler-exception_spring</module>
 

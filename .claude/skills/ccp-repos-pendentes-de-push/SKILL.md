@@ -1,6 +1,6 @@
 ---
 name: ccp-repos-pendentes-de-push
-description: Lista quais repositórios git do workspace (a raiz jobsnow_workspace e cada módulo) têm algo a enviar — arquivos modificados, arquivos novos não rastreados ou commits à frente do remoto. Use quando pedirem "quais repositórios estão pendentes de push", "o que falta subir", "tem algo sem commit", "quais projetos mudaram", ou antes de rodar o fazPushEmTodosProjetosLocais.bat / fazPullEmTodosProjetosLocais.bat.
+description: Lista quais repositórios git do workspace (a raiz jobsnow_workspace e cada módulo) têm algo a enviar — arquivos modificados, arquivos novos não rastreados, arquivos removidos ou commits à frente do remoto. Use quando pedirem "quais repositórios estão pendentes de push", "o que falta subir", "tem algo sem commit", "quais projetos mudaram", ou antes de rodar o fazPushEmTodosProjetosLocais.bat / fazPullEmTodosProjetosLocais.bat.
 ---
 
 # Repositórios pendentes de push
@@ -21,7 +21,11 @@ varre todos e mostra só os que têm algo a enviar.
 
 2. Apresentar uma tabela Markdown só com os pendentes: **#** (contador
    iniciado em 1, incrementado a cada linha) | **Repositório** | **Modificados** |
-   **Novos** | **Commits à frente** | **Atrás**. Fechar com a linha de totais.
+   **Novos** | **Removidos** | **Commits à frente** | **Atrás**. Fechar com a linha de totais.
+   As colunas vêm do `git status --porcelain`: **Novos** são os não rastreados (`??`),
+   **Removidos** os que têm `D` no stage ou na árvore de trabalho, e **Modificados** todo o
+   resto (editados, renomeados com `git mv`, adicionados ao stage). Somadas, as três dão o
+   total de arquivos com mudança no repositório.
 3. Destacar:
    - repositório **atrás** do remoto (BEHIND > 0) — o push vai ser rejeitado até puxar;
    - `sem-upstream` — branch sem remoto configurado, o push do .bat falha nele;

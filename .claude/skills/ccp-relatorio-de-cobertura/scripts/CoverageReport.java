@@ -76,7 +76,7 @@ public class CoverageReport {
 			System.out.println("analyzing " + module.getName() + " <- " + classes);
 			CoverageBuilder builder = new CoverageBuilder();
 			Analyzer analyzer = new Analyzer(loader.getExecutionDataStore(), builder);
-			analyzer.analyzeAll(classes);
+			analyzeOwnClasses(analyzer, classes);
 			Node project = new Node(module.getName());
 			Node sourceFolder = project.child("src/main/java");
 			for (IClassCoverage c : builder.getClasses()) {
@@ -118,6 +118,31 @@ public class CoverageReport {
 	 * The workspace's own artifacts in the local repository, by artifactId: every artifactId-version.jar under the
 	 * folder (sources, javadoc and tests jars left out). The artifactId is the module's folder name.
 	 */
+	/**
+	 * Analyzes the classes of a jar or folder. In a jar, the dependencies nested in BOOT-INF/lib are skipped: they never
+	 * count (only classes whose source is in the module do), and JaCoCo fails on some third-party classes there (on
+	 * 2026-10-04 a log4j class inside the jn API jar aborted the whole report).
+	 */
+	static void analyzeOwnClasses(Analyzer analyzer, File classes) throws IOException {
+		if (classes.isDirectory()) {
+			analyzer.analyzeAll(classes);
+			return;
+		}
+		try (java.util.zip.ZipFile zip = new java.util.zip.ZipFile(classes)) {
+			java.util.Enumeration<? extends java.util.zip.ZipEntry> entries = zip.entries();
+			while (entries.hasMoreElements()) {
+				java.util.zip.ZipEntry entry = entries.nextElement();
+				String name = entry.getName();
+				if (!name.endsWith(".class") || name.startsWith("BOOT-INF/lib/")) continue;
+				try (java.io.InputStream in = zip.getInputStream(entry)) {
+					analyzer.analyzeClass(in, classes + "@" + name);
+				} catch (IOException e) {
+					System.out.println("WARNING: skipped " + name + ": " + e.getMessage());
+				}
+			}
+		}
+	}
+
 	static Map<String, File> findSnapshotJars(File folder) throws IOException {
 		Map<String, File> jars = new HashMap<>();
 		if (!folder.isDirectory()) return jars;

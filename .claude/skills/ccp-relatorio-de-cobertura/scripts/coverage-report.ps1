@@ -150,10 +150,12 @@ $html = Join-Path $OutDir 'coverage-report.html'
 $tsv = Join-Path $OutDir 'coverage.tsv'
 # the business modules are analyzed from their jars in the local repository (what the tests JVM loaded), the API
 # from the snapshot it ran from; target/classes only as the last resort, because Eclipse rewrites it
-$overrides = if ($apiMeasured -and (Test-Path $apiClasses)) { "$ApiModule=$apiClasses" } else { '' }
+# '-' stands for "none": Windows PowerShell drops empty-string arguments when calling a native program, which
+# shifted the next arguments and silently put the tests module back in the report (seen on 2026-10-04)
+$overrides = if ($apiMeasured -and (Test-Path $apiClasses)) { "$ApiModule=$apiClasses" } else { '-' }
 # the src/main of the tests module is support code for the tests (fixtures, templates, http helpers), not
 # production code: it is left out unless asked, so the percentage measures only what the tests exercise
-$excluded = if ($IncludeTestModule) { '' } else { $Module }
+$excluded = if ($IncludeTestModule) { '-' } else { $Module }
 $testsRun = if (Test-Path $testsFile) { (Get-Content $testsFile -Raw).Trim() } else { '' }
 if (-not $testsRun) { Write-Warning 'The number of tests run is unknown (no Surefire summary in this run)' }
 & java -cp "$classes;$cp" CoverageReport $execFiles $Root $html $tsv $subtitle $m2 $overrides $excluded $testsRun

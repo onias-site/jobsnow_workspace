@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Module Structure
 
-The root `pom.xml` is an aggregator (not a parent — modules keep their own `<parent>` declarations). Build order is encoded in the module list.
+The root `pom.xml` is an aggregator (not a parent — modules keep their own `<parent>` declarations). Build order is encoded in the module list. A module's layer is the length of its longest chain of internal dependencies down to `ccp_commons_jobsnow`.
 
 | Layer | Module | Purpose |
 |-------|--------|---------|
@@ -29,15 +29,15 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 | 1 | `ccp_password_mindrot` | Password hashing via BCrypt |
 | 1 | `jn_business_jobsnow` | Core jobsnow business logic |
 | 1 | `ccp_rest-api-handler-exception_spring` | Spring Boot exception handler (has own Spring parent) |
-| 2 | `ccp_db-query_elasticsearch` | Elasticsearch query builder |
-| 2 | `vis_business_jobsnow` | Visualization business logic |
-| 2 | `jb_business_jobsnow` | BackOffice business logic |
-| 2 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app (has own Spring parent) |
-| 3 | `ccp_mocking_jobsnow` | Test mocks and DI wiring |
+| 2 | `ccp_db-query_elasticsearch` | Elasticsearch query builder (depends on `ccp_json_gson`) |
+| 2 | `vis_business_jobsnow` | Visualization business logic (depends on `jn_business_jobsnow`) |
+| 3 | `jb_business_jobsnow` | BackOffice business logic (depends on `jn_business_jobsnow` and `vis_business_jobsnow`) |
+| 3 | `ccp_mocking_jobsnow` | Test mocks and DI wiring (depends on `ccp_db-query_elasticsearch`) |
 | 4 | `jb_instant-messenger-listener_jobsnow_dependency-chooser` | BackOffice bot listener |
-| 5 | `jn_rest-api_spring_jobsnow_dependency-chooser` | jobsnow REST API / Spring Boot app |
-| 5 | `vis_rest-api_spring_jobsnow_dependency-chooser` | Visualization REST API / Spring Boot app |
-| 5 | `ccp_rest-api-tests_jobsnow` | Integration/API test suite |
+| 4 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app (has own Spring parent) |
+| 4 | `jn_rest-api_spring_jobsnow_dependency-chooser` | jobsnow REST API / Spring Boot app |
+| 4 | `vis_rest-api_spring_jobsnow_dependency-chooser` | Visualization REST API / Spring Boot app |
+| 5 | `ccp_rest-api-tests_jobsnow` | Integration/API test suite (depends on every module above) |
 
 ## Repository Layout
 
@@ -99,12 +99,6 @@ npm start          # Start Node.js server
 
 **Dependency Injection** — `CcpDependencyInjection` provides interface-to-implementation binding at runtime. Tests wire real implementations; production may substitute mocks or cloud-specific implementations.
 
-**Entity System** — Annotation-driven:
-- `@CcpEntityCache` — marks entities that use caching
-- `@CcpEntityVersionable` — enables version history
-- `@CcpEntityTwin` — twin-document pattern
-- `@CcpEntityDataTransfer` — DTO mapping
-
 **Database Layer** — `CcpCrud` interface backed by Elasticsearch:
 - `CcpQuery` / `CcpQueryBool` / `CcpQueryAggregations` — fluent query builder
 - `CcpBulkExecutor` — bulk CRUD with pluggable handlers
@@ -134,3 +128,39 @@ Legacy React + Redux stack (React 15–16, Webpack 2, Bootstrap 3). Deployed to 
 - JUnit 4 (not 5) is used throughout.
 - Two modules use `spring-boot-starter-parent` as their own parent (`ccp_rest-api-handler-exception_spring` and `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency`) — they are included in the aggregator but do not inherit from the root POM.
 - `instanceof` pattern matching against a variable already declared as the same type (e.g., `CcpBusiness x instanceof CcpBusiness y`) is rejected by the compiler — replace with a `!= null` check.
+
+## Architectural Rules
+
+Named rules that govern how classes are written and how requests are interpreted. They can be cited by name or acronym ("apply MIAEL", "this violates OQL").
+
+### Data entities
+
+- **Automatic Entity Id (AEI)** — every entity's id is calculated from the fields annotated with `@CcpEntityFieldPrimaryKey`.
+- **Entity Decorators** — any change of an entity's behavior on create, read, update, transfer, copy or delete is a decorator listed in `@CcpEntityCustomDecorators`.
+- **Disposable Entity** — records discarded after some time: `@CcpEntityCustomDecorator(value = JnEntityDisposableBuilder.class, priority = 1)` plus `@JnEntityDisposable(value = JnDisposableEntity.class, timeOption = <CcpEntityExpurgableOptions>)`.
+- **Versionable Entity** — versioned records: `@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2)` plus `@JnEntityVersionable(JnVersionableEntity.class)`.
+- **Twin Entity** — records with a mirror table that receives what is deleted from the main one: `@CcpEntityTwin(twinEntityName = <twin table>, bulkExecutorClass = JnExecuteBulkOperation.class, functionToDeleteKeysInTheCacheClass = JnDeleteKeysFromCache.class)`.
+- **Read Only Entity** — read-only records: `@CcpEntityOlyReadable` (spelled that way); they change only through bulk operations.
+- **Cache Entity** — cacheable records: `@CcpEntityCache(<ttl in seconds>)`.
+- **Async Entity** — records whose writes run asynchronously: `@CcpEntityCustomDecorator(value = JnEntityAsyncWriterBuilder.class, priority = 8)` plus `@JnEntityAsyncWriter(JnAsyncWriterEntity.class)`.
+- **LGPD Fields Entity** — records holding sensitive data (e-mail, password): `@CcpEntityFieldsTransformer(classReferenceWithTheFields = <transformer catalog>)` on the entity, or `@CcpEntityFieldTransformer(<subclass of CcpJsonTransformersDefaultEntityField>)` on the field.
+
+### Reading and writing data
+
+- **Online Query Less (OQL)** — online requests (usually entering through an MVC controller) never run complex queries. Complex queries run only in a scheduled process, a queue listener or an asynchronous process: data that needs several entities and a complex query is produced there by a CQD, stored under an id, and the requester reads it by that id, directly or indirectly. Support bot commands are not online requests: only the support team (a few users) issues them, so they may run complex queries.
+- **Complex Query Dsl (CQD)** — complex queries use the fluent interface of `CcpQueryOptions`.
+- **Multi Get Id Entity (MGIE)** — fetching from several entities with no complex query, only id formation, uses `CcpCrud.unionAll`.
+- **Flow Batch Operation Entity (FBOE)** — batches whose target entity is chosen dynamically are written by `JnExecuteBulkOperation.executeSelectUnionAllThenExecuteBulkOperation`.
+- **Flow Status Entity Dsl (FSED)** — when throwing a `CcpErrorFlowDisturb` or running a `CcpBusiness` depends on which entity the record is (or is not) in, use `CcpGetEntityId` and its chained fluent interface.
+
+### Code shape
+
+- **Separated Business Type** — every action is a class or enum item that implements `CcpBusiness`, directly or indirectly.
+- **Dto Less** — no classes representing data (VO, DTO, Bean, Record, Model or similar); use `CcpJsonRepresentation`, which wraps a map and is parsed to and from JSON through `CcpJsonHandler`.
+- **Dto Less Validation (DLV)** — validation happens in `CcpBusiness.execute`, which calls `CcpJsonValidatorEngine.validateJson`.
+- **Immutable Object** — classes that hold data are immutable.
+- **Null Less** — passing `null` to a constructor or method, or returning `null` from a method, is forbidden; woven aspects enforce it by throwing `CcpNullParameterException` / `CcpNullReturnException`. The only allowed exceptions are members annotated with `@CcpAllowNullParameter` or `@CcpAllowNullReturn` (`com.ccp.aop`). Nulls coming from third-party libraries are handled defensively where needed.
+- **Mitigate If And Else Less (MIAEL)** — `else` is forbidden. Each `if` ends in `return` or `throw` (inside a loop, also `continue` or `break`). The `if` body is kept as small as possible, ideally one line; when it would be larger than the code after it, invert the condition so the short path goes inside the `if`. A simple ternary (`condition ? a : b`) is tolerated; a compound one (nested ternaries or one branch holding another ternary) is forbidden.
+- **Enum as Decisor** — when a decision depends on an enum, the enum declares an abstract method for it and each item implements it, whenever possible.
+- **Decorator Everywhere** — APIs for files, input streams, collections, e-mail, JSON, folders, hashes, numbers, passwords, properties files, reflection, strings, text, time, URLs or anything else demanding many operations sit behind a decorator in package `com.ccp.decorators`.
+- **Abstraction Technology Provider** — a business module (`*_business_*`) depends only on `ccp_commons_jobsnow`, `aspectjtools` and other business modules.

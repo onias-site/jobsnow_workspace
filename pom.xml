@@ -38,21 +38,21 @@
 		<module>jn_business_jobsnow</module>
 		<module>ccp_rest-api-handler-exception_spring</module>
 
-		<!-- Layer 2: dependem de módulos da Layer 1 -->
+		<!-- Layer 2: dependem de módulos da Layer 1 (ccp_json_gson, jn_business_jobsnow) -->
 		<module>ccp_db-query_elasticsearch</module>
 		<module>vis_business_jobsnow</module>
-		<module>jb_business_jobsnow</module>
 
-		<!-- Layer 3: depende de ccp_db-query_elasticsearch e vários da Layer 1 -->
+		<!-- Layer 3: dependem de módulos da Layer 2 (vis_business_jobsnow, ccp_db-query_elasticsearch) -->
+		<module>jb_business_jobsnow</module>
 		<module>ccp_mocking_jobsnow</module>
 
-		<!-- Layer 4: depende de jb_business_jobsnow e ccp_mocking_jobsnow -->
+		<!-- Layer 4: dependem de módulos da Layer 3 (ccp_mocking_jobsnow, jb_business_jobsnow) -->
 		<module>jb_instant-messenger-listener_jobsnow_dependency-chooser</module>
 		<module>jn_mensageria-consumer_gcp-pubsub-push-spring_dependency</module>
-
-		<!-- Layer 5: suite de testes completa -->
 		<module>jn_rest-api_spring_jobsnow_dependency-chooser</module>
 		<module>vis_rest-api_spring_jobsnow_dependency-chooser</module>
+
+		<!-- Layer 5: suite de testes completa, depende de todos os módulos acima -->
 		<module>ccp_rest-api-tests_jobsnow</module>
 	</modules>
 

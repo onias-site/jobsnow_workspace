@@ -12,13 +12,30 @@ desses números entre uma refatoração e outra.
 
 ## Argumento esperado
 
-Nenhum obrigatório. O script aceita três parâmetros opcionais:
+Nenhum obrigatório. O script aceita estes parâmetros opcionais:
 
 | Parâmetro | Padrão | Para quê |
 |---|---|---|
 | `-Root` | `C:\eclipse-workspaces\ccp` | raiz do workspace a varrer |
 | `-OutDir` | `$env:TEMP\map-literals` | onde gravar os CSVs |
 | `-Top` | `12` | tamanho dos rankings de arquivos e subcategorias |
+| `-ExcludeReasons` | OpenAPI, mensagem de erro, diretiva de compilador, carga inicial | razões que ficam fora do relatório |
+| `-IncludeAll` | desligado | traz de volta as razões excluídas |
+
+## O que fica fora do relatório (por padrão)
+
+Quatro razões têm motivo legítimo para usar literal e só poluem a busca por candidatos a
+refatoração. O relatório as lista num bloco "FORA DO RELATORIO" com a contagem, e elas
+continuam no `final.csv`:
+
+- `Documentacao de API (OpenAPI)`;
+- `Mensagem de erro / validacao`;
+- `Diretiva de compilador`;
+- `Carga inicial (getFirstRecordsToInsert)`: literais nos corpos dos métodos alcançáveis a
+  partir do `getFirstRecordsToInsert` **no mesmo arquivo**, ou seja, o próprio método e os
+  auxiliares que ele chama em qualquer profundidade (`getSystemMessages`, `addSystemMessage`...).
+  São dados de semente, o lugar previsto para os textos ao usuário. Essa regra vence todas
+  as outras. Um literal em campo ou constante que só a semente usa **não** é pego.
 
 ## Passos
 
@@ -73,12 +90,23 @@ importa**: lambda e receptor são testados antes do dono da chamada, senão
 `Manipulacao / formatacao de texto` · `Roteamento HTTP (Spring)` · `Infraestrutura HTTP` ·
 `Nome de campo JSON (CcpJsonFieldName)` · `Comparacao de valor` ·
 `Metadado do framework CCP` · `Coercao para String ("" + x)` · `Configuracao / ambiente` ·
-`Reflexao / carga por nome` · `Constante nomeada`
+`Reflexao / carga por nome` · `Constante nomeada` · `Log / saida de console` ·
+`Carga inicial (getFirstRecordsToInsert)`
+
+A varredura do dono da chamada pula inicializadores de array já fechados (`}` seguido de
+`,` ou `)`). Sem isso, em `@ApiResponse(content = { ... }, responseCode = "200")` ela parava
+no `}` e 125 literais de OpenAPI caíam em "String solta" (corrigido em 2026-10-05).
+
+Campo declarado direto no corpo de uma `interface` é implicitamente `static final`, então vira
+`Constante nomeada` mesmo sem os modificadores escritos (caso do `CcpOtherConstants`). O
+bloco que contém o literal é achado pulando inicializadores de array (`{` depois de `=` ou
+`]`). O `default "x"` de atributo de anotação continua em "Metadado do framework CCP".
 
 ## Restrições
 
 - **O projeto de testes fica fora.** `ccp_rest-api-tests_jobsnow` é excluído, junto com
-  `target/`, `node_modules/` e `bin/`. Alterar isso muda a base de comparação entre execuções.
+  `target/`, `node_modules/`, `bin/` e `.claude/` (os scripts Java das skills, como o
+  `CoverageReport.java`, não são código de produção). Alterar isso muda a base de comparação entre execuções.
 - **A classificação é heurística sintática, não análise semântica com resolução de tipos.**
   Três limites conhecidos, que devem ser repetidos ao usuário toda vez:
   - *Indireção derrota o classificador.* Literal que passa por variável local antes do uso
@@ -99,7 +127,22 @@ importa**: lambda e receptor são testados antes do dono da chamada, senão
 
 ## Baseline
 
-Execução de 2026-09-16, após a troca de 22 chaves literais por enums de field name:
+Execução de 2026-10-05, já com as exclusões padrão, a correção do inicializador de array e
+`.claude/` fora da varredura:
+
+| | |
+|---|---|
+| Arquivos varridos | 581 (143 com literal no relatório) |
+| Literais no relatório | 733 |
+| Fora do relatório | 1.383: OpenAPI 630 · carga inicial 311 · mensagem de erro 269 · diretiva 173 |
+| Maiores categorias | Concatenação 151 · Manipulação de texto 149 · String solta 122 · Roteamento HTTP 103 |
+| Por centro de custo | ccp 452 · vis 117 · jn 84 · jb 80 |
+
+Medida depois de trocar os tipos de condição do Elasticsearch pelo enum
+`CcpQueryConditionType`, apontar o formato de data para `CcpEntityExpurgableOptions.millisecond.format`,
+remover o endpoint `/oi` e reconhecer constante de interface.
+
+Execução de 2026-09-16 (sem exclusões e antes da correção, não comparável com a de cima), após a troca de 22 chaves literais por enums de field name:
 
 | | |
 |---|---|

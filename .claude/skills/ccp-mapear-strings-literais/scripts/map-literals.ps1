@@ -1,6 +1,6 @@
 # Mapeia todas as strings literais dos arquivos .java e agrupa por "razao de existir".
 #
-#   .\map-literals.ps1 [-Root <dir>] [-OutDir <dir>] [-Top <n>]
+#   .\map-literals.ps1 [-Root <dir>] [-OutDir <dir>] [-Top <n>] [-ExcludeReasons <razoes>] [-IncludeAll]
 #
 # Gera no OutDir:
 #   literals.csv  - um registro por literal, com o contexto sintatico cru (antes e depois)
@@ -10,7 +10,14 @@
 param(
     [string] $Root   = 'C:\eclipse-workspaces\ccp',
     [string] $OutDir = $(Join-Path $env:TEMP 'map-literals'),
-    [int]    $Top    = 12
+    [int]    $Top    = 12,
+    [string[]] $ExcludeReasons = @(
+        'Documentacao de API (OpenAPI)',
+        'Mensagem de erro / validacao',
+        'Diretiva de compilador',
+        'Carga inicial (getFirstRecordsToInsert)'
+    ),
+    [switch] $IncludeAll
 )
 
 $ErrorActionPreference = 'Stop'
@@ -18,9 +25,11 @@ if (-not (Test-Path $OutDir)) { New-Item -ItemType Directory -Path $OutDir -Forc
 
 # ─── 1. Coleta de arquivos ────────────────────────────────────────────────────
 # ccp_rest-api-tests_jobsnow fica de fora: e o projeto de testes, nao codigo de producao.
+# .claude tambem: os scripts das skills (ex.: CoverageReport.java) nao sao codigo de producao.
 $files = Get-ChildItem -Path $Root -Filter *.java -Recurse -File | Where-Object {
     $p = $_.FullName
     ($p -notmatch '\\target\\') -and
+    ($p -notmatch '\\\.claude\\') -and
     ($p -notmatch '\\node_modules\\') -and
     ($p -notmatch '\\ccp_rest-api-tests_jobsnow\\') -and
     ($p -notmatch '\\bin\\')
@@ -97,8 +106,71 @@ foreach ($f in $files) {
 
     $codeStr = $code.ToString()
 
+    # Carga inicial: corpos dos metodos alcancaveis a partir de getFirstRecordsToInsert dentro
+    # do mesmo arquivo (o proprio metodo e os auxiliares que ele chama, em qualquer profundidade).
+    # Literal ali dentro e dado de semente, nao texto espalhado no codigo.
+    $seedRanges = @()
+    if ($codeStr -match '\bgetFirstRecordsToInsert\s*\(\s*\)\s*\{') {
+        $bodies = @{}
+        $declRegex = [regex]'(?<!new\s)(?<![\.\w])(\w+)\s*\([^;{}()]*(?:\([^()]*\)[^;{}()]*)*\)\s*(?:throws\s+[\w\.,\s]+)?\{'
+        foreach ($m in $declRegex.Matches($codeStr)) {
+            $name = $m.Groups[1].Value
+            if ($name -match '^(if|for|while|switch|catch|synchronized|try|return|else|do|new)$') { continue }
+            $open = $m.Index + $m.Length - 1
+            $d = 0; $e = $open
+            while ($e -lt $codeStr.Length) {
+                if ($codeStr[$e] -eq '{') { $d++ } elseif ($codeStr[$e] -eq '}') { $d--; if ($d -eq 0) { break } }
+                $e++
+            }
+            if (-not $bodies.ContainsKey($name)) { $bodies[$name] = New-Object System.Collections.ArrayList }
+            [void]$bodies[$name].Add(@($open, $e))
+        }
+        $reached = @{}
+        $queue = New-Object System.Collections.Queue
+        $queue.Enqueue('getFirstRecordsToInsert')
+        while ($queue.Count -gt 0) {
+            $name = $queue.Dequeue()
+            if ($reached.ContainsKey($name) -or -not $bodies.ContainsKey($name)) { continue }
+            $reached[$name] = $true
+            foreach ($range in $bodies[$name]) {
+                $seedRanges += ,$range
+                $body = $codeStr.Substring($range[0], $range[1] - $range[0] + 1)
+                foreach ($call in [regex]::Matches($body, '\b(\w+)\s*\(')) { $queue.Enqueue($call.Groups[1].Value) }
+            }
+        }
+    }
+
+    # Chaves que abrem o corpo de uma interface (ou @interface). Campo declarado direto ali e
+    # implicitamente static final, mesmo sem os modificadores escritos.
+    $interfaceOpeners = @{}
+    foreach ($m in [regex]::Matches($codeStr, '\binterface\s+\w+[^{;]*\{')) { $interfaceOpeners[$m.Index + $m.Length - 1] = $true }
+
     foreach ($lit in $lits) {
         $pos = $lit.Pos
+        $isSeed = $false
+        foreach ($range in $seedRanges) { if ($pos -gt $range[0] -and $pos -lt $range[1]) { $isSeed = $true; break } }
+
+        # Bloco que contem o literal, pulando inicializadores de array ({ apos '=' ou ']'):
+        # se for o corpo de uma interface, o literal pertence a uma constante.
+        $isInterfaceConstant = $false
+        if ($interfaceOpeners.Count -gt 0) {
+            $braces = 0
+            $b = $pos - 1
+            while ($b -ge 0) {
+                $ch = $codeStr[$b]
+                if ($ch -eq '}') { $braces++ }
+                elseif ($ch -eq '{') {
+                    if ($braces -gt 0) { $braces-- }
+                    else {
+                        $prefix = $codeStr.Substring([Math]::Max(0, $b - 20), $b - [Math]::Max(0, $b - 20)).TrimEnd()
+                        if ($prefix -match '[=\]]$') { $b--; continue }
+                        $isInterfaceConstant = $interfaceOpeners.ContainsKey($b)
+                        break
+                    }
+                }
+                $b--
+            }
+        }
 
         # Varredura para tras: acha o '(' nao-balanceado mais proximo e identifica quem o
         # precede -> @Anotacao, new Tipo, .metodo ou chamada simples. E isso que revela o
@@ -109,6 +181,20 @@ foreach ($f in $files) {
         $ownerName = ''
         while ($j -ge 0) {
             $ch = $codeStr[$j]
+            # '}' seguido de ',' ou ')' fecha um inicializador de array dentro da expressao
+            # (content = { ... }, responseCode = "200"): pula o bloco balanceado em vez de parar.
+            if ($ch -eq '}' -and $depth -eq 0) {
+                $after = $codeStr.Substring($j + 1, [Math]::Min(40, $codeStr.Length - $j - 1)).TrimStart()
+                if ($after -match '^[,)]') {
+                    $braces = 0
+                    while ($j -ge 0) {
+                        if ($codeStr[$j] -eq '}') { $braces++ } elseif ($codeStr[$j] -eq '{') { $braces--; if ($braces -eq 0) { break } }
+                        $j--
+                    }
+                    $j--
+                    continue
+                }
+            }
             if ($ch -eq ')' -or $ch -eq ']') { $depth++ }
             elseif ($ch -eq '(') {
                 if ($depth -eq 0) {
@@ -149,7 +235,7 @@ foreach ($f in $files) {
         [void]$records.Add([pscustomobject]@{
             File = $f.FullName.Substring($Root.Length + 1); Line = $line; Value = $lit.Value
             Block = $lit.Block; OwnerKind = $ownerKind; OwnerName = $ownerName
-            Stmt = $stmt; Next = $suffix
+            Stmt = $stmt; Next = $suffix; Seed = $isSeed; InterfaceConstant = $isInterfaceConstant
         })
     }
 }
@@ -163,6 +249,9 @@ function Get-Reason($x) {
     $stmt = $x.Stmt; $next = $x.Next; $kind = $x.OwnerKind; $name = $x.OwnerName; $val = $x.Value
     $file = Split-Path $x.File -Leaf
     $isExc = $file -match '(Error|Exception)\.java$'
+
+    if ("$($x.Seed)" -eq 'True') { return @('Carga inicial (getFirstRecordsToInsert)', 'semente de entidade') }
+    if ("$($x.InterfaceConstant)" -eq 'True' -and $kind -ne 'annotation' -and $stmt -notmatch 'default\s*$') { return @('Constante nomeada', 'constante de interface') }
 
     if ($stmt -match '\(\s*\)\s*->\s*$') { return @('Nome de campo JSON (CcpJsonFieldName)', 'lambda  () -> "x"') }
     if ($stmt -match '->\s*$')           { return @('String solta', 'corpo de lambda') }
@@ -225,8 +314,21 @@ $out = foreach ($x in $records) {
 $out | Export-Csv -Path (Join-Path $OutDir 'final.csv') -NoTypeInformation -Encoding UTF8
 
 # ─── 4. Relatorio ─────────────────────────────────────────────────────────────
+# O final.csv guarda tudo; o relatorio deixa de fora as razoes em $ExcludeReasons, que sao
+# literais com razao legitima de existir (documentacao, mensagem de excecao, diretiva,
+# semente de entidade). -IncludeAll traz tudo de volta.
+$excluded = @()
+if (-not $IncludeAll) {
+    $excluded = @($out | Where-Object { $ExcludeReasons -contains $_.Reason })
+    $out = @($out | Where-Object { $ExcludeReasons -notcontains $_.Reason })
+}
 $total = $out.Count
 "ARQUIVOS VARRIDOS: $($files.Count)   COM LITERAL: $(($out | Select-Object -ExpandProperty File -Unique).Count)   LITERAIS: $total"
+if ($excluded.Count -gt 0) {
+    ""
+    "##### FORA DO RELATORIO ($($excluded.Count)) #####"
+    $excluded | Group-Object Reason | Sort-Object Count -Descending | ForEach-Object { "{0,5}  {1}" -f $_.Count, $_.Name }
+}
 ""
 "##### POR RAZAO DE EXISTIR #####"
 $out | Group-Object Reason | Sort-Object Count -Descending | ForEach-Object {

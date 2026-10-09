@@ -31,7 +31,9 @@ import org.jacoco.core.tools.ExecFileLoader;
  * Writes a collapsible HTML page, a TSV with one line per file and prints the tree down to the source folder level.
  *
  * usage: CoverageReport <jacoco.exec[;other.exec...]> <workspace> <output.html> <output.tsv> [subtitle] [m2 repository]
- *        [module=classesDirOrJar;...] [excludedModule;...] [tests run summary]
+ *        [module=classesDirOrJar;...] [excludedModule;...] [tests run summary] [history.tsv run-label scope]
+ * With the history arguments, the project totals are compared with the latest earlier run of the same scope (in the
+ * console and at the top of the HTML) and this run is recorded in the history.
  */
 public class CoverageReport {
 
@@ -104,9 +106,15 @@ public class CoverageReport {
 		}
 		// how many tests produced these numbers: the user wants it next to the coverage, so a run that broke
 		// halfway (API down, Surefire fork dead) is visible in the report itself
-		String testsRun = args.length > 8 ? args[8] : "";
+		// '-' stands for "unknown": Windows PowerShell drops empty-string arguments, which would shift the next ones
+		String testsRun = args.length > 8 && !args[8].equals("-") ? args[8] : "";
+		// project-level history: the user wants every run compared with the previous one, at project level only
+		String comparison = "";
+		if (args.length > 11 && !args[9].isBlank() && !args[9].equals("-")) {
+			comparison = compareWithPreviousRun(root, Path.of(args[9]), args[10], args[11], testsRun);
+		}
 		writeTsv(root, args[3]);
-		writeHtml(root, args[2], subtitle, testsRun);
+		writeHtml(root, args[2], subtitle, testsRun, comparison);
 		if (!testsRun.isBlank()) System.out.println("TESTS: " + testsRun);
 		System.out.printf("%-62s %8s %10s %10s %10s%n", "Element", "Coverage", "Covered", "Missed", "Total");
 		print(root, 0, 2);
@@ -157,6 +165,111 @@ public class CoverageReport {
 		return jars;
 	}
 
+	/** One project of one run, as kept in the history file. */
+	record HistoryRow(String run, String scope, String tests, String project, long covered, long missed) {
+		long total() { return covered + missed; }
+	}
+
+	/**
+	 * Compares the projects of this run with those of the latest earlier run of the same scope found in the history
+	 * file (tab separated: run, scope, tests, project, covered, missed), prints the comparison, records this run in
+	 * the history (replacing an earlier record of the same run, so -SkipRun does not duplicate it) and returns the
+	 * comparison as HTML. Only the project level is compared, by the user's choice (2026-10-07).
+	 */
+	static String compareWithPreviousRun(Node root, Path historyFile, String run, String scope, String testsRun) throws IOException {
+		List<HistoryRow> history = new ArrayList<>();
+		if (Files.exists(historyFile)) {
+			for (String line : Files.readAllLines(historyFile, StandardCharsets.UTF_8)) {
+				String[] cols = line.split("\t", -1);
+				if (cols.length < 6 || cols[0].equals("run")) continue;
+				history.add(new HistoryRow(cols[0], cols[1], cols[2], cols[3], Long.parseLong(cols[4]), Long.parseLong(cols[5])));
+			}
+		}
+		// the run labels are "yyyy-MM-dd HH:mm", so the text order is the time order
+		String previousRun = history.stream().filter(h -> h.scope().equals(scope) && h.run().compareTo(run) < 0)
+				.map(HistoryRow::run).max(String::compareTo).orElse(null);
+		Map<String, HistoryRow> previous = new TreeMap<>();
+		String previousTests = "";
+		for (HistoryRow h : history) {
+			if (!h.run().equals(previousRun) || !h.scope().equals(scope)) continue;
+			previous.put(h.project(), h);
+			previousTests = h.tests();
+		}
+
+		List<HistoryRow> kept = new ArrayList<>();
+		for (HistoryRow h : history) if (!(h.run().equals(run) && h.scope().equals(scope))) kept.add(h);
+		for (Node p : root.children.values()) kept.add(new HistoryRow(run, scope, testsRun, p.name, p.covered, p.missed));
+		StringBuilder out = new StringBuilder("run\tscope\ttests\tproject\tcovered\tmissed\n");
+		for (HistoryRow h : kept) {
+			out.append(h.run()).append('\t').append(h.scope()).append('\t').append(h.tests()).append('\t').append(h.project())
+			   .append('\t').append(h.covered()).append('\t').append(h.missed()).append('\n');
+		}
+		Files.createDirectories(historyFile.toAbsolutePath().getParent());
+		Files.writeString(historyFile, out.toString(), StandardCharsets.UTF_8);
+
+		if (previousRun == null) {
+			System.out.println("COMPARISON: no earlier run with scope '" + scope + "' in " + historyFile);
+			return "<h2>Comparison with the previous run</h2><p>No earlier run with this scope in the history yet; the next run will be compared with this one.</p>";
+		}
+
+		java.util.TreeSet<String> projects = new java.util.TreeSet<>(previous.keySet());
+		projects.addAll(root.children.keySet());
+		StringBuilder sb = new StringBuilder("<h2>Comparison with the previous run (project level)</h2>")
+				.append("<p class='tests'><b>Previous:</b> ").append(escape(previousRun))
+				.append(previousTests.isBlank() ? "" : " &middot; tests run: " + escape(previousTests))
+				.append("<br><b>Current:</b> ").append(escape(run))
+				.append(testsRun.isBlank() ? "" : " &middot; tests run: " + escape(testsRun)).append("</p>")
+				.append("<div class='wrap'><table class='cmp'><thead><tr><th class='n'>#</th><th>Project</th><th class='n'>Previous</th><th class='n'>Current</th>")
+				.append("<th class='n'>Change</th><th class='n'>Covered (prev &rarr; now)</th><th class='n'>Total (prev &rarr; now)</th></tr></thead><tbody>");
+		System.out.println("COMPARISON with " + previousRun + (previousTests.isBlank() ? "" : " (" + previousTests + ")"));
+		System.out.printf("%3s %-58s %9s %9s %9s %21s %21s%n", "#", "Project", "Previous", "Current", "Change", "Covered", "Total");
+		long prevCovered = 0, prevTotal = 0;
+		int number = 0;
+		for (String project : projects) {
+			HistoryRow before = previous.get(project);
+			Node now = root.children.get(project);
+			if (before != null) { prevCovered += before.covered(); prevTotal += before.total(); }
+			number++;
+			appendComparison(sb, String.valueOf(number), project, before == null ? -1 : before.covered(), before == null ? -1 : before.total(),
+					now == null ? -1 : now.covered, now == null ? -1 : now.total(), false);
+		}
+		appendComparison(sb, "", "Grand total", prevCovered, prevTotal, root.covered, root.total(), true);
+		sb.append("</tbody></table></div>");
+		return sb.toString();
+	}
+
+	/** One line of the comparison, in the HTML and in the console; -1 stands for "the project was not in that run". */
+	static void appendComparison(StringBuilder sb, String number, String project, long prevCovered, long prevTotal, long covered, long total, boolean bold) {
+		String before = prevTotal < 0 ? "&mdash;" : percent(prevCovered, prevTotal);
+		String now = total < 0 ? "&mdash;" : percent(covered, total);
+		String change = "&mdash;";
+		String changeClass = "";
+		if (prevTotal >= 0 && total >= 0) {
+			double points = ratio(covered, total) - ratio(prevCovered, prevTotal);
+			change = String.format(Locale.forLanguageTag("pt-BR"), "%+.1f p.p.", points);
+			changeClass = points >= 0.05 ? " up" : points <= -0.05 ? " down" : "";
+		}
+		String coveredText = (prevTotal < 0 ? "&mdash;" : String.valueOf(prevCovered)) + " &rarr; " + (total < 0 ? "&mdash;" : String.valueOf(covered));
+		String totalText = (prevTotal < 0 ? "&mdash;" : String.valueOf(prevTotal)) + " &rarr; " + (total < 0 ? "&mdash;" : String.valueOf(total));
+		String open = bold ? "<b>" : "", close = bold ? "</b>" : "";
+		sb.append("<tr><td class='n'>").append(number).append("</td><td>").append(open).append(escape(project)).append(close)
+		  .append("</td><td class='n'>").append(open).append(before).append(close).append("</td><td class='n'>").append(open).append(now).append(close)
+		  .append("</td><td class='n").append(changeClass).append("'>").append(open).append(change).append(close)
+		  .append("</td><td class='n'>").append(coveredText).append("</td><td class='n'>").append(totalText).append("</td></tr>");
+		System.out.printf("%3s %-58s %9s %9s %9s %21s %21s%n", number, project, plain(before), plain(now), plain(change), plain(coveredText), plain(totalText));
+	}
+
+	/** The HTML entities of the comparison, as console text. */
+	static String plain(String html) {
+		return html.replace("&mdash;", "-").replace("&rarr;", "->");
+	}
+
+	static double ratio(long covered, long total) { return total == 0 ? 0 : 100.0 * covered / total; }
+
+	static String percent(long covered, long total) {
+		return String.format(Locale.forLanguageTag("pt-BR"), "%.1f %%", ratio(covered, total));
+	}
+
 	static void sum(Node n) {
 		if (n.children.isEmpty()) return;
 		n.covered = 0; n.missed = 0;
@@ -180,7 +293,7 @@ public class CoverageReport {
 		Files.writeString(Path.of(output), sb.toString(), StandardCharsets.UTF_8);
 	}
 
-	static void writeHtml(Node root, String output, String subtitle, String testsRun) throws IOException {
+	static void writeHtml(Node root, String output, String subtitle, String testsRun, String comparison) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		// no doctype/html/head/body: the Artifact publish wraps the page in its own skeleton, and browsers render it as is when opened locally
 		String dark = "--bg:#17181b;--fg:#e8e8ea;--mut:#9a9aa2;--line:#2c2d33;--hov:#202227;--ok:#3fb95a;--bad:#e0574b;--track:#4a2825;color-scheme:dark";
@@ -193,10 +306,14 @@ public class CoverageReport {
 		  .append("th,td{padding:3px 8px;border-bottom:1px solid var(--line);white-space:nowrap}th{text-align:left;font-weight:600;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg)}")
 		  .append("td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}tr:hover td{background:var(--hov)}tr.h{display:none}.t{cursor:pointer;user-select:none}")
 		  .append(".t::before{content:'\\25B8';display:inline-block;width:14px;color:var(--mut)}.t.o::before{content:'\\25BE'}.bar{display:inline-block;width:60px;height:9px;background:var(--track);vertical-align:middle;margin-right:6px}")
-		  .append(".bar i{display:block;height:100%;background:var(--ok)}.lv1{padding-left:22px}.lv2{padding-left:40px}.lv3{padding-left:58px}.lv4{padding-left:76px}.leaf{padding-left:14px}</style><main>")
+		  .append(".bar i{display:block;height:100%;background:var(--ok)}.lv1{padding-left:22px}.lv2{padding-left:40px}.lv3{padding-left:58px}.lv4{padding-left:76px}.leaf{padding-left:14px}")
+		  .append("h2{font-size:15px;margin:0 0 4px}table.cmp{margin-bottom:24px}td.up{color:var(--ok)}td.down{color:var(--bad)}</style><main>")
 		  .append("<h1>Coverage Report</h1>")
 		  .append(testsRun.isBlank() ? "" : "<p class='tests'><b>Tests run:</b> " + escape(testsRun) + "</p>")
-		  .append("<p>").append(escape(subtitle)).append(" Click a row to expand.</p>")
+		  .append("<p>").append(escape(subtitle)).append("</p>")
+		  .append(comparison)
+		  .append(comparison.isBlank() ? "" : "<h2>Current run</h2>")
+		  .append("<p>Click a row to expand.</p>")
 		  .append("<div class='wrap'><table><thead><tr><th>Element</th><th class='n'>Coverage</th><th class='n'>Covered Instructions</th><th class='n'>Missed Instructions</th><th class='n'>Total Instructions</th></tr></thead><tbody>");
 		int[] id = {0};
 		html(root, 0, -1, sb, id);

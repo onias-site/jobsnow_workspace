@@ -29,6 +29,15 @@ instruções cobertas, perdidas e totais.
    - `coverage.tsv` — `project  package  file  coverage  covered  missed  total`, uma linha por
      arquivo, boa para ordenar/filtrar ou comparar duas rodadas;
    - no console, a árvore até o nível de pasta de fonte.
+4. **Comparativo com a rodada anterior, só por projeto** (pedido do usuário em 2026-10-07). O total
+   de cada projeto de cada rodada fica em `history/coverage-projects.tsv`, dentro da pasta da skill
+   (`run  scope  tests  project  covered  missed`; versionado com o `.claude/`, sobrevive à limpeza
+   do `%TEMP%`). A cada rodada o gerador compara com a rodada anterior mais recente **do mesmo
+   escopo** (`full`, `test=<filtro>`, com `+test-module` quando `-IncludeTestModule`), imprime a
+   tabela `COMPARISON` no console, põe a mesma tabela no topo do HTML e grava a rodada atual no
+   histórico (um `-SkipRun` substitui a gravação da mesma rodada em vez de duplicar). Se o histórico
+   ainda não tem a rodada que deixou o `coverage.tsv` no `-OutDir`, o script a importa antes de
+   rodar, para que haja com o que comparar. O comparativo nunca desce a pacote ou arquivo.
 
 Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já estão lá.
 
@@ -43,6 +52,7 @@ Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já est
 | `-SkipRun` | desligado | não roda testes; só regera o relatório a partir do `jacoco.exec` existente (e do `jacoco-api.exec`, se houver) |
 | `-NoApi` | desligado | não sobe a API jn; os testes REST só passam se ela já estiver no ar |
 | `-IncludeTestModule` | desligado | inclui no relatório o próprio `ccp_rest-api-tests_jobsnow`, que por padrão fica de fora |
+| `-HistoryFile` | `<skill>\history\coverage-projects.tsv` | histórico dos totais por projeto usado no comparativo; `-` desliga o comparativo |
 
 ## Passos
 
@@ -84,11 +94,18 @@ Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já est
      | 2 | jn_business_jobsnow | 74,3 % | 23.671 | 8.185 | 31.856 |
      | … | … | | | | |
      | | **Total geral** | **64,0 %** | **102.197** | **57.487** | **159.684** |
+   - o **comparativo com a rodada anterior, só por projeto** (tabela `COMPARISON` do console), com
+     as colunas **# | Módulo | Anterior | Atual | Variação (p.p.) | Total anterior → atual**,
+     terminando com a linha **Total geral** sem número, e acima dela a data e os testes das duas
+     rodadas. Nunca descer a pacote ou arquivo no comparativo. Explicar variações grandes que vêm de
+     mudança de medição e não de teste (API jn não medida numa das rodadas, módulo instalado
+     desatualizado, total de instruções que mudou por código novo);
    - os módulos/pacotes com 0 % que têm volume relevante de instruções — são o achado;
    - quantos testes falharam na rodada (o script imprime as linhas `<<< FAILURE/ERROR`), porque
      teste quebrado no meio do fluxo derruba a cobertura do que vem depois.
 
-5. Para comparar antes/depois, guardar o `coverage.tsv` da primeira rodada com outro nome e
+5. O comparativo por projeto sai sozinho (item 4 de "Como funciona"). Só se o usuário pedir
+   comparação por pacote ou arquivo: guardar o `coverage.tsv` da primeira rodada com outro nome e
    comparar por `project+package+file`, nunca só pelo total.
 
 ## Restrições e armadilhas

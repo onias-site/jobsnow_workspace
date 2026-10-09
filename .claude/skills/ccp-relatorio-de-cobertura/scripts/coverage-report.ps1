@@ -11,7 +11,8 @@ param(
 	[int]$AgentPort = 6300,
 	[string]$Java = 'C:\Program Files\Java\jdk-17\bin\java.exe',
 	[string]$JacocoVersion = '0.8.12',
-	[string]$AsmVersion = '9.7'
+	[string]$AsmVersion = '9.7',
+	[string]$HistoryFile = (Join-Path (Split-Path $PSScriptRoot -Parent) 'history\coverage-projects.tsv')
 )
 
 # Coverage report of the workspace: starts the jn API (port 8080) with a JaCoCo agent in tcpserver mode, runs the
@@ -68,9 +69,37 @@ function Invoke-Maven([string[]]$mvnArgs, [string]$where) {
 	finally { Pop-Location }
 }
 
+# runs are compared only with runs of the same scope: a filtered run measures less code than the full suite
+$runScope = if ($Test) { "test=$Test" } else { 'full' }
+if ($IncludeTestModule) { $runScope += '+test-module' }
+$previousTsv = Join-Path $OutDir 'coverage.tsv'
+
+# the history keeps the project totals of every run, so the next run can be compared with this one; a run made
+# before the history existed is imported from the coverage.tsv it left behind, as long as it is still there
+function Import-PreviousRun {
+	if ($HistoryFile -eq '-' -or -not (Test-Path $previousTsv)) { return }
+	$label = (Get-Item $previousTsv).LastWriteTime.ToString('yyyy-MM-dd HH:mm')
+	if ((Test-Path $HistoryFile) -and (Select-String -Path $HistoryFile -SimpleMatch "$label`t" -Quiet)) { return }
+	$tests = if (Test-Path $testsFile) { (Get-Content $testsFile -Raw).Trim() } else { '' }
+	$lines = New-Object System.Collections.Generic.List[string]
+	if (-not (Test-Path $HistoryFile)) {
+		New-Item -ItemType Directory -Force (Split-Path $HistoryFile -Parent) | Out-Null
+		$lines.Add("run`tscope`ttests`tproject`tcovered`tmissed")
+	}
+	# the scope of an imported run is unknown; it is taken as the scope of this run
+	Import-Csv -Path $previousTsv -Delimiter "`t" | Group-Object project | ForEach-Object {
+		$covered = ($_.Group | Measure-Object -Property covered -Sum).Sum
+		$missed = ($_.Group | Measure-Object -Property missed -Sum).Sum
+		$lines.Add("$label`t$runScope`t$tests`t$($_.Name)`t$covered`t$missed")
+	}
+	[IO.File]::AppendAllLines($HistoryFile, $lines, (New-Object Text.UTF8Encoding $false))
+	Write-Host "Imported the run of $label into $HistoryFile"
+}
+
 $apiProcess = $null
 $apiMeasured = $false
 if (-not $SkipRun) {
+	Import-PreviousRun
 	if (Test-Path $exec) { Remove-Item $exec -Force -Confirm:$false }
 	if (Test-Path $apiExec) { Remove-Item $apiExec -Force -Confirm:$false }
 
@@ -158,9 +187,11 @@ $overrides = if ($apiMeasured -and (Test-Path $apiClasses)) { "$ApiModule=$apiCl
 $excluded = if ($IncludeTestModule) { '-' } else { $Module }
 $testsRun = if (Test-Path $testsFile) { (Get-Content $testsFile -Raw).Trim() } else { '' }
 if (-not $testsRun) { Write-Warning 'The number of tests run is unknown (no Surefire summary in this run)' }
-& java -cp "$classes;$cp" CoverageReport $execFiles $Root $html $tsv $subtitle $m2 $overrides $excluded $testsRun
+if (-not $testsRun) { $testsRun = '-' }
+& java -cp "$classes;$cp" CoverageReport $execFiles $Root $html $tsv $subtitle $m2 $overrides $excluded $testsRun $HistoryFile $execDate $runScope
 if ($LASTEXITCODE -ne 0) { throw 'CoverageReport failed' }
 
 Write-Host ""
-Write-Host "HTML: $html"
-Write-Host "TSV:  $tsv"
+Write-Host "HTML:    $html"
+Write-Host "TSV:     $tsv"
+Write-Host "HISTORY: $HistoryFile"

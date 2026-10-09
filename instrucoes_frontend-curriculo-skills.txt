@@ -1,0 +1,26 @@
+Códigos fonte com os quais aprender a fazer esta tarefa:
+  A) Backend do login: jn_rest-api_spring_jobsnow_dependency-chooser
+  B) Backend da hierarquia de skills: vis_rest-api_spring_jobsnow_dependency-chooser
+  C) Onde reiniciar os indices do elasticsearch: ccp_rest-api-tests_jobsnow na classe java "CcpCreateEntities" 	
+  D) Backend do job do atendente do suporte: jb_instant-messenger-listener_jobsnow_dependency-chooser
+  E) Front end (telas do sistema) onde interagir: jn_frontend_calistrato-react
+passo a passo:
+  01) Limpe os indices do VIS, JN e JB para começar sem influencias do passado.
+  02) Suba os backends do vis e do jn
+  03) Abra a url http://localhost:3000/portuguese-version/como-estou-indo/ver-meu-curriculo
+  04) Preencha o campo "Função / papel / emprego / ocupação que estou buscando:" com "Programador Beta"
+  05) Preencha o campo "Endereço (URL) para encontrar o meu linkedin:" com "https://www.linkedin.com/in/onias85/"
+  06) Preencha o campo "Todo o texto que copiei do meu currículo" com o conteudo do arquivo cv.txt
+  07) Clique no botao "Idiomas" e aguarde o ajax das skills lidas do curriculo
+  08) Na aba "Idiomas" vá para aba "Habilidades" (Essa aba aparece dinamicamente de acordo com o tipo e conteúdo do
+  currículo)
+  09) Na aba Habilidades, note que existem 3 seções e observe a sessão de "conhecimentos implicitos"
+  10) Escolha um "conhecimento implícito" aleatório e então clique em seu botão de "associar parent e skills", o botão no código fonte do front end é aquele que contem o ícone "pi-plus-circle"
+  11) Será aberto um modal. Observe as integrações que foram feitas com o "Backend da hierarquia de skills"
+  12) Note que estas integraçoes se comunicam com o controller mvc VisRestApiSkillFixHierarchy, o service (enum) VisServiceSkillFixHierarchy.FixSkillHierarchy com o objetivo final de se comunicar com a entidade de dados VisEntitySkillFixHierarchyPending 
+  13) Feche o modal aberto no passo anterior e clique no link "Deixamos de listar alguma habilidade?", será aberto um outro modal
+  14) Você terá de copiar todas as integrações com backend que foram feitas para o modal aberto no passo 11, para este modal que voce abriu no passo 13, mas em vez de se comunicar com a entidade VisEntitySkillFixHierarchyPending, a comunicação será com a entidade VisEntitySkillPending, porém, você terá que criar novo controller e novo service.
+  15) Também deverá investigar de como as integrações com a entidade VisEntitySkillFixHierarchyPending acionam o suporte e terá de fazer os mesmos acionamentos mas adaptados para a entidade VisEntitySkillPending
+  16) Os comandos de bots que foram feitos pensando na entidade VisEntitySkillFixHierarchyPending deverão ser feitos adaptados pensando na entidade VisEntitySkillPending
+  17) A entidade VisEntitySkillPending diferente da entidade VisEntitySkillFixHierarchyPending possui processos de aprovação e rejeição, pois diferentemente da entidade VisEntitySkillFixHierarchyPending ela nao possui itens associados a ela, é apenas uma única palavra ou frase.
+  18) Na modal referente à entidade VisEntitySkillPending adicione um campo que permita adicionar múltiplas frases que no final alimentará o field "synonym" que é um array nesta entidade, faltou isso nesta modal.

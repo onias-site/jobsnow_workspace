@@ -15,7 +15,7 @@
   5. **"Informe a senha para o login '...'"** — quem já tem senha.
 - O token chega por e-mail. Localmente o e-mail vira arquivo: `C:\logs\email\com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html` (procure "esse token é XXXXXXXX"; o arquivo é sobrescrito a cada envio, confira a hora).
 - Os pedidos ao suporte (desbloqueio e reenvio do token) chegam como comando no arquivo `C:\logs\telegram\support-751717896.txt` (é o "Telegram" local da API jn).
-- **Lentidão:** login, gravação de senha e verificação de e-mail levam de **5 a 10 segundos** cada (medido). Espere o botão voltar antes de concluir que travou.
+- **Lentidão (corrigida em 2026-10-09):** na execução, login, gravação de senha e verificação de e-mail levavam de 5 a 10 segundos. A causa era BCrypt (cerca de 250 ms por hash) feito à toa em toda leitura das entidades de senha e de token. Agora a verificação de e-mail leva cerca de 50 ms e as leituras transformam só a chave primária, então o login leva cerca de 0,7 s (antes, 1 a 2 s): o que sobra é a conferência da senha, que é um BCrypt por natureza.
 
 ## Dados
 
@@ -144,7 +144,7 @@
 | 6 | O cache do navegador mistura as respostas "já resolvida" do desbloqueio e do reenvio (mesmo nome de status): um desbloqueio pedido depois de um reenvio resolvido respondeu, sem ir ao servidor, que o desbloqueio "já foi resolvido" (com a hora do reenvio) | Observado; a correção do 5 apaga esse cache na hora, e o clique seguinte vai ao servidor. Não corrigido na raiz |
 
 ### Observações (não são erro de quem testa, mas merecem avaliação)
-- Login, gravação de senha e verificação de e-mail levam de 5 a 10 segundos.
+- Login, gravação de senha e verificação de e-mail levavam de 5 a 10 segundos (corrigido em 2026-10-09; ver o início do roteiro).
 - O token vale um mês e pode ser reutilizado nesse prazo.
 - O toast de troca de senha diz "autenticado".
 - Pedido de desbloqueio aceito diz "localizar o token que enviamos" antes de o suporte agir.

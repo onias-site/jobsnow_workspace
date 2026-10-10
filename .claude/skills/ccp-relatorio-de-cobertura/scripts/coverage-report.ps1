@@ -6,19 +6,24 @@ param(
 	[switch]$SkipRun,
 	[switch]$NoApi,
 	[switch]$IncludeTestModule,
-	[string]$ApiModule = 'jn_rest-api_spring_jobsnow_dependency-chooser',
-	[string]$ApiMainClass = 'com.jn.rest.api.JnRestApiSpringStarter',
-	[int]$AgentPort = 6300,
+	# troca uma API que já esteja na porta (iniciada fora do Eclipse) por uma medida, e a sobe de novo, sem agente, no fim
+	[switch]$RestartApis,
 	[string]$Java = 'C:\Program Files\Java\jdk-17\bin\java.exe',
 	[string]$JacocoVersion = '0.8.12',
 	[string]$AsmVersion = '9.7',
 	[string]$HistoryFile = (Join-Path (Split-Path $PSScriptRoot -Parent) 'history\coverage-projects.tsv')
 )
 
-# Coverage report of the workspace: starts the jn API (port 8080) with a JaCoCo agent in tcpserver mode, runs the
-# tests of $Module with another agent attached to the Surefire JVM, dumps the API's data, stops the API, and then
-# analyzes both .exec files together against target/classes of every module. Writes coverage-report.html
-# (collapsible, EclEmma layout) and coverage.tsv (one line per file) into $OutDir.
+# Coverage report of the workspace: starts the jn API (port 8080) and the vis API (port 8081), each with a JaCoCo agent
+# in tcpserver mode, runs the tests of $Module with another agent attached to the Surefire JVM, dumps the APIs' data,
+# stops the APIs, and then analyzes all the .exec files together against the bytecode of every module. Writes
+# coverage-report.html (collapsible, EclEmma layout) and coverage.tsv (one line per file) into $OutDir.
+
+# the APIs the suite calls: com.jn.rest.api.* uses 8080, com.vis.rest.api.* (resume validations) uses 8081
+$apis = @(
+	[pscustomobject]@{ Name = 'jn';  Module = 'jn_rest-api_spring_jobsnow_dependency-chooser';  Main = 'com.jn.rest.api.JnRestApiSpringStarter';   Port = 8080; AgentPort = 6300 },
+	[pscustomobject]@{ Name = 'vis'; Module = 'vis_rest-api_spring_jobsnow_dependency-chooser'; Main = 'com.vis.rest.api.VisRestApiSpringStarter'; Port = 8081; AgentPort = 6301 }
+)
 
 $ErrorActionPreference = 'Stop'
 
@@ -45,10 +50,15 @@ foreach ($k in $jars.Keys) {
 $agent = Join-Path $OutDir 'jacocoagent.jar'
 Copy-Item $jars.agent $agent -Force
 $exec = Join-Path $OutDir 'jacoco.exec'
-$apiExec = Join-Path $OutDir 'jacoco-api.exec'
 $includes = 'includes=com.ccp.*:com.jn.*:com.jb.*:com.vis.*'
-$apiClasses = Join-Path $OutDir 'api-classes'
 $testsFile = Join-Path $OutDir 'tests-run.txt'
+foreach ($api in $apis) {
+	$api | Add-Member Exec (Join-Path $OutDir "jacoco-api-$($api.Name).exec")
+	$api | Add-Member Classes (Join-Path $OutDir "api-classes-$($api.Name)")
+	$api | Add-Member Process $null
+	$api | Add-Member Measured $false
+	$api | Add-Member WasRunning $false
+}
 
 $classes = Join-Path $OutDir 'classes'
 New-Item -ItemType Directory -Force $classes | Out-Null
@@ -77,8 +87,10 @@ $previousTsv = Join-Path $OutDir 'coverage.tsv'
 # the history keeps the project totals of every run, so the next run can be compared with this one; a run made
 # before the history existed is imported from the coverage.tsv it left behind, as long as it is still there
 function Import-PreviousRun {
-	if ($HistoryFile -eq '-' -or -not (Test-Path $previousTsv)) { return }
-	$label = (Get-Item $previousTsv).LastWriteTime.ToString('yyyy-MM-dd HH:mm')
+	if ($HistoryFile -eq '-' -or -not (Test-Path $previousTsv) -or -not (Test-Path $exec)) { return }
+	# the run is dated by its jacoco.exec, the same label CoverageReport records it under; the coverage.tsv is rewritten
+	# by every -SkipRun, and dating by it imported a re-generation as a new run on 2026-10-10
+	$label = (Get-Item $exec).LastWriteTime.ToString('yyyy-MM-dd HH:mm')
 	if ((Test-Path $HistoryFile) -and (Select-String -Path $HistoryFile -SimpleMatch "$label`t" -Quiet)) { return }
 	$tests = if (Test-Path $testsFile) { (Get-Content $testsFile -Raw).Trim() } else { '' }
 	$lines = New-Object System.Collections.Generic.List[string]
@@ -96,44 +108,86 @@ function Import-PreviousRun {
 	Write-Host "Imported the run of $label into $HistoryFile"
 }
 
-$apiProcess = $null
-$apiMeasured = $false
+# the process listening on a port, or $null
+function Get-PortOwner([int]$port) {
+	$connection = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+	if (-not $connection) { return $null }
+	return Get-Process -Id $connection.OwningProcess -ErrorAction SilentlyContinue
+}
+
+# builds the classpath of an API module (compiling it first) into $OutDir and returns the file
+function Get-ApiClasspathFile($api) {
+	$cpFile = Join-Path $OutDir "api-classpath-$($api.Name).txt"
+	Write-Host "Building the classpath of $($api.Module)"
+	Invoke-Maven @('-o', '-q', 'compile', 'dependency:build-classpath', "-Dmdep.outputFile=$cpFile") (Join-Path $Root $api.Module) | Select-Object -Last 5
+	return $cpFile
+}
+
+# starts an API with a JaCoCo agent in tcpserver mode and waits for its port
+function Start-MeasuredApi($api) {
+	$apiDir = Join-Path $Root $api.Module
+	$cpFile = Get-ApiClasspathFile $api
+	# the API runs from a snapshot of target/classes: Eclipse may rewrite target/classes during the run, and the
+	# report must analyze exactly the bytecode that ran
+	if (Test-Path $api.Classes) { Remove-Item $api.Classes -Recurse -Force -Confirm:$false }
+	Copy-Item (Join-Path $apiDir 'target\classes') $api.Classes -Recurse
+	$apiClasspath = $api.Classes + ';' + (Get-Content $cpFile -Raw).Trim()
+	# DevTools restarts the API whenever its classpath changes, and the port goes down meanwhile: on 2026-10-02 an
+	# Eclipse rebuild restarted it mid-run and 3 REST tests got "connection refused"
+	$apiArgs = "-javaagent:$agent=output=tcpserver,address=127.0.0.1,port=$($api.AgentPort),$includes -Dspring.devtools.restart.enabled=false -cp `"$apiClasspath`" $($api.Main)"
+	$apiLog = Join-Path $OutDir "api-$($api.Name).log"
+	$api.Process = Start-Process -FilePath $Java -ArgumentList $apiArgs -WorkingDirectory $apiDir -RedirectStandardOutput $apiLog -RedirectStandardError (Join-Path $OutDir "api-$($api.Name)-err.log") -WindowStyle Hidden -PassThru
+	$deadline = (Get-Date).AddSeconds(180)
+	while (-not (Test-Port $api.Port)) {
+		if ($api.Process.HasExited) { throw "The $($api.Name) API exited during startup, see $apiLog" }
+		if ((Get-Date) -gt $deadline) { Stop-Process -Id $api.Process.Id -Force -Confirm:$false; throw "The $($api.Name) API did not open port $($api.Port) in 180 s, see $apiLog" }
+		Start-Sleep -Milliseconds 500
+	}
+	Write-Host "$($api.Name) API up (PID $($api.Process.Id)), agent listening on port $($api.AgentPort)"
+}
+
+# an API that was running before the run (and was replaced by a measured one) comes back, without agent, from target/classes
+function Restore-Api($api) {
+	$apiDir = Join-Path $Root $api.Module
+	$cpFile = Get-ApiClasspathFile $api
+	$apiClasspath = (Join-Path $apiDir 'target\classes') + ';' + (Get-Content $cpFile -Raw).Trim()
+	$log = Join-Path $OutDir "api-$($api.Name)-restored.log"
+	$process = Start-Process -FilePath $Java -ArgumentList "-cp `"$apiClasspath`" $($api.Main)" -WorkingDirectory $apiDir -RedirectStandardOutput $log -RedirectStandardError (Join-Path $OutDir "api-$($api.Name)-restored-err.log") -WindowStyle Hidden -PassThru
+	Write-Host "$($api.Name) API started again without agent, as it was before the run (PID $($process.Id), log $log)"
+}
+
 if (-not $SkipRun) {
 	Import-PreviousRun
 	if (Test-Path $exec) { Remove-Item $exec -Force -Confirm:$false }
-	if (Test-Path $apiExec) { Remove-Item $apiExec -Force -Confirm:$false }
+	foreach ($old in @(Get-ChildItem $OutDir -Filter 'jacoco-api*.exec')) { Remove-Item $old.FullName -Force -Confirm:$false }
 
-	if (-not $NoApi) {
-		if (Test-Port 8080) {
-			Write-Warning 'Port 8080 is already taken (the API in Eclipse?): the tests use it, but the code run inside it is not measured. Stop it to measure the API too.'
-		} else {
-			$apiDir = Join-Path $Root $ApiModule
-			$cpFile = Join-Path $OutDir 'api-classpath.txt'
-			Write-Host "Building the classpath of $ApiModule"
-			Invoke-Maven @('-o', '-q', 'compile', 'dependency:build-classpath', "-Dmdep.outputFile=$cpFile") $apiDir | Select-Object -Last 5
-			# the API runs from a snapshot of target/classes: Eclipse may rewrite target/classes during the run, and
-			# the report must analyze exactly the bytecode that ran
-			if (Test-Path $apiClasses) { Remove-Item $apiClasses -Recurse -Force -Confirm:$false }
-			Copy-Item (Join-Path $apiDir 'target\classes') $apiClasses -Recurse
-			$apiClasspath = $apiClasses + ';' + (Get-Content $cpFile -Raw).Trim()
-			# DevTools restarts the API whenever its classpath changes, and port 8080 goes down meanwhile: on
-			# 2026-10-02 an Eclipse rebuild restarted it mid-run and 3 REST tests got "connection refused"
-			$apiArgs = "-javaagent:$agent=output=tcpserver,address=127.0.0.1,port=$AgentPort,$includes -Dspring.devtools.restart.enabled=false -cp `"$apiClasspath`" $ApiMainClass"
-			$apiLog = Join-Path $OutDir 'api.log'
-			$apiProcess = Start-Process -FilePath $Java -ArgumentList $apiArgs -WorkingDirectory $apiDir -RedirectStandardOutput $apiLog -RedirectStandardError (Join-Path $OutDir 'api-err.log') -WindowStyle Hidden -PassThru
-			$deadline = (Get-Date).AddSeconds(120)
-			while (-not (Test-Port 8080)) {
-				if ($apiProcess.HasExited) { throw "The API exited during startup, see $apiLog" }
-				if ((Get-Date) -gt $deadline) { Stop-Process -Id $apiProcess.Id -Force -Confirm:$false; throw "The API did not open port 8080 in 120 s, see $apiLog" }
-				Start-Sleep -Milliseconds 500
-			}
-			Write-Host "API up (PID $($apiProcess.Id)), agent listening on port $AgentPort"
+	# inside the try: if one API fails to start, the finally still stops the ones started and brings back the replaced ones
+	try {
+	foreach ($api in $apis) {
+		$owner = Get-PortOwner $api.Port
+		if ($NoApi) {
+			if (-not $owner) { Write-Warning "Nothing listens on localhost:$($api.Port): the com.$($api.Name).rest.api.* tests will fail with connection refused." }
+			continue
 		}
-	} elseif (-not (Test-Port 8080)) {
-		Write-Warning 'Nothing listens on localhost:8080: the com.jn.rest.api.* tests will fail with connection refused (about 62 of them).'
+		if ($owner -and $owner.ProcessName -eq 'javaw') {
+			# Eclipse runs it (maybe in debug): never stopped by this script
+			Write-Warning "Port $($api.Port) is taken by Eclipse (javaw, PID $($owner.Id)): the tests use it, but the $($api.Name) API code is not measured. Stop it in Eclipse to measure it too."
+			continue
+		}
+		if ($owner -and -not $RestartApis) {
+			Write-Warning "Port $($api.Port) is already taken ($($owner.ProcessName), PID $($owner.Id)): the tests use it, but the $($api.Name) API code is not measured. Use -RestartApis to replace it by a measured one."
+			continue
+		}
+		if ($owner) {
+			Write-Host "Stopping the $($api.Name) API that was running (PID $($owner.Id)); it comes back without agent after the run"
+			Stop-Process -Id $owner.Id -Force -Confirm:$false
+			$api.WasRunning = $true
+			$free = (Get-Date).AddSeconds(30)
+			while ((Test-Port $api.Port) -and (Get-Date) -lt $free) { Start-Sleep -Milliseconds 500 }
+		}
+		Start-MeasuredApi $api
 	}
 
-	try {
 		$argLine = "-DargLine=-javaagent:$agent=destfile=$exec,$includes"
 		$mvnArgs = @('-o', 'test', '-fn', '-pl', $Module, $argLine)
 		if ($Test) { $mvnArgs += @("-Dtest=$Test", '-Dsurefire.failIfNoSpecifiedTests=false') }
@@ -151,28 +205,37 @@ if (-not $SkipRun) {
 		}
 	}
 	finally {
-		if ($apiProcess) {
-			# the API is stopped by force, so its agent never writes on exit: ask for the data first
-			& java -cp "$classes;$cp" AgentDump $AgentPort $apiExec
-			$apiMeasured = ($LASTEXITCODE -eq 0) -and (Test-Path $apiExec)
-			if (-not $apiMeasured) { Write-Warning 'Could not dump the API coverage' }
-			Stop-Process -Id $apiProcess.Id -Force -Confirm:$false
-			Write-Host "API stopped (PID $($apiProcess.Id))"
+		foreach ($api in $apis) {
+			if ($api.Process) {
+				# the API is stopped by force, so its agent never writes on exit: ask for the data first
+				& java -cp "$classes;$cp" AgentDump $api.AgentPort $api.Exec
+				$api.Measured = ($LASTEXITCODE -eq 0) -and (Test-Path $api.Exec)
+				if (-not $api.Measured) { Write-Warning "Could not dump the $($api.Name) API coverage" }
+				Stop-Process -Id $api.Process.Id -Force -Confirm:$false
+				Write-Host "$($api.Name) API stopped (PID $($api.Process.Id))"
+			}
+			if ($api.WasRunning) { Restore-Api $api }
 		}
 	}
 } else {
-	$apiMeasured = Test-Path $apiExec
+	foreach ($api in $apis) { $api.Measured = (Test-Path $api.Exec) -and (Test-Path $api.Classes) }
+	# runs made before 2026-10-10 measured only the jn API, under the names jacoco-api.exec and api-classes
+	$legacyExec = Join-Path $OutDir 'jacoco-api.exec'; $legacyClasses = Join-Path $OutDir 'api-classes'
+	if (-not $apis[0].Measured -and (Test-Path $legacyExec) -and (Test-Path $legacyClasses)) {
+		$apis[0].Exec = $legacyExec; $apis[0].Classes = $legacyClasses; $apis[0].Measured = $true
+	}
 }
+$measuredApis = @($apis | Where-Object { $_.Measured })
 if (-not (Test-Path $exec)) { throw "No jacoco.exec at $exec (run without -SkipRun first)" }
 # an exec with only the header means the tests never ran (a Surefire fork that died while scanning, for instance)
 if ((Get-Item $exec).Length -lt 1024) {
 	throw "The tests did not run: $exec has only $((Get-Item $exec).Length) bytes. See the latest *.dump in $Root\$Module\target\surefire-reports (with Eclipse open, a ClassNotFoundException of a test class means Eclipse was rebuilding target; run again)."
 }
 
-$execFiles = if ($apiMeasured) { "$exec;$apiExec" } else { $exec }
+$execFiles = (@($exec) + @($measuredApis | ForEach-Object { $_.Exec })) -join ';'
 $scope = if ($Test) { "tests of $Module matching '$Test'" } else { "full test suite of $Module" }
 if (-not $IncludeTestModule) { $scope += " (the $Module project itself left out)" }
-$apiScope = if ($apiMeasured) { ' plus the code run inside the jn API' } else { '' }
+$apiScope = if ($measuredApis.Count) { ' plus the code run inside the ' + (($measuredApis | ForEach-Object { $_.Name }) -join ' and ') + ' API' + $(if ($measuredApis.Count -gt 1) { 's' } else { '' }) } else { '' }
 $execDate = (Get-Item $exec).LastWriteTime.ToString('yyyy-MM-dd HH:mm')
 $subtitle = "JaCoCo $JacocoVersion engine (the one EclEmma uses), instruction counters, $scope$apiScope, run on $execDate."
 $html = Join-Path $OutDir 'coverage-report.html'
@@ -181,15 +244,27 @@ $tsv = Join-Path $OutDir 'coverage.tsv'
 # from the snapshot it ran from; target/classes only as the last resort, because Eclipse rewrites it
 # '-' stands for "none": Windows PowerShell drops empty-string arguments when calling a native program, which
 # shifted the next arguments and silently put the tests module back in the report (seen on 2026-10-04)
-$overrides = if ($apiMeasured -and (Test-Path $apiClasses)) { "$ApiModule=$apiClasses" } else { '-' }
+$overrides = (@($measuredApis | Where-Object { Test-Path $_.Classes } | ForEach-Object { "$($_.Module)=$($_.Classes)" }) -join ';')
+if (-not $overrides) { $overrides = '-' }
 # the src/main of the tests module is support code for the tests (fixtures, templates, http helpers), not
 # production code: it is left out unless asked, so the percentage measures only what the tests exercise
 $excluded = if ($IncludeTestModule) { '-' } else { $Module }
 $testsRun = if (Test-Path $testsFile) { (Get-Content $testsFile -Raw).Trim() } else { '' }
 if (-not $testsRun) { Write-Warning 'The number of tests run is unknown (no Surefire summary in this run)' }
 if (-not $testsRun) { $testsRun = '-' }
-& java -cp "$classes;$cp" CoverageReport $execFiles $Root $html $tsv $subtitle $m2 $overrides $excluded $testsRun $HistoryFile $execDate $runScope
+# with -SkipRun the .exec is old and the jars may have been reinstalled since: a run already in the history is kept
+$recordMode = if ($SkipRun) { 'keep' } else { 'record' }
+& java -cp "$classes;$cp" CoverageReport $execFiles $Root $html $tsv $subtitle $m2 $overrides $excluded $testsRun $HistoryFile $execDate $runScope $recordMode
 if ($LASTEXITCODE -ne 0) { throw 'CoverageReport failed' }
+
+# a full run that reached the history marks the code it measured: the scheduled run (run-scheduled.ps1) skips the day
+# when the code has not changed since. Taken after the run, so files the suite itself touches do not count as a change
+if (-not $SkipRun -and -not $Test -and $HistoryFile -ne '-') {
+	. (Join-Path $PSScriptRoot 'code-fingerprint.ps1')
+	$fingerprintFile = Join-Path (Split-Path $HistoryFile -Parent) 'last-code-fingerprint.txt'
+	[IO.File]::WriteAllText($fingerprintFile, (Get-CodeFingerprint -Root $Root), (New-Object Text.UTF8Encoding $false))
+	Write-Host "FINGERPRINT: $fingerprintFile"
+}
 
 Write-Host ""
 Write-Host "HTML:    $html"

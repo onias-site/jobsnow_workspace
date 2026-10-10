@@ -47,7 +47,7 @@ As sugestões do candidato chegam ao operador **como uma mensagem do bot no Tele
 
 Os roteiros supõem que nenhuma sugestão foi feita ainda. Para isso:
 
-- [ ] 3.1 No Eclipse, rode `com.ccp.random.CcpCreateEntities` (projeto `ccp_rest-api-tests_jobsnow`). Na janela, marque **jn, vis e jb** e clique em **Recreate checked**. (Marcar só o jn apaga os modelos de e-mail que o vis semeia nos índices do jn.) **Obrigatório na primeira vez depois das mudanças de 2026-10-08**: mudaram a chave da tabela de usuários ignorados (agora só o e-mail), a ordem dos parâmetros do `/fixSkillHierarchy` e os textos do bot — índices antigos fazem o bot responder com os textos e o formato antigos.
+- [ ] 3.1 No Eclipse, rode `com.ccp.random.CcpCreateEntities` (projeto `ccp_rest-api-tests_jobsnow`). Na janela, marque **jn, vis e jb** e clique em **Recreate checked**. (Marcar só o jn apaga os modelos de e-mail que o vis semeia nos índices do jn.) **Obrigatório na primeira vez depois das mudanças de 2026-10-08**: mudaram a chave da tabela de usuários ignorados (agora só o e-mail), a ordem dos parâmetros do `/fixSkillHierarchy` e os textos do bot — índices antigos fazem o bot responder com os textos e o formato antigos. Desde 2026-10-09 a recriação também cria `jn_support_cancelled_command` (a desistência tira o ticket do `/pendingTickets`) e semeia os nomes "aprovado"/"reprovado" do painel Motivo.
 - [ ] 3.2 Confira que `C:\logs\jn\mappingJnEntitiesErrors.json`, `C:\logs\vis\mappingJnEntitiesErrors.json` e `C:\logs\jb\mappingJnEntitiesErrors.json` estão **vazios**.
 - [ ] 3.3 Reinicie a API do vis e o leitor do bot (eles guardam cache em memória).
 
@@ -57,7 +57,7 @@ Os roteiros supõem que nenhuma sugestão foi feita ainda. Para isso:
 
 Recriar o jn apaga o seu login, mas o navegador ainda se lembra dele e entra num laço ("O seu login não foi encontrado"). Resolva assim:
 
-- [ ] 4.1 Abra `http://localhost:3000`, aperte **F12 → Console** e execute: `localStorage.removeItem('logins')`
+- [ ] 4.1 Abra `http://localhost:3000`, aperte **F12 → Console** e execute: `localStorage.removeItem('logins'); sessionStorage.removeItem('login')` (a sessão da aba fica no `sessionStorage`. Sem apagá-la, a tela continua usando o login antigo, inclusive ao trocar de conta no S8 do roteiro 01)
 - [ ] 4.2 O login será pedido quando você **enviar** a primeira sugestão (abrir os modais não exige login). Quando ele aparecer:
   1. Informe `onias85@gmail.com` → **Avançar**.
   2. "Por favor, confirme o e-mail": digite o e-mail de novo → **Confirmar**.

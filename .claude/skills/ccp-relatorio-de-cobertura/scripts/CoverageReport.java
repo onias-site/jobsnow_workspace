@@ -111,7 +111,11 @@ public class CoverageReport {
 		// project-level history: the user wants every run compared with the previous one, at project level only
 		String comparison = "";
 		if (args.length > 11 && !args[9].isBlank() && !args[9].equals("-")) {
-			comparison = compareWithPreviousRun(root, Path.of(args[9]), args[10], args[11], testsRun);
+			// "keep" (-SkipRun): a run already in the history stays as it was recorded. Re-analyzing an old .exec against
+			// jars installed later gives worse numbers (classes that no longer match are dropped): on 2026-10-10 a
+			// -SkipRun turned the 74,2 % of 2026-10-09 into 72,4 % in the history
+			boolean keepRecordedRun = args.length > 12 && args[12].equals("keep");
+			comparison = compareWithPreviousRun(root, Path.of(args[9]), args[10], args[11], testsRun, keepRecordedRun);
 		}
 		writeTsv(root, args[3]);
 		writeHtml(root, args[2], subtitle, testsRun, comparison);
@@ -176,7 +180,7 @@ public class CoverageReport {
 	 * the history (replacing an earlier record of the same run, so -SkipRun does not duplicate it) and returns the
 	 * comparison as HTML. Only the project level is compared, by the user's choice (2026-10-07).
 	 */
-	static String compareWithPreviousRun(Node root, Path historyFile, String run, String scope, String testsRun) throws IOException {
+	static String compareWithPreviousRun(Node root, Path historyFile, String run, String scope, String testsRun, boolean keepRecordedRun) throws IOException {
 		List<HistoryRow> history = new ArrayList<>();
 		if (Files.exists(historyFile)) {
 			for (String line : Files.readAllLines(historyFile, StandardCharsets.UTF_8)) {
@@ -196,9 +200,21 @@ public class CoverageReport {
 			previousTests = h.tests();
 		}
 
+		boolean alreadyRecorded = history.stream().anyMatch(h -> h.run().equals(run) && h.scope().equals(scope));
 		List<HistoryRow> kept = new ArrayList<>();
-		for (HistoryRow h : history) if (!(h.run().equals(run) && h.scope().equals(scope))) kept.add(h);
-		for (Node p : root.children.values()) kept.add(new HistoryRow(run, scope, testsRun, p.name, p.covered, p.missed));
+		// the projects compared as "current": the numbers recorded at the time when the run is kept, else this analysis
+		Map<String, long[]> current = new TreeMap<>();
+		if (keepRecordedRun && alreadyRecorded) {
+			kept.addAll(history);
+			for (HistoryRow h : history) if (h.run().equals(run) && h.scope().equals(scope)) current.put(h.project(), new long[] {h.covered(), h.total()});
+			System.out.println("HISTORY: the run of " + run + " is already recorded and was kept as it is (-SkipRun); the comparison uses the recorded numbers");
+			keptRunNotice = "<p class='tests'><b>Re-generated from an earlier run.</b> The comparison and the charts use the numbers recorded when the run happened; "
+					+ "the detailed tree below was re-analyzed against the jars installed now and may show less coverage.</p>";
+		} else {
+			for (Node p : root.children.values()) current.put(p.name, new long[] {p.covered, p.total()});
+			for (HistoryRow h : history) if (!(h.run().equals(run) && h.scope().equals(scope))) kept.add(h);
+			for (Node p : root.children.values()) kept.add(new HistoryRow(run, scope, testsRun, p.name, p.covered, p.missed));
+		}
 		StringBuilder out = new StringBuilder("run\tscope\ttests\tproject\tcovered\tmissed\n");
 		for (HistoryRow h : kept) {
 			out.append(h.run()).append('\t').append(h.scope()).append('\t').append(h.tests()).append('\t').append(h.project())
@@ -206,6 +222,8 @@ public class CoverageReport {
 		}
 		Files.createDirectories(historyFile.toAbsolutePath().getParent());
 		Files.writeString(historyFile, out.toString(), StandardCharsets.UTF_8);
+		writeTotalHistory(kept, historyFile.resolveSibling("coverage-total.tsv"));
+		charts = evolutionCharts(kept, scope);
 
 		if (previousRun == null) {
 			System.out.println("COMPARISON: no earlier run with scope '" + scope + "' in " + historyFile);
@@ -213,7 +231,7 @@ public class CoverageReport {
 		}
 
 		java.util.TreeSet<String> projects = new java.util.TreeSet<>(previous.keySet());
-		projects.addAll(root.children.keySet());
+		projects.addAll(current.keySet());
 		StringBuilder sb = new StringBuilder("<h2>Comparison with the previous run (project level)</h2>")
 				.append("<p class='tests'><b>Previous:</b> ").append(escape(previousRun))
 				.append(previousTests.isBlank() ? "" : " &middot; tests run: " + escape(previousTests))
@@ -223,19 +241,157 @@ public class CoverageReport {
 				.append("<th class='n'>Change</th><th class='n'>Covered (prev &rarr; now)</th><th class='n'>Total (prev &rarr; now)</th></tr></thead><tbody>");
 		System.out.println("COMPARISON with " + previousRun + (previousTests.isBlank() ? "" : " (" + previousTests + ")"));
 		System.out.printf("%3s %-58s %9s %9s %9s %21s %21s%n", "#", "Project", "Previous", "Current", "Change", "Covered", "Total");
-		long prevCovered = 0, prevTotal = 0;
+		long prevCovered = 0, prevTotal = 0, nowCovered = 0, nowTotal = 0;
 		int number = 0;
 		for (String project : projects) {
 			HistoryRow before = previous.get(project);
-			Node now = root.children.get(project);
+			long[] now = current.get(project);
 			if (before != null) { prevCovered += before.covered(); prevTotal += before.total(); }
+			if (now != null) { nowCovered += now[0]; nowTotal += now[1]; }
 			number++;
 			appendComparison(sb, String.valueOf(number), project, before == null ? -1 : before.covered(), before == null ? -1 : before.total(),
-					now == null ? -1 : now.covered, now == null ? -1 : now.total(), false);
+					now == null ? -1 : now[0], now == null ? -1 : now[1], false);
 		}
-		appendComparison(sb, "", "Grand total", prevCovered, prevTotal, root.covered, root.total(), true);
+		appendComparison(sb, "", "Grand total", prevCovered, prevTotal, nowCovered, nowTotal, true);
 		sb.append("</tbody></table></div>");
 		return sb.toString();
+	}
+
+	/** The evolution charts of the run just recorded, built with the history; empty without history. */
+	static String charts = "";
+
+	/** Warning shown at the top when -SkipRun kept a run already recorded; empty otherwise. */
+	static String keptRunNotice = "";
+
+	/**
+	 * Writes the total of all projects together of every run (run, scope, tests, covered, missed, total, coverage), one
+	 * line per run. It is derived from the project history on every run, so the two never disagree and the runs recorded
+	 * before this file existed (2026-10-10) got their totals too.
+	 */
+	static void writeTotalHistory(List<HistoryRow> history, Path totalFile) throws IOException {
+		Map<String, long[]> totals = new TreeMap<>();
+		Map<String, String> tests = new HashMap<>();
+		for (HistoryRow h : history) {
+			String key = h.run() + "\t" + h.scope();
+			long[] sum = totals.computeIfAbsent(key, k -> new long[2]);
+			sum[0] += h.covered();
+			sum[1] += h.missed();
+			tests.put(key, h.tests());
+		}
+		StringBuilder out = new StringBuilder("run\tscope\ttests\tcovered\tmissed\ttotal\tcoverage\n");
+		for (Map.Entry<String, long[]> e : totals.entrySet()) {
+			long covered = e.getValue()[0], missed = e.getValue()[1];
+			out.append(e.getKey()).append('\t').append(tests.get(e.getKey())).append('\t').append(covered).append('\t').append(missed)
+			   .append('\t').append(covered + missed).append('\t').append(percent(covered, covered + missed)).append('\n');
+		}
+		Files.writeString(totalFile, out.toString(), StandardCharsets.UTF_8);
+	}
+
+	/**
+	 * Line charts of the coverage over the runs of this scope (the user asked for them on 2026-10-10): one for the total
+	 * of all projects together and one per project, biggest projects first. Inline SVG, no external library.
+	 */
+	static String evolutionCharts(List<HistoryRow> history, String scope) {
+		java.util.TreeSet<String> runs = new java.util.TreeSet<>();
+		Map<String, Map<String, HistoryRow>> byProject = new TreeMap<>();
+		for (HistoryRow h : history) {
+			if (!h.scope().equals(scope)) continue;
+			runs.add(h.run());
+			byProject.computeIfAbsent(h.project(), k -> new HashMap<>()).put(h.run(), h);
+		}
+		if (runs.isEmpty()) return "";
+		List<String> runList = new ArrayList<>(runs);
+		long[] totalCovered = new long[runList.size()], totalAll = new long[runList.size()];
+		for (Map<String, HistoryRow> rows : byProject.values()) {
+			for (int i = 0; i < runList.size(); i++) {
+				HistoryRow h = rows.get(runList.get(i));
+				if (h == null) continue;
+				totalCovered[i] += h.covered();
+				totalAll[i] += h.total();
+			}
+		}
+		StringBuilder sb = new StringBuilder("<h2>Evolution (").append(runList.size()).append(runList.size() == 1 ? " run" : " runs")
+				.append(", scope ").append(escape(scope)).append(")</h2><p>Coverage of every run of this scope. Hover a point for the numbers.</p>");
+		sb.append("<div class='chart big'><h3>Total (all projects together)</h3>").append(lineChart(runList, totalCovered, totalAll, 720, 240)).append("</div>");
+		// biggest projects first: they move the total the most
+		List<String> projects = new ArrayList<>(byProject.keySet());
+		String lastRun = runList.get(runList.size() - 1);
+		projects.sort((a, b) -> Long.compare(size(byProject.get(b), lastRun), size(byProject.get(a), lastRun)));
+		sb.append("<div class='charts'>");
+		for (String project : projects) {
+			long[] covered = new long[runList.size()], all = new long[runList.size()];
+			Map<String, HistoryRow> rows = byProject.get(project);
+			for (int i = 0; i < runList.size(); i++) {
+				HistoryRow h = rows.get(runList.get(i));
+				covered[i] = h == null ? -1 : h.covered();
+				all[i] = h == null ? -1 : h.total();
+			}
+			sb.append("<div class='chart'><h3>").append(escape(project)).append("</h3>").append(lineChart(runList, covered, all, 360, 170)).append("</div>");
+		}
+		return sb.append("</div>").toString();
+	}
+
+	static long size(Map<String, HistoryRow> rows, String run) {
+		HistoryRow h = rows.get(run);
+		if (h != null) return h.total();
+		return rows.values().stream().mapToLong(HistoryRow::total).max().orElse(0);
+	}
+
+	/** One line chart: x = the runs in time order, y = coverage %; a run where the project was absent (-1) is a gap. */
+	static String lineChart(List<String> runs, long[] covered, long[] all, int width, int height) {
+		int left = 44, right = 12, top = 12, bottom = 34;
+		double min = 100, max = 0;
+		for (int i = 0; i < runs.size(); i++) {
+			if (all[i] <= 0) continue;
+			double p = ratio(covered[i], all[i]);
+			min = Math.min(min, p);
+			max = Math.max(max, p);
+		}
+		if (min > max) { min = 0; max = 100; }
+		// a few points of margin around the data, so a small change is still visible; rounded to whole percents
+		double low = Math.max(0, Math.floor(min - 2)), high = Math.min(100, Math.ceil(max + 2));
+		if (high - low < 4) { high = Math.min(100, low + 4); low = Math.max(0, high - 4); }
+		final double yLow = low, yHigh = high;
+		double plotW = width - left - right, plotH = height - top - bottom;
+		int n = runs.size();
+		java.util.function.IntFunction<Double> xOf = i -> left + (n == 1 ? plotW / 2 : plotW * i / (n - 1));
+		java.util.function.DoubleFunction<Double> yOf = p -> top + plotH * (yHigh - p) / (yHigh - yLow);
+		StringBuilder sb = new StringBuilder("<svg viewBox='0 0 ").append(width).append(' ').append(height)
+				.append("' role='img' preserveAspectRatio='xMidYMid meet'>");
+		for (int g = 0; g <= 4; g++) {
+			double p = low + (high - low) * g / 4;
+			double y = yOf.apply(p);
+			sb.append(String.format(Locale.ROOT, "<line class='grid' x1='%d' y1='%.1f' x2='%.1f' y2='%.1f'/>", left, y, width - (double) right, y))
+			  .append(String.format(Locale.ROOT, "<text class='ax' x='%d' y='%.1f' text-anchor='end'>%s</text>", left - 6, y + 4, String.format(Locale.forLanguageTag("pt-BR"), "%.0f%%", p)));
+		}
+		// at most ~6 dates on the axis, always the first and the last run
+		int step = Math.max(1, (int) Math.ceil(n / 6.0));
+		for (int i = 0; i < n; i++) {
+			if (i % step != 0 && i != n - 1) continue;
+			// the first and the last dates are anchored inwards, so they are not cut at the edges of the chart
+			String anchor = n == 1 ? "middle" : i == 0 ? "start" : i == n - 1 ? "end" : "middle";
+			sb.append(String.format(Locale.ROOT, "<text class='ax' x='%.1f' y='%d' text-anchor='%s'>%s</text>", xOf.apply(i), height - 12, anchor, shortRun(runs.get(i))));
+		}
+		StringBuilder path = new StringBuilder();
+		boolean penDown = false;
+		for (int i = 0; i < n; i++) {
+			if (all[i] <= 0) { penDown = false; continue; }
+			path.append(penDown ? " L" : " M").append(String.format(Locale.ROOT, "%.1f %.1f", xOf.apply(i), yOf.apply(ratio(covered[i], all[i]))));
+			penDown = true;
+		}
+		if (path.length() > 0) sb.append("<path class='ln' d='").append(path.toString().trim()).append("'/>");
+		for (int i = 0; i < n; i++) {
+			if (all[i] <= 0) continue;
+			double p = ratio(covered[i], all[i]);
+			sb.append(String.format(Locale.ROOT, "<circle class='pt' cx='%.1f' cy='%.1f' r='3.5'><title>", xOf.apply(i), yOf.apply(p)))
+			  .append(escape(runs.get(i))).append(": ").append(percent(covered[i], all[i])).append(" (").append(covered[i]).append(" of ").append(all[i]).append(")</title></circle>");
+		}
+		return sb.append("</svg>").toString();
+	}
+
+	/** "2026-10-09 04:55" as "09/10 04:55". */
+	static String shortRun(String run) {
+		return run.length() >= 16 ? run.substring(8, 10) + "/" + run.substring(5, 7) + " " + run.substring(11, 16) : run;
 	}
 
 	/** One line of the comparison, in the HTML and in the console; -1 stands for "the project was not in that run". */
@@ -296,9 +452,12 @@ public class CoverageReport {
 	static void writeHtml(Node root, String output, String subtitle, String testsRun, String comparison) throws IOException {
 		StringBuilder sb = new StringBuilder();
 		// no doctype/html/head/body: the Artifact publish wraps the page in its own skeleton, and browsers render it as is when opened locally
-		String dark = "--bg:#17181b;--fg:#e8e8ea;--mut:#9a9aa2;--line:#2c2d33;--hov:#202227;--ok:#3fb95a;--bad:#e0574b;--track:#4a2825;color-scheme:dark";
+		String dark = "--bg:#17181b;--fg:#e8e8ea;--mut:#9a9aa2;--line:#2c2d33;--hov:#202227;--ok:#3fb95a;--bad:#e0574b;--track:#4a2825;--acc:#6ea8fe;color-scheme:dark";
 		sb.append("<meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>jobsnow Coverage</title><style>")
-		  .append(":root{--bg:#fff;--fg:#1d1d1f;--mut:#6b6b70;--line:#e3e3e8;--hov:#f3f4f8;--ok:#2e9e44;--bad:#c9372c;--track:#f1d4d1}")
+		  .append(":root{--bg:#fff;--fg:#1d1d1f;--mut:#6b6b70;--line:#e3e3e8;--hov:#f3f4f8;--ok:#2e9e44;--bad:#c9372c;--track:#f1d4d1;--acc:#2f6fdb}")
+		  .append(".chart{border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-width:0}.chart.big{margin-bottom:12px}.chart h3{font-size:12px;font-weight:600;margin:0 0 4px;overflow-wrap:anywhere}")
+		  .append(".charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:24px}.chart svg{display:block;width:100%;height:auto}")
+		  .append(".chart .grid{stroke:var(--line)}.chart .ax{fill:var(--mut);font-size:10px}.chart .ln{fill:none;stroke:var(--acc);stroke-width:2}.chart .pt{fill:var(--acc)}")
 		  .append("@media (prefers-color-scheme:dark){:root:not([data-theme=\"light\"]){").append(dark).append("}}")
 		  .append(":root[data-theme=\"dark\"]{").append(dark).append("}")
 		  .append("body{margin:0;background:var(--bg);color:var(--fg);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif}main{max-width:1100px;margin:0 auto;padding-block:20px;padding-inline:16px}")
@@ -311,7 +470,9 @@ public class CoverageReport {
 		  .append("<h1>Coverage Report</h1>")
 		  .append(testsRun.isBlank() ? "" : "<p class='tests'><b>Tests run:</b> " + escape(testsRun) + "</p>")
 		  .append("<p>").append(escape(subtitle)).append("</p>")
+		  .append(keptRunNotice)
 		  .append(comparison)
+		  .append(charts)
 		  .append(comparison.isBlank() ? "" : "<h2>Current run</h2>")
 		  .append("<p>Click a row to expand.</p>")
 		  .append("<div class='wrap'><table><thead><tr><th>Element</th><th class='n'>Coverage</th><th class='n'>Covered Instructions</th><th class='n'>Missed Instructions</th><th class='n'>Total Instructions</th></tr></thead><tbody>");

@@ -1,6 +1,6 @@
 ---
 name: ccp-relatorio-de-cobertura
-description: Relatório de porcentagem de cobertura de código do workspace — roda a suíte de ccp_rest-api-tests_jobsnow com o agente JaCoCo (o mesmo motor do EclEmma) e gera uma página HTML expansível no formato da view Coverage do Eclipse (workspace > projeto > src/main/java > pacote > arquivo, com Coverage, Covered/Missed/Total Instructions) mais um TSV por arquivo. Use quando pedirem "cobertura de código", "coverage", "porcentagem de cobertura", "quanto do código os testes cobrem", "relatório do EclEmma/JaCoCo", "quais classes não têm teste", ou para comparar a cobertura antes e depois de uma mudança.
+description: Relatório de porcentagem de cobertura de código do workspace — roda a suíte de ccp_rest-api-tests_jobsnow com o agente JaCoCo (o mesmo motor do EclEmma) e gera uma página HTML expansível no formato da view Coverage do Eclipse (workspace > projeto > src/main/java > pacote > arquivo, com Coverage, Covered/Missed/Total Instructions) mais um TSV por arquivo. Guarda o histórico de todas as rodadas (por projeto e total) com gráficos de linha da evolução, e roda sozinha todo dia às 12:00 pelo Agendador de Tarefas do Windows. Use quando pedirem "cobertura de código", "coverage", "porcentagem de cobertura", "quanto do código os testes cobrem", "relatório do EclEmma/JaCoCo", "quais classes não têm teste", ou para comparar a cobertura antes e depois de uma mudança.
 ---
 
 # Relatório de cobertura de código
@@ -38,6 +38,48 @@ instruções cobertas, perdidas e totais.
    histórico (um `-SkipRun` substitui a gravação da mesma rodada em vez de duplicar). Se o histórico
    ainda não tem a rodada que deixou o `coverage.tsv` no `-OutDir`, o script a importa antes de
    rodar, para que haja com o que comparar. O comparativo nunca desce a pacote ou arquivo.
+5. **Histórico de todas as rodadas e gráficos de evolução** (pedidos do usuário em 2026-10-10):
+   - `history/coverage-projects.tsv` guarda os números **por projeto** de toda rodada; ao lado,
+     `history/coverage-total.tsv` guarda o **total de todos os projetos juntos** de toda rodada
+     (`run  scope  tests  covered  missed  total  coverage`). O total é sempre recalculado a partir do
+     arquivo por projeto, então os dois nunca divergem. Os dois ficam na pasta da skill, versionados.
+   - O HTML ganha, logo depois do comparativo, a seção **Evolution**: um gráfico de linhas grande com a
+     cobertura do **total** em todas as rodadas do mesmo escopo, e um gráfico pequeno **por projeto**,
+     do maior para o menor (os maiores mexem mais no total). SVG embutido, sem biblioteca externa; passar
+     o mouse num ponto mostra data, porcentagem e instruções.
+   - **`-SkipRun` nunca regrava uma rodada que já está no histórico.** Reanalisar um `.exec` antigo
+     contra jars instalados depois perde classes ("WARNING: N classes ran from bytecode different...") e
+     dá números piores. Em 2026-10-10 isso transformou os 74,2 % de 2026-10-09 em 72,4 % no histórico,
+     e os números originais tiveram de ser recuperados do console daquela rodada. Agora a rodada fica
+     como foi gravada, o comparativo usa os números gravados e o HTML avisa no topo que a árvore detalhada
+     foi reanalisada.
+6. **Execução automática todo dia às 12:00, só quando o código mudou** (pedidos do usuário em 2026-10-10):
+   tarefa `\jobsnow\Relatorio de cobertura` do Agendador de Tarefas do Windows, que roda `scripts/run-scheduled.ps1`.
+   - **Só roda se o código mudou.** `code-fingerprint.ps1` tira uma impressão digital de cada módulo Maven:
+     commit atual mais hash das alterações locais, inclusive arquivos novos. A raiz e o front end ficam de fora.
+     Toda rodada completa (sem `-Test`, sem `-SkipRun`) que chega ao histórico grava essa impressão em
+     `history/last-code-fingerprint.txt`, inclusive as feitas à mão. A tarefa compara com ela e, sem mudança,
+     sai em segundos sem rodar nada. Uma rodada que falha não grava, então é tentada de novo no dia seguinte.
+     `-Force` roda mesmo sem mudança.
+   - **Sobe o que a suíte precisa:**
+     - o Elasticsearch, se estiver parado (`C:\elasticsearch-7.4.0\bin\elasticsearch.bat`, que fica rodando
+       depois da rodada);
+     - os jars do `~/.m2` iguais ao código (`mvn -o install -DskipTests` no agregador; se falhar, por lock do
+       Eclipse por exemplo, cancela);
+     - as APIs **jn (8080) e vis (8081)**, medidas pelo `coverage-report.ps1 -RestartApis`: uma API já rodando
+       fora do Eclipse é parada, substituída pela medida e devolvida sem agente no fim. Uma API do Eclipse
+       (`javaw`) nunca é parada: é usada, mas não medida.
+     - Telegram, e-mail, cache e mensageria não precisam de nada no ar: nos testes são falsos ou locais.
+       O leitor do bot não é usado.
+   - Deixa um log por execução em `%TEMP%\ccp-coverage\scheduled-logs`.
+   - A tarefa só roda com o usuário logado (as APIs, o Maven e o ES são da sessão dele). Se o computador
+     estiver desligado ao meio-dia, ela roda assim que possível (`StartWhenAvailable`). O limite é de 3 h, e
+     uma execução nunca se sobrepõe a outra.
+   - **Ela não publica o Artifact nem escreve a análise**: isso continua sendo feito pelo Claude ao rodar a
+     skill. Quando o usuário pedir o relatório depois de uma execução agendada, rodar com `-SkipRun` (que não
+     mexe no histórico, ver item 5) e publicar o HTML.
+   - Para conferir: `Get-ScheduledTask -TaskPath '\jobsnow\' | Get-ScheduledTaskInfo`. Para desligar:
+     `Disable-ScheduledTask -TaskPath '\jobsnow\' -TaskName 'Relatorio de cobertura'`.
 
 Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já estão lá.
 
@@ -49,8 +91,9 @@ Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já est
 | `-Module` | `ccp_rest-api-tests_jobsnow` | módulo cujos testes rodam |
 | `-Test` | vazio (suíte inteira) | filtro do Surefire, ex. `'com.jn.services.login.**'` ou `'SavePassword,ExecuteLogin'` |
 | `-OutDir` | `%TEMP%\ccp-coverage` | onde ficam exec, html e tsv — **não pode ter espaço** (quebra o `-javaagent`) |
-| `-SkipRun` | desligado | não roda testes; só regera o relatório a partir do `jacoco.exec` existente (e do `jacoco-api.exec`, se houver) |
-| `-NoApi` | desligado | não sobe a API jn; os testes REST só passam se ela já estiver no ar |
+| `-SkipRun` | desligado | não roda testes; só regera o relatório a partir do `jacoco.exec` existente (e do `jacoco-api.exec`, se houver), sem regravar no histórico uma rodada que já está lá |
+| `-NoApi` | desligado | não sobe as APIs jn e vis; os testes REST só passam se elas já estiverem no ar |
+| `-RestartApis` | desligado | troca uma API que já esteja na 8080/8081 fora do Eclipse por uma medida, e a devolve sem agente no fim |
 | `-IncludeTestModule` | desligado | inclui no relatório o próprio `ccp_rest-api-tests_jobsnow`, que por padrão fica de fora |
 | `-HistoryFile` | `<skill>\history\coverage-projects.tsv` | histórico dos totais por projeto usado no comparativo; `-` desliga o comparativo |
 
@@ -100,6 +143,8 @@ Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já est
      rodadas. Nunca descer a pacote ou arquivo no comparativo. Explicar variações grandes que vêm de
      mudança de medição e não de teste (API jn não medida numa das rodadas, módulo instalado
      desatualizado, total de instruções que mudou por código novo);
+   - a **evolução**: em uma ou duas frases, como o total andou desde a primeira rodada do escopo
+     (`history/coverage-total.tsv`) e quais projetos mais subiram ou caíram; os gráficos estão no HTML;
    - os módulos/pacotes com 0 % que têm volume relevante de instruções — são o achado;
    - quantos testes falharam na rodada (o script imprime as linhas `<<< FAILURE/ERROR`), porque
      teste quebrado no meio do fluxo derruba a cobertura do que vem depois.
@@ -110,13 +155,15 @@ Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já est
 
 ## Restrições e armadilhas
 
-- **A API jn é medida junto, por padrão.** Se a porta 8080 estiver livre, o script sobe
-  `JnRestApiSpringStarter` (classpath via `dependency:build-classpath`, como na memória "Subir a
-  API jn sem Eclipse") com um agente em modo `tcpserver` na porta 6300, roda a suíte, coleta os
-  dados com `AgentDump.java` (o processo é derrubado à força e não gravaria nada ao sair), para a
-  API e entrega os dois `.exec` juntos ao `CoverageReport`. Se a 8080 já estiver ocupada (API no
-  Eclipse), os testes usam essa API mas o código dela não é medido: o script avisa. `-NoApi`
-  desliga tudo isso. A API do vis não é iniciada. A API sobe com
+- **As APIs jn e vis são medidas junto, por padrão** (a vis desde 2026-10-10: as classes
+  `com.vis.rest.api.resume.validations.*` chamam a 8081). Para cada porta livre (8080, 8081), o script sobe
+  a API (classpath via `dependency:build-classpath`, como na memória "Subir a API jn sem Eclipse") com um
+  agente em modo `tcpserver` (portas 6300 e 6301), roda a suíte, coleta os dados com `AgentDump.java`
+  (o processo é derrubado à força e não gravaria nada ao sair), para as APIs e entrega todos os `.exec`
+  (`jacoco-api-jn.exec`, `jacoco-api-vis.exec`) juntos ao `CoverageReport`. Porta ocupada: os testes usam
+  a API que está lá, mas o código dela não é medido, e o script avisa. Com `-RestartApis` (usado pela
+  execução agendada), uma API ocupando a porta fora do Eclipse é trocada pela medida e devolvida sem agente
+  no fim. `-NoApi` desliga tudo isso. A API sobe com
   `-Dspring.devtools.restart.enabled=false`: com o DevTools ligado, uma recompilação do Eclipse
   reinicia a API no meio da rodada e os testes REST daquele instante tomam "connection refused"
   (foi o que derrubou 3 testes do `PasswordLoginScreen` em 2026-10-02).

@@ -15,8 +15,8 @@ passo a passo:
   08) Na aba "Idiomas" vá para aba "Habilidades" (Essa aba aparece dinamicamente de acordo com o tipo e conteúdo do
   currículo)
   09) Na aba Habilidades, note que existem 3 seções e observe a sessão de "conhecimentos implicitos"
-  10) Escolha um "conhecimento implícito" aleatório e então clique em seu botão de "associar parent e skills", o botão no código fonte do front end é aquele que contem o ícone "pi-plus-circle"
-  11) Será aberto um modal. Observe as integrações que foram feitas com o "Backend da hierarquia de skills"
+  10) Escolha um "conhecimento implícito" aleatório e então clique em seu botão de "associar parent e skills", o botão no código fonte do front end é aquele que contem o ícone "pi-plus-circle". Será aberto um modal.
+  11) Observe as integrações que foram feitas com o "Backend da hierarquia de skills"
   12) Note que estas integraçoes se comunicam com o controller mvc VisRestApiSkillFixHierarchy, o service (enum) VisServiceSkillFixHierarchy.FixSkillHierarchy com o objetivo final de se comunicar com a entidade de dados VisEntitySkillFixHierarchyPending 
   13) Feche o modal aberto no passo anterior e clique no link "Deixamos de listar alguma habilidade?", será aberto um outro modal
   14) Você terá de copiar todas as integrações com backend que foram feitas para o modal aberto no passo 11, para este modal que voce abriu no passo 13, mas em vez de se comunicar com a entidade VisEntitySkillFixHierarchyPending, a comunicação será com a entidade VisEntitySkillPending, porém, você terá que criar novo controller e novo service.

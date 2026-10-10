@@ -15,7 +15,7 @@
 7. O pedido vai sempre para **avaliado** (`vis_skill_fix_hierarchy_fulfiled`); cada item vai para **aprovado** ou **rejeitado**. Um item aprovado altera os "pais" da habilidade em `vis_skill` **e** na tabela que a leitura do currículo usa, então o conhecimento implícito da tela muda. O candidato recebe um e-mail com os itens aprovados e rejeitados e as justificativas.
 8. Um pedido cujas habilidades **todas** já foram decididas antes (mesmo termo e tipo) não é gravado: o candidato recebe o e-mail "já foram atendidos".
 
-> **Cache:** a tabela que a leitura do currículo usa fica 1 hora em memória na API do vis, e a aprovação roda no leitor do bot, outro processo. Para ver na tela o efeito de uma aprovação (1.19, 4.7), **reinicie a API do vis** e reprocesse o currículo.
+> **Cache:** a aprovação limpa, no mesmo instante, o cache da tabela que a leitura do currículo usa. Desde 2026-10-08 isso vale também entre os processos locais (o leitor do bot e a API do vis), como já acontece em produção com o Memcache. Para ver o efeito de uma aprovação (1.19, 4.7), basta reprocessar o currículo.
 
 ## Dados usados neste roteiro (do `cv.txt`, conferidos na tela em 2026-10-08)
 
@@ -88,15 +88,15 @@ O usuário será avisado por e-mail.
 
 ### Conferir
 
-- [ ] 1.13 `vis_skill_fix_hierarchy_pending`: sem o pedido. `vis_skill_fix_hierarchy_fulfiled`: o pedido, com `explanation` contendo uma linha por item (`JDBC (approved): ...`, `SPRING (rejected): ...`).
+- [ ] 1.13 `vis_skill_fix_hierarchy_pending`: sem o pedido. `vis_skill_fix_hierarchy_fulfiled`: o pedido, com `explanation` contendo uma linha por item, com a decisão no idioma do sistema (`JDBC (aprovado): ...`, `SPRING (reprovado): ...`).
 - [ ] 1.14 Itens: `ORMJAVA/add/JDBC` em `..._item_approved`; `ORMJAVA/add/SPRING` em `..._item_rejected`; nenhum em `..._item_pending`.
 - [ ] 1.15 `vis_skill?q=skill:JDBC`: o campo `parent` agora inclui `ORMJAVA`. `vis_skill?q=skill:SPRING`: **sem** ORMJAVA.
 - [ ] 1.16 E-mail `...$VisNotifyUserAboutFulfiledSkillHierarchy.html`: "Olá, a sua solicitação de associação com o termo ORMJAVA foi avaliada pelo nosso time." + "Itens aprovados:" (JDBC e a justificativa) + "Itens reprovados:" (SPRING e a justificativa).
 - [ ] 1.17 Ticket `/fixSkillHierarchy add <email> ORMJAVA` saiu de `/pendingTickets`.
 - [ ] 1.18 Na tela, clique no ⊕ de ORMJAVA. Esperado: **"status: Avaliado"**, painel **"Motivo"** com as duas linhas (uma embaixo da outra), campos desabilitados, botão **"Nova sugestão"** (sem "Desistir"). JDBC e SPRING aparecem selecionados mesmo que deixem de ser opções.
-  > **Visto na execução:** as duas linhas do Motivo apareciam coladas numa linha só. **Corrigido** em 2026-10-08 (`TabSkills.tsx`: o parágrafo do Motivo passou a respeitar a quebra de linha). As linhas trazem `(approved)` / `(rejected)` em inglês, como estão gravadas — ⚠ ver as observações.
-- [ ] 1.19 **A aprovação aparece na tela:** feche o modal, **reinicie a API do vis** (cache, ver o resumo), **reprocesse o currículo** (espaço no fim do texto + **Idiomas**) e volte à aba Habilidades. Esperado: **ORMJAVA (3)** lista HIBERNATE, **JDBC**, JPA.
-  > **Visto na execução:** confirmado na tela (`ORMJAVA (2)` → `ORMJAVA (3)`).
+  > **Visto na execução:** as duas linhas do Motivo apareciam coladas numa linha só e com `(approved)` / `(rejected)` em inglês. **Corrigido** em 2026-10-08: o parágrafo do Motivo respeita a quebra de linha, e a decisão é gravada no idioma do candidato (por enquanto travado em português: "aprovado" / "reprovado"). Pedidos avaliados antes da correção continuam com o texto antigo.
+- [ ] 1.19 **A aprovação aparece na tela:** feche o modal, **reprocesse o currículo** (espaço no fim do texto + **Idiomas**) e volte à aba Habilidades. Esperado: **ORMJAVA (3)** lista HIBERNATE, **JDBC**, JPA.
+  > **Visto na execução:** confirmado na tela (`ORMJAVA (2)` → `ORMJAVA (3)`). Em 2026-10-09, já sem reiniciar a API, uma aprovação em NOSQLDATABASE apareceu na tela no reprocessamento seguinte.
 
 ---
 
@@ -116,10 +116,10 @@ O usuário será avisado por e-mail.
 ## H3 — Pedido recusado por já ter sido atendido
 
 - [ ] 3.1 ⊕ de ORMJAVA → **Nova sugestão** → selecione só **SPRING** (decidido em H1) → justificativa `Reenviando um pedido já atendido antes.` → **Enviar**.
-- [ ] 3.2 Esperado: **nada fica pendente** e **nada chega ao Telegram**. Na tela: **"Sugestão enviada"** (Network 200).
+- [ ] 3.2 Esperado: **nada fica pendente** e **nada chega ao Telegram**. Na tela: **"Solicitação já atendida — Sua solicitação está completa: todas as habilidades dela já foram avaliadas pelo nosso time. Estamos enviando um e-mail com o resultado."** (Network **208**), e o modal fecha.
 - [ ] 3.3 E-mail `...$VisNotifyUserAboutAlreadyReviewedSkillHierarchy.html`: "Olá, você solicitou associação entre os termos SPRING e ORMJAVA, mas todos eles já foram atendidos em solicitações anteriores, por isso esta solicitação não foi registrada."
 
-> **⚠ Visto na execução (para a sua decisão):** a tela diz "Sugestão enviada" para um pedido que **não** foi registrado; só o e-mail avisa o candidato. Ao reabrir o ⊕, a tela mostra o pedido avaliado anterior, não o recusado.
+> **Corrigido em 2026-10-08:** na execução, a tela dizia "Sugestão enviada" para um pedido que **não** foi registrado. Agora o servidor responde 208 e a tela avisa que a solicitação está completa e que o e-mail está sendo enviado. Ao reabrir o ⊕, a tela mostra o pedido avaliado anterior.
 
 ---
 
@@ -131,7 +131,7 @@ O usuário será avisado por e-mail.
 - [ ] 4.4 Operador envia o comando. Esperado: cabeçalho "Solicitação de **desassociação** ..." e só o item LINQ.
 - [ ] 4.5 Responde `aprovar LINQ realmente é de outra plataforma`. Esperado: "Aprovados: LINQ", "Reprovados: -".
 - [ ] 4.6 `vis_skill?q=skill:LINQ`: `parent` **sem** SQLDATABASE (se a consulta logo depois ainda mostrar, recarregue em 1 s — refresh do Elasticsearch). E-mail de avaliação: "desassociação com o termo SQLDATABASE", só "Itens aprovados" (sem o bloco de reprovados).
-- [ ] 4.7 Reinicie a API do vis e reprocesse o currículo. Esperado: **SQLDATABASE (10)**, sem LINQ.
+- [ ] 4.7 Reprocesse o currículo. Esperado: **SQLDATABASE (10)**, sem LINQ.
   > **Visto na execução:** confirmado na tela (`SQLDATABASE (11)` → `(10)`).
 - [ ] 4.8 Na tela: 🗑 de SQLDATABASE mostra o pedido avaliado (LINQ); ⊕ de SQLDATABASE abre vazio, com **Enviar**. Um não interfere no outro.
 
@@ -236,9 +236,10 @@ O item não tem e-mail na chave. Para ver isso:
 | # | O que se viu | Situação |
 |---|---|---|
 | 1 | Motivo com as linhas de cada item coladas numa só (1.18). | **corrigido** (`TabSkills.tsx`) |
-| 2 | Pedido recusado por já atendido: a tela diz "Sugestão enviada" (H3). | ⚠ para a sua decisão |
-| 3 | O Motivo mostra `(approved)` / `(rejected)` em inglês para o candidato. É o texto gravado em `explanation`. | ⚠ para a sua decisão |
+| 2 | Pedido recusado por já atendido: a tela dizia "Sugestão enviada" (H3). | **corrigido** (208 + aviso de solicitação completa) |
+| 3 | O Motivo mostrava `(approved)` / `(rejected)` em inglês para o candidato. | **corrigido** (idioma do candidato, hoje português) |
 | 4 | `/removeSession`, citado neste roteiro e na preparação, não existe (10.3). | documentação corrigida |
-| 5 | `/showAllCommands` lista `/solucionarTicketsDeTokenDeLogin`, mas os tickets de login usam `/solveLoginTokenTicket`. | ⚠ para a sua avaliação |
-| 6 | Aprovação só aparece na tela depois de 1 hora ou de reiniciar a API do vis. | ambiente / cache |
+| 5 | `/showAllCommands` lista `/solucionarTicketsDeTokenDeLogin`, e os tickets usam `/solveLoginTokenTicket`. | não é defeito: o nome canônico funciona em qualquer idioma, e o do idioma do operador é um apelido |
+| 6 | Aprovação só aparecia na tela depois de reiniciar a API do vis. | **corrigido** no ambiente local: a limpeza do cache feita por um processo agora vale para todos (em produção o Memcache já é compartilhado) |
+| 8 | Desistir de um pedido pela tela não tirava o ticket do `/pendingTickets`. | **corrigido** |
 | 7 | `vis_command_not_allowed_to_user` tem registros duplicados de um e-mail antigo (chaves de antes da mudança para "só e-mail"). Recriar o índice (item 3.1 da preparação) limpa. | ambiente |

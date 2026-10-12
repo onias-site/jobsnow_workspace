@@ -6,16 +6,19 @@
 >
 > **Executado de novo em 2026-10-10**, de S1 a S8 (S8 com a conta `roteiro.s8@teste.com`). Tudo bateu, exceto uma sugestão perdida quando o Telegram caiu, já corrigida. Os passos 1.18, 3.4 e 5.8b foram atualizados. Veja [Observações da execução (2026-10-10)](#observações-da-execução-2026-10-10).
 
+> **Atualizado em 2026-10-11** (ainda não executado depois disso): validação ao sair do campo da habilidade, sinônimos e justificativa liberados só depois de uma habilidade válida, sinônimo virando etiqueta ao sair do campo, regras do sinônimo, sinônimos reconhecidos (cenário S9), desistência repetida bloqueada por uma hora (4.6b), "Justificativa do suporte:" nos e-mails e o comando `/listarUsuariosIgnorados` (5.8c). Veja [Mudanças de 2026-10-11](#mudanças-de-2026-10-11).
+
 ## Como a funcionalidade funciona (resumo)
 
-1. O candidato sugere uma habilidade que **consta no texto do currículo** e não foi listada, com sinônimos (várias frases) e uma justificativa.
-2. A tela recusa sozinha o que já aparece no currículo, sem chamar o servidor. O servidor recusa:
+1. O candidato sugere uma habilidade que **consta no texto do currículo** e não foi listada, com sinônimos (várias frases) e uma justificativa. Os sinônimos e a justificativa só ficam habilitados depois que a habilidade passa pelas validações, feitas **ao sair do campo** da habilidade.
+2. A tela recusa sozinha o que já aparece no currículo, inclusive por meio de um sinônimo, sem chamar o servidor. O servidor recusa:
    - o que o sistema já conhece, como habilidade **ou como sinônimo** (412);
    - o que esse candidato já teve rejeitado (410 — a rejeição é definitiva);
    - o que o operador já avaliou a partir da sugestão de **outro** candidato (410 `alreadyReviewed`): a decisão vale para todos, o candidato vê o status e o motivo do operador, e nenhum ticket novo é aberto;
-   - o que já está pendente (409).
+   - o que já está pendente (409);
+   - um sinônimo de uma sugestão que o candidato já fez (409): sugerir `PTL` depois de sugerir `PICK BY LIGHT` com o sinônimo `PTL`.
 3. A sugestão fica **pendente** (`vis_skill_pending`): o candidato recebe um e-mail e o operador recebe no Telegram `/reviewSkillSuggestion <email> <habilidade>`.
-4. Enquanto pendente, o modal é **só leitura**. Para alterar a sugestão, o candidato desiste dela e envia de novo.
+4. Enquanto pendente, o modal é **só leitura**. Para alterar a sugestão, o candidato desiste dela e envia de novo. Desistir de novo da mesma habilidade só depois que virar a hora (429).
 5. O operador **aprova** ou **rejeita** (sempre com justificativa de 10 a 500 caracteres) ou **ignora** o candidato. O "ignorar" vale para **todos os comandos** do suporte, não só para este.
 6. Se aprovada, vai para `vis_skill_approved`, entra em `vis_skill` e na tabela de leitura do currículo, com os sinônimos, e passa a ser reconhecida nos currículos. Se rejeitada, vai para `vis_skill_rejected`. Nos dois casos o candidato recebe um e-mail com a justificativa do operador.
 7. Uma sugestão por candidato e habilidade (chave: e-mail + habilidade).
@@ -40,9 +43,11 @@ Conferidas contra o currículo e a base de habilidades em 2026-10-08:
 ### Candidato
 
 - [ ] 1.1 Clique em **"Deixamos de listar alguma habilidade?"**. Abre o modal "Descreva a habilidade técnica que CONSTA no texto do seu currículo e que deixamos de listar aqui" com três campos e o botão **Enviar**.
-- [ ] 1.2 Campo da habilidade: digite `pick  by light` (com dois espaços). Esperado: o texto já aparece em MAIÚSCULAS.
-- [ ] 1.3 Clique no campo de sinônimos. Esperado: o campo da habilidade vira `PICK BY LIGHT` (um espaço só). Nenhum status aparece (ainda não há sugestão).
+- [ ] 1.2 Campo da habilidade: digite `pick  by light` (com dois espaços). Esperado: o texto já aparece em MAIÚSCULAS. Os campos de sinônimos e de justificativa estão **desabilitados**, e o botão **Enviar** também.
+- [ ] 1.3 Saia do campo (Tab ou clique fora). Esperado: o campo da habilidade vira `PICK BY LIGHT` (um espaço só); nenhum status aparece (ainda não há sugestão); os sinônimos, a justificativa e o **Enviar** ficam **habilitados**.
 - [ ] 1.4 Sinônimos: digite `pick to light` e tecle **Enter** → vira uma etiqueta `PICK TO LIGHT`. Digite `ptl, put to light` e tecle **Enter** → viram duas etiquetas (`PTL`, `PUT TO LIGHT`). O campo ocupa a largura toda do modal.
+- [ ] 1.4b Digite `pick by light` e tecle **Enter**. Esperado: aviso **"Sinônimo inválido — 'PICK BY LIGHT' é a própria habilidade 'PICK BY LIGHT', e não um sinônimo dela."** e nenhuma etiqueta nova. Repita com `píck by líght` (com acento): o mesmo aviso, porque a acentuação não conta.
+- [ ] 1.4c Digite `teste de saida` e, **sem teclar Enter**, clique no campo da justificativa. Esperado: vira a etiqueta `TESTE DE SAIDA`, como se tivesse teclado Enter. Remova-a no **x** da etiqueta.
 - [ ] 1.5 Justificativa: `Consta no projeto da Volkswagen (2012): sistema de automacao Pick By Light na linha de montagem.`
 - [ ] 1.6 **Enviar**. (Se for o primeiro envio desde o login, faça o login do item 4 da preparação; o envio é refeito sozinho.)
 
@@ -52,7 +57,7 @@ Esperado na tela:
 - [ ] Network: `POST /resume/onias85@gmail.com/skills/suggestion` → **200**.
 
 Esperado fora da tela:
-- [ ] E-mail `...$VisNotifySupportAndUserAboutPendingSkillRequest.html`: "Olá, você sugeriu a habilidade PICK BY LIGHT (sinônimos: PICK TO LIGHT, PTL, PUT TO LIGHT). Nosso time está avaliando e te responderá o quanto antes."
+- [ ] E-mail `...$VisNotifySupportAndUserAboutPendingSkillRequest.html`: "Olá, você sugeriu a habilidade PICK BY LIGHT (sinônimos: PICK TO LIGHT, PTL, PUT TO LIGHT). Nosso time está avaliando e te responderá o quanto antes." e, no parágrafo seguinte, **"Sua justificativa:"** com o texto que você digitou (desde 2026-10-11; vale também para os e-mails de aprovação e de rejeição)
 - [ ] Telegram: o bot manda `/reviewSkillSuggestion onias85@gmail.com PICK BY LIGHT`.
 - [ ] `vis_skill_pending`: um registro com `skill: PICK BY LIGHT`, os 3 sinônimos, a justificativa e o `email` em hash.
 - [ ] `jn_versionable?q=entity:vis_skill_pending`: ganha um registro de histórico (o índice é cumulativo — conte antes e depois).
@@ -60,13 +65,13 @@ Esperado fora da tela:
 
 ### Candidato consulta a sugestão pendente
 
-- [ ] 1.7 Abra o modal de novo. Esperado: campos vazios e habilitados, botão **Enviar**.
+- [ ] 1.7 Abra o modal de novo. Esperado: campos vazios; só o da habilidade habilitado (sinônimos, justificativa e **Enviar** desabilitados até a habilidade ser validada).
 - [ ] 1.8 Digite `Pick by light` e clique fora do campo. Esperado:
   - os sinônimos e a justificativa são carregados;
   - **os três campos ficam desabilitados**;
   - aparece **"status: Pendente"** e o aviso "Esta sugestão está em análise. Para alterá-la, desista dela e envie uma nova.";
   - os botões são **"Desistir da sugestão"** e **"Nova sugestão"** (não há mais "Enviar").
-- [ ] 1.9 Clique em **Nova sugestão**. Esperado: os campos se esvaziam e voltam a ficar habilitados, com o botão **Enviar**. Feche o modal.
+- [ ] 1.9 Clique em **Nova sugestão**. Esperado: os campos se esvaziam, o da habilidade volta a ficar habilitado e o botão volta a ser **Enviar** (desabilitado até a habilidade ser validada). Feche o modal.
 
 > **409 (opcional, só por fora da tela):** a tela não deixa reenviar uma sugestão pendente. O servidor responde **409** se alguém enviar `PICK BY LIGHT` de novo para o mesmo e-mail (outra aba aberta antes do primeiro envio, Postman). Na tela, o aviso é "Sugestão já pendente — Você já sugeriu a habilidade 'PICK BY LIGHT' e ela ainda está em análise."
 
@@ -96,7 +101,7 @@ Esperado depois da aprovação:
 - [ ] `vis_skill_pending`: o registro sumiu.
 - [ ] `vis_skill_approved`: o registro está lá, com `explanation` = a sua justificativa.
 - [ ] `vis_skill?q=skill:"PICK BY LIGHT"`: a habilidade existe, com os sinônimos e um `ranking` (o último + 1).
-- [ ] E-mail `...$VisNotifyUserAboutAprovedSkill.html`: "Olá, a habilidade PICK BY LIGHT que você sugeriu foi aprovada pelo nosso time e passa a ser reconhecida nos currículos." e a sua justificativa.
+- [ ] E-mail `...$VisNotifyUserAboutAprovedSkill.html`: "Olá, a habilidade PICK BY LIGHT que você sugeriu foi aprovada pelo nosso time e passa a ser reconhecida nos currículos." e, no parágrafo seguinte, **"Justificativa do suporte: ferramenta de automação industrial relevante"**.
 - [ ] Tickets: `/reviewSkillSuggestion ... PICK BY LIGHT` não está mais em `jn_support_pending_command` nem em `jb_pending_tickets`.
 - [ ] 1.14 Envie o mesmo comando de novo ao bot. Esperado: "Não há sugestão pendente da habilidade 'PICK BY LIGHT' para o e-mail 'onias85@gmail.com'".
 
@@ -106,10 +111,10 @@ Esperado depois da aprovação:
 - [ ] 1.16 Clique em **Nova sugestão**: os campos se esvaziam. Feche o modal.
 - [ ] 1.17 **Reprocesse o currículo** (espaço no fim do texto + **Idiomas**) e volte à aba Habilidades. Esperado: `PICK BY LIGHT` aparece agora na lista "Habilidades pelas quais eu quero que o meu currículo seja ENCONTRADO" (o contador passa de 105 para 106), sem nenhum conhecimento implícito associado.
   > **Visto na execução:** confirmado (105 → 106), mas na época só depois de reiniciar a API do vis. A aprovação limpa o cache no mesmo instante, porém roda em outro processo (o leitor do bot), e localmente cada processo tinha o seu cache em memória. **Corrigido em 2026-10-08:** localmente, a limpeza feita por um processo vale para todos, como já acontece em produção com o Memcache compartilhado. Não é mais preciso reiniciar nada.
-- [ ] 1.18 Tente sugerir `PTL` (sinônimo recém-aprovado). Esperado: a tela barra sozinha, com o aviso amarelo **"Habilidade fora do currículo — A habilidade 'PTL' não aparece no texto do seu currículo. Só é possível sugerir uma habilidade escrita exatamente como consta nele."** Nada vai ao servidor.
+- [ ] 1.18 Abra o modal, digite `PTL` (sinônimo recém-aprovado) e saia do campo. Esperado: a tela barra sozinha, com o aviso amarelo **"Habilidade já cadastrada por meio de sinônimo — 'PTL' é sinônimo de 'PICK BY LIGHT', que já está na lista 'Habilidades pelas quais eu quero que o meu currículo seja ENCONTRADO'."** Nada vai ao servidor, e os sinônimos e a justificativa continuam desabilitados.
   > **412 (opcional, só por fora da tela):** se alguém enviar `PTL` direto ao servidor (Postman), ele recusa com **412** "Habilidade já reconhecida", porque PTL já é sinônimo conhecido.
   >
-  > **Mudou em 2026-10-08:** antes a tela não barrava `PTL` e quem recusava era o servidor. Desde que a tela só aceita frases que constam no currículo, o 412 não aparece mais por ela.
+  > **Mudou em 2026-10-11:** a leitura do currículo (`skills/fromText`) passou a trazer os sinônimos de cada habilidade, e a tela os usa. Até então o aviso era "Habilidade fora do currículo", que só aparecia porque `PTL` não está no `cv.txt`. Antes do reprocessamento do 1.17, `PTL` ainda não está na lista: o caso é o do S9 (9.3).
 
 ---
 
@@ -124,7 +129,7 @@ Esperado depois da aprovação:
 
 ### Conferir
 - [ ] 2.4 `vis_skill_rejected`: registro com `explanation`. `vis_skill`: **não** tem KIPREV.
-- [ ] 2.5 E-mail `...$VisNotifyUserAboutRejectedSkill.html`: "Olá, a habilidade KIPREV que você sugeriu não foi aprovada pelo nosso time." e a justificativa com `<projeto>` aparecendo como texto (o HTML é escapado).
+- [ ] 2.5 E-mail `...$VisNotifyUserAboutRejectedSkill.html`: "Olá, a habilidade KIPREV que você sugeriu não foi aprovada pelo nosso time." e, no parágrafo seguinte, **"Justificativa do suporte: é o nome de um &lt;projeto&gt;, não uma habilidade técnica"**, com `<projeto>` aparecendo como texto (o HTML é escapado).
 - [ ] 2.6 Na tela, digite `KIPREV` no modal e clique fora. Esperado: **"status: Rejeitada"** + **Motivo**, campos desabilitados, botão **Nova sugestão**.
 - [ ] 2.7 Clique em **Nova sugestão**, digite `KIPREV` de novo e clique fora. Esperado: volta a mostrar "Rejeitada" com o motivo. **Não há como reenviar uma habilidade rejeitada** — é a regra.
 
@@ -134,16 +139,19 @@ Esperado depois da aprovação:
 
 ## S3 — Validações da tela (nenhuma chega ao servidor)
 
-Para cada linha, abra o modal, preencha e clique em **Enviar**. Esperado: aviso amarelo, o modal continua aberto e nada aparece no Network.
+Abra o modal para cada item. Esperado (em todos): aviso amarelo, o modal continua aberto e nada aparece no Network.
 
-| # | Habilidade | Sinônimos | Justificativa | Aviso esperado |
-|---|---|---|---|---|
-| - [ ] 3.1 | `X` | — | `Justificativa com mais de dez letras` | "Habilidade inválida — 'X' deve ter entre 2 e 50 caracteres." |
-| - [ ] 3.2 | `BOLETOS` | `G` | `Justificativa com mais de dez letras` | "Sinônimo inválido — 'G' deve ter entre 2 e 50 caracteres." |
-| - [ ] 3.3 | `BOLETOS` | — | `curta` | "Explicação inválida — A explicação deve ter entre 10 e 500 caracteres." |
-| - [ ] 3.4 | `BOLETOS` | `BOLETOS` | `Justificativa com mais de dez letras` | **envia** (o sinônimo igual à própria habilidade é descartado antes do envio). Depois, desista dela (como no S4.2 a 4.4) para o S4 começar sem ela. |
+- [ ] 3.1 Habilidade `X` (ou ` X ` com espaços em volta) e saia do campo.
+  Esperado: "Habilidade inválida — 'X' deve ter entre 2 e 50 caracteres." Os sinônimos, a justificativa e o **Enviar** continuam desabilitados.
+  > **Defesa do servidor (opcional, com Postman):** `POST /resume/<email>/skills/suggestion/search` com `{"skill": " X "}` responde **400**: o servidor também conta o tamanho depois do trim.
+- [ ] 3.2 Habilidade `BOLETOS` (saia do campo), sinônimo `G` + **Enter**.
+  Esperado: "Sinônimo inválido — 'G' deve ter entre 2 e 50 caracteres." e nenhuma etiqueta.
+- [ ] 3.3 Habilidade `BOLETOS` (saia do campo), sem sinônimo, justificativa `curta` → **Enviar**.
+  Esperado: "Justificativa inválida — A justificativa deve ter entre 10 e 500 caracteres."
+- [ ] 3.4 Habilidade `BOLETOS` (saia do campo), sinônimo `boletos` + **Enter**.
+  Esperado: "Sinônimo inválido — 'BOLETOS' é a própria habilidade 'BOLETOS', e não um sinônimo dela." e nenhuma etiqueta. Feche o modal sem enviar.
 
-> **Mudou em 2026-10-10:** até então este cenário usava `GEORREFERENCIAMENTO`, que não consta no `cv.txt`. Desde 2026-10-08 a tela recusa frases fora do currículo ("Habilidade fora do currículo"), e o 3.4 deixou de enviar. Os avisos de 3.1 a 3.3 aparecem antes dessa checagem, por isso não mudavam.
+> **Mudou em 2026-10-11:** a habilidade é validada ao sair do campo, e não só no Enviar; os sinônimos são validados ao virar etiqueta. O 3.4 não envia mais: o sinônimo igual à habilidade era descartado em silêncio e agora é recusado com aviso.
 
 ---
 
@@ -156,6 +164,8 @@ Para cada linha, abra o modal, preencha e clique em **Enviar**. Esperado: aviso 
 - [ ] 4.5 Operador: envie ao bot o comando que tinha chegado (`/reviewSkillSuggestion onias85@gmail.com BOLETOS`). Esperado: "Não há sugestão pendente da habilidade 'BOLETOS' ...". O ticket some de `/pendingTickets`.
   > **Corrigido em 2026-10-08:** na execução, desistir pela tela não tirava o ticket de `/pendingTickets`. Agora a desistência cancela o ticket: no próximo `/pendingTickets` ele já não aparece (vale também para o ajuste de hierarquia).
 - [ ] 4.6 Sugira `BOLETOS` de novo (agora com outra justificativa). Esperado: aceita — desistir não é rejeição.
+- [ ] 4.6b Abra o modal, digite `BOLETOS`, saia do campo e clique em **Desistir da sugestão** → **Sim, desistir**. Esperado: aviso **"Desistência não permitida — Você já desistiu de uma sugestão da habilidade 'BOLETOS' há pouco. Não é possível desistir dela de novo dentro de uma hora: ela continua em análise."**; Network `DELETE ...skills/suggestion` → **429**; `vis_skill_pending` ainda tem BOLETOS e o ticket continua no `/pendingTickets`.
+  > O prazo não é de 60 minutos corridos: ele vence quando **vira a hora** (a desistência das 10:50 libera às 11:00). A variante abaixo desiste de `BOLETOS` de novo: faça-a depois que a hora virar, senão o 4.8 recebe este mesmo aviso.
 
 **Variante — desistir durante a revisão:**
 - [ ] 4.7 Com `BOLETOS` pendente, o operador envia o comando e recebe a sugestão (não responda ainda).
@@ -181,7 +191,8 @@ Para cada linha, abra o modal, preencha e clique em **Enviar**. Esperado: aviso 
 - [ ] 5.8 **Ignorar é global:** o candidato tenta um ajuste de hierarquia (⊕ de qualquer conhecimento implícito, uma habilidade, justificativa válida). Esperado: também **403** / "Falha ao enviar sugestão".
 - [ ] 5.8b Se o operador digitar `/reviewSkillSuggestion onias85@gmail.com JAB` (ou qualquer `/fixSkillHierarchy ... onias85@gmail.com ...`), o bot responde: "O usuário onias85@gmail.com está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use /permitirComandoAoUsuario onias85@gmail.com"
   > O bot indica o comando pelo nome no idioma do operador (português aqui, desde 2026-10-10). O nome canônico `/allowCommandToUser` continua valendo.
-- [ ] 5.9 Operador envia `/permitirComandoAoUsuario onias85@gmail.com` (ou `/allowCommandToUser onias85@gmail.com`). Esperado: "O usuário onias85@gmail.com não é mais ignorado pelo suporte: as próximas solicitações dele, em todos os comandos, voltarão a chegar ao suporte." O registro sai de `vis_command_not_allowed_to_user` e vai para `vis_command_reallowed_to_user`.
+- [ ] 5.8c Operador envia `/listarUsuariosIgnorados` (ou `/ignoredUsers`). Esperado: "O suporte está ignorando 1 usuário" e, abaixo, "Usuário 1 de 1 => onias85@gmail.com", "Ignorado no comando reviewSkillSuggestion (AMGSTROM)" e "Digite "1" para voltar a atendê-lo ou "2" para ir ao próximo". Responda `talvez`: "Não entendi a resposta." e o mesmo usuário de novo. Responda `2`: o mesmo usuário (depois do último vem o primeiro). Não responda `1` ainda: o 5.9 desfaz o ignorar.
+- [ ] 5.9 Operador responde `1` à lista do 5.8c. Esperado, em sequência: "Voltando a atender o usuário onias85@gmail.com", a mensagem abaixo do `/allowCommandToUser` e a lista de novo, agora "O suporte não está ignorando nenhum usuário.". O mesmo vale para quem envia `/permitirComandoAoUsuario onias85@gmail.com` (ou `/allowCommandToUser onias85@gmail.com`) direto. Esperado: "O usuário onias85@gmail.com não é mais ignorado pelo suporte: as próximas solicitações dele, em todos os comandos, voltarão a chegar ao suporte." O registro sai de `vis_command_not_allowed_to_user` e vai para `vis_command_reallowed_to_user`.
 - [ ] 5.10 Envie o mesmo `/allowCommandToUser` de novo. Esperado: "O usuário onias85@gmail.com não está sendo ignorado pelo suporte"
 
 ---
@@ -189,6 +200,7 @@ Para cada linha, abra o modal, preencha e clique em **Enviar**. Esperado: aviso 
 ## S6 — Pelo `/pendingTickets`
 
 - [ ] 6.1 Candidato sugere `JAB` (depois do 5.9), justificativa `Java Arquitetura Brasil, framework do Santander.`
+  > **Corrigido em 2026-10-11:** na execução de 2026-10-11, este envio deu `Connection reset` no Telegram. A conexão com o Telegram tinha ficado parada no pool desde o 5.9 e foi descartada pelo outro lado sem aviso. Agora uma conexão parada há mais de 20 segundos não é reaproveitada. Para conferir, faça o 6.1 alguns minutos depois do 5.9: o aviso chega ao Telegram normalmente.
 - [ ] 6.2 Operador envia `/pendingTickets`. Esperado: "Você tem N tickets para resolver" e "Ticket 1 de N => /reviewSkillSuggestion onias85@gmail.com JAB — Digite "1" para resolver ou "2" para ir ao próximo" (a ordem é do mais antigo para o mais novo; use `2` até chegar ao de JAB).
 - [ ] 6.3 Responde `1`. Esperado: "Resolvendo o ticket ..." e logo a sugestão de JAB com as opções, como se você tivesse digitado o comando.
 - [ ] 6.4 Rejeite com justificativa. Esperado: depois do resumo, a lista de tickets reabre sem o de JAB.
@@ -203,16 +215,21 @@ Para cada linha, abra o modal, preencha e clique em **Enviar**. Esperado: aviso 
 
 ## S7 — O que a tela barra sozinha (nada vai ao servidor)
 
-Sugira cada palavra (qualquer justificativa válida) e clique em **Enviar**. Esperado: aviso amarelo, o modal fica aberto, nada no Network.
+Digite cada palavra no campo da habilidade e **saia do campo**. Esperado: aviso amarelo, o modal fica aberto, nada no Network, e os sinônimos, a justificativa e o **Enviar** continuam desabilitados. (Desde 2026-10-11 essas checagens rodam ao sair do campo; antes, só no **Enviar**, que agora fica desabilitado até a habilidade passar por elas.)
 
-| # | Sugestão | Aviso esperado | Por quê |
-|---|---|---|---|
-| - [ ] 7.1 | `JAVA` | "A palavra 'JAVA' já está relacionada em sua lista de ferramentas" | já está na sua lista |
-| - [ ] 7.2 | `WEM` | "O sinônimo (VCM) para esta palavra já está presente em sua lista" | WEM é sinônimo de VCM |
-| - [ ] 7.3 | `ASP` | "O nome desta ferramenta é parte de uma outra palavra "ASPECTJ" presente no texto do seu currículo" | só aparece dentro de ASPECTJ |
-| - [ ] 7.4 | `PRIMEFACE` | "Esta ferramenta é um pedaço de outra ferramenta "PRIMEFACES" já adicionada à sua lista" | pedaço de PRIMEFACES |
-| - [ ] 7.5 | `JVM` | "... já está relacionada em sua lista de ferramentas porém como pré requisito das palavras [...]" | é conhecimento implícito de várias da lista |
-| - [ ] 7.6 | `PICK TO LIGHT SYSTEM` | "Habilidade fora do currículo — A habilidade 'PICK TO LIGHT SYSTEM' não aparece no texto do seu currículo. Só é possível sugerir uma habilidade escrita exatamente como consta nele." | a frase não consta no currículo |
+- [ ] 7.1 Sugestão `JAVA` (já está na sua lista).
+  Esperado: "A palavra 'JAVA' já está relacionada em sua lista de ferramentas"
+- [ ] 7.2 Sugestão `WEM` (WEM é sinônimo de VCM).
+  Esperado (desde 2026-10-11, visto no navegador): "Habilidade já cadastrada por meio de sinônimo — 'WEM' é sinônimo de 'VCM', que já está na lista 'Habilidades pelas quais eu quero que o meu currículo seja ENCONTRADO'." (antes era "O sinônimo (VCM) para esta palavra já está presente em sua lista", que continua existindo, mas agora vem depois desta checagem)
+- [ ] 7.3 Sugestão `ASP` (só aparece dentro de ASPECTJ).
+  Esperado: "O nome desta ferramenta é parte de uma outra palavra "ASPECTJ" presente no texto do seu currículo"
+- [ ] 7.4 Sugestão `PRIMEFACE` (pedaço de PRIMEFACES).
+  Esperado: "Esta ferramenta é um pedaço de outra ferramenta "PRIMEFACES" já adicionada à sua lista"
+- [ ] 7.5 Sugestão `JVM` (é conhecimento implícito de várias da lista).
+  Esperado: "... já está relacionada em sua lista de ferramentas porém como pré requisito das palavras [...]"
+- [ ] 7.6 Sugestão `PICK TO LIGHT SYSTEM` (a frase não consta no currículo).
+  Esperado: "Habilidade fora do currículo — A habilidade 'PICK TO LIGHT SYSTEM' não aparece no texto do seu currículo. Só é possível sugerir uma habilidade escrita exatamente como consta nele."
+  Exceção ao "nada no Network": aqui aparece `POST ...skills/suggestion/search` → 200. Esta é a única checagem feita depois da consulta ao servidor, porque um sinônimo de uma sugestão anterior pode não constar no currículo e precisa ser reconhecido antes (cenário S9).
 
 > **Defesa do servidor (opcional, com Postman ou similar):** o servidor também recusa `JAVA`, `WEM`, `ASP` e `JVM` com **412** mesmo se a chamada não vier da tela — inclusive `WEM`, que é só sinônimo. `PRIMEFACE` passaria (não é palavra conhecida, só pedaço de uma): só a tela, que lê o currículo, sabe barrá-la.
 >
@@ -230,6 +247,18 @@ Sugira cada palavra (qualquer justificativa válida) e clique em **Enviar**. Esp
   Se o 410 chegar à tela (habilidade avaliada entre digitar e enviar), aparece o aviso "Sugestão já avaliada — A habilidade 'KIPREV' já foi avaliada pelo suporte. Veja abaixo o resultado e o motivo." e o modal mostra a decisão.
 - [ ] 8.4 Digite `PICK BY LIGHT` (se a tela deixar: depois do reprocessamento ela já é reconhecida no currículo). Esperado: **"status: Aprovada"** + **Motivo**. Se o envio chegar ao servidor, vem o **412** "Habilidade já reconhecida", e o modal também mostra a decisão.
 - [ ] 8.5 `vis_skill_reviewed`: um registro por habilidade (`KIPREV` → `rejected`, `PICK BY LIGHT` → `approved`), com `explanation` e sinônimos, sem e-mail.
+
+---
+
+## S9 — Sinônimos: a mesma habilidade com outro nome
+
+Este cenário acompanha o S1: cada passo diz em que ponto do S1 ele deve ser feito.
+
+- [ ] 9.1 **Logo depois do 1.6** (PICK BY LIGHT pendente, com os sinônimos PICK TO LIGHT, PTL e PUT TO LIGHT): `vis_skill_synonym` tem **3 registros**, um por sinônimo, todos com `synonym: PICK BY LIGHT` (`skill: PICK TO LIGHT`, `skill: PTL`, `skill: PUT TO LIGHT`). Uma sugestão sem sinônimos não grava nada nesse índice.
+- [ ] 9.2 Ainda com PICK BY LIGHT pendente: abra o modal, digite `PTL` e saia do campo. Esperado: aviso **"Habilidade já sugerida por meio de sinônimo — 'PTL' é sinônimo de 'PICK BY LIGHT', que já foi sugerida. Veja abaixo a situação dela."**; o campo da habilidade passa a mostrar `PICK BY LIGHT`; aparece **"status: Pendente"**, com os campos desabilitados e os botões "Desistir da sugestão" e "Nova sugestão". Network: `POST ...skills/suggestion/search` → 200, com `typedSynonym: "PTL"` na resposta.
+  > **409 (opcional, só por fora da tela):** enviar `PTL` como sugestão nova (Postman) é recusado com **409** (`suggestedThroughSynonym`), e nada fica pendente.
+- [ ] 9.3 **Depois do 1.13** (aprovada) **e antes do 1.17** (reprocessar): repita o 9.2. Esperado: o mesmo aviso, agora com **"status: Aprovada"** e o painel com a justificativa do operador.
+- [ ] 9.4 **Depois do 1.17**: o 1.18 mostra o outro aviso ("Habilidade já cadastrada por meio de sinônimo"). Agora `PICK BY LIGHT` está na lista do currículo, e a leitura do currículo traz os sinônimos dela, então a tela barra sem consultar o servidor.
 
 ---
 
@@ -255,6 +284,21 @@ Sugira cada palavra (qualquer justificativa válida) e clique em **Enviar**. Esp
 | 5 | A confirmação do `ignorar` ainda diz "Esta sugestão será descartada", mas desde 2026-10-10 **todas** as pendências do candidato são descartadas. | cosmético |
 | 6 | Para trocar de conta no navegador não basta apagar `logins` do localStorage: a sessão também fica em `sessionStorage` (`login`). | informativo (ver item 4 da preparação) |
 
+## Mudanças de 2026-10-11
+
+| O que mudou | Onde aparece |
+|---|---|
+| A habilidade é validada ao sair do campo: tamanho depois do trim (também no servidor, 400), já está na lista, é sinônimo de uma da lista, é pedaço de outra palavra, consta no currículo | 1.3, 3.1, S7, 1.18 |
+| Sinônimos, justificativa e **Enviar** só ficam habilitados depois de uma habilidade válida e ainda não sugerida | 1.2, 1.3 |
+| Sair do campo de sinônimos com texto digitado vale como Enter | 1.4c |
+| Sinônimo: de 2 a 50 caracteres e diferente da habilidade, sem contar a acentuação | 1.4b, 3.2, 3.4 |
+| A leitura do currículo traz os sinônimos de cada habilidade; a tela barra o sinônimo de uma habilidade da lista | 1.18, 9.4 |
+| Sinônimos das sugestões gravados em `vis_skill_synonym`; digitar um deles leva à sugestão já feita | S9 |
+| Desistir de novo da mesma habilidade só depois que virar a hora (429) | 4.6b |
+| E-mails de aprovação e de rejeição com "Justificativa do suporte:" antes da justificativa do operador | 1.13, 2.5 |
+| Comando `/listarUsuariosIgnorados`, com a mesma interação do `/pendingTickets` | 5.8c, 5.9 |
+| `Connection reset` ao avisar o Telegram depois de alguns minutos sem tráfego | 6.1 |
+
 ---
 
 ## Resumo do que este roteiro cobre
@@ -270,4 +314,7 @@ Sugira cada palavra (qualquer justificativa válida) e clique em **Enviar**. Esp
 | Aprovada entra em `vis_skill` e passa a ser lida nos currículos | S1 |
 | `/pendingTickets` entra e sai | S1, S4, S6 |
 | Decisão do operador vale para todos os candidatos (410 `alreadyReviewed`, sem ticket novo) | S8 |
-| Validações da tela e bloqueios locais | S3, S7 |
+| Validações da tela (ao sair do campo) e bloqueios locais | S3, S7 |
+| Sinônimos: regras, sinônimo de uma habilidade da lista, sinônimo de uma sugestão já feita (409) | S1, S3, S9 |
+| Desistência repetida dentro da hora (429) | S4 |
+| Lista de usuários ignorados (`/listarUsuariosIgnorados`) | S5 |

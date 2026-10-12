@@ -7,7 +7,10 @@ rem e roda a classe com a pasta de trabalho em ccp_rest-api-tests_jobsnow, que e
 rem de onde ela le os scripts em documentation\<centro de custo>\...
 rem Os demais modulos entram pelos jars do ~/.m2: rode antes "mvn -o install -DskipTests"
 rem nos modulos alterados (ou o buildEmTodosOsProjetos.bat) para usar o codigo atual.
-rem O main abre um dialogo para escolher os centros de custo (jn, vis, jb) a recriar.
+rem Sem argumentos recria jn, vis e jb (nessa ordem). Para recriar so alguns, passe-os:
+rem   executaCcpCreateEntities.bat vis
+rem   executaCcpCreateEntities.bat jn vis
+rem (recriar o jn sem o vis apaga os modelos de mensagem que o vis semeia nos indices do jn)
 
 pushd "%~dp0ccp_rest-api-tests_jobsnow"
 
@@ -27,7 +30,7 @@ rem O classpath passa de 18 mil caracteres: vai num arquivo de argumentos do jav
 powershell -NoProfile -Command "$cp = (Get-Content -Raw '%CP_FILE%').Trim() -replace '\\','/'; Set-Content -Encoding ascii '%ARG_FILE%' ('-cp \"target/test-classes;target/classes;' + $cp + '\"')"
 
 echo Executando CcpCreateEntities...
-"C:\Program Files\Java\jdk-17\bin\java.exe" @%ARG_FILE% com.ccp.random.CcpCreateEntities
+"C:\Program Files\Java\jdk-17\bin\java.exe" @%ARG_FILE% com.ccp.random.CcpCreateEntities %*
 set "RESULT=%ERRORLEVEL%"
 
 popd

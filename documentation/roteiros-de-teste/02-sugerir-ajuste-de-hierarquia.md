@@ -42,7 +42,7 @@
 
 Esperado:
 - [ ] "Sugestão enviada — Obrigado! Sua sugestão será analisada e você será avisado do resultado." O modal fecha. Network: `POST /resume/<email>/skills/hierarchy` → 200.
-- [ ] E-mail `...$VisNotifySupportAndUserAboutPendingSkillHierarchyRequest.html`: "Olá, você solicitou associação entre os termos JDBC, SPRING e ORMJAVA. Nosso time está avaliando e te responderá o quanto antes."
+- [ ] E-mail `...$VisNotifySupportAndUserAboutPendingSkillHierarchyRequest.html`: "Olá, você solicitou associação entre as habilidades JDBC, SPRING e o conhecimento implícito (pai) ORMJAVA." + a lista **Conhecimento implícito (pai):** ORMJAVA / **Habilidades:** JDBC, SPRING / **Sua justificativa:** (o texto do 1.4) + "Nosso time está avaliando e te responderá o quanto antes." *(desde 2026-10-11: antes dizia "entre os termos JDBC, SPRING e ORMJAVA", sem dizer qual era o pai, e sem a justificativa)*
 - [ ] Telegram: `/fixSkillHierarchy add <email> ORMJAVA`
 - [ ] `vis_skill_fix_hierarchy_pending`: o pedido (`parent: ORMJAVA`, `type: add`, `skill: [JDBC, SPRING]`, `description`).
 - [ ] `vis_skill_fix_hierarchy_item_pending`: **dois** itens (`ORMJAVA/add/JDBC` e `ORMJAVA/add/SPRING`).
@@ -91,7 +91,7 @@ O usuário será avisado por e-mail.
 - [ ] 1.13 `vis_skill_fix_hierarchy_pending`: sem o pedido. `vis_skill_fix_hierarchy_fulfiled`: o pedido, com `explanation` contendo uma linha por item, com a decisão no idioma do sistema (`JDBC (aprovado): ...`, `SPRING (reprovado): ...`).
 - [ ] 1.14 Itens: `ORMJAVA/add/JDBC` em `..._item_approved`; `ORMJAVA/add/SPRING` em `..._item_rejected`; nenhum em `..._item_pending`.
 - [ ] 1.15 `vis_skill?q=skill:JDBC`: o campo `parent` agora inclui `ORMJAVA`. `vis_skill?q=skill:SPRING`: **sem** ORMJAVA.
-- [ ] 1.16 E-mail `...$VisNotifyUserAboutFulfiledSkillHierarchy.html`: "Olá, a sua solicitação de associação com o termo ORMJAVA foi avaliada pelo nosso time." + "Itens aprovados:" (JDBC e a justificativa) + "Itens reprovados:" (SPRING e a justificativa).
+- [ ] 1.16 E-mail `...$VisNotifyUserAboutFulfiledSkillHierarchy.html`: "Olá, a sua solicitação de associação com o conhecimento implícito (pai) ORMJAVA foi avaliada pelo nosso time." + a mesma lista do e-mail de recebimento (pai, habilidades, **Sua justificativa**) + "Itens aprovados:" (JDBC e a justificativa) + "Itens reprovados:" (SPRING e a justificativa).
 - [ ] 1.17 Ticket `/fixSkillHierarchy add <email> ORMJAVA` saiu de `/pendingTickets`.
 - [ ] 1.18 Na tela, clique no ⊕ de ORMJAVA. Esperado: **"status: Avaliado"**, painel **"Motivo"** com as duas linhas (uma embaixo da outra), campos desabilitados, botão **"Nova sugestão"** (sem "Desistir"). JDBC e SPRING aparecem selecionados mesmo que deixem de ser opções.
   > **Visto na execução:** as duas linhas do Motivo apareciam coladas numa linha só e com `(approved)` / `(rejected)` em inglês. **Corrigido** em 2026-10-08: o parágrafo do Motivo respeita a quebra de linha, e a decisão é gravada no idioma do candidato (por enquanto travado em português: "aprovado" / "reprovado"). Pedidos avaliados antes da correção continuam com o texto antigo.
@@ -117,7 +117,7 @@ O usuário será avisado por e-mail.
 
 - [ ] 3.1 ⊕ de ORMJAVA → **Nova sugestão** → selecione só **SPRING** (decidido em H1) → justificativa `Reenviando um pedido já atendido antes.` → **Enviar**.
 - [ ] 3.2 Esperado: **nada fica pendente** e **nada chega ao Telegram**. Na tela: **"Solicitação já atendida — Sua solicitação está completa: todas as habilidades dela já foram avaliadas pelo nosso time. Estamos enviando um e-mail com o resultado."** (Network **208**), e o modal fecha.
-- [ ] 3.3 E-mail `...$VisNotifyUserAboutAlreadyReviewedSkillHierarchy.html`: "Olá, você solicitou associação entre os termos SPRING e ORMJAVA, mas todos eles já foram atendidos em solicitações anteriores, por isso esta solicitação não foi registrada."
+- [ ] 3.3 E-mail `...$VisNotifyUserAboutAlreadyReviewedSkillHierarchy.html`: "Olá, você solicitou associação entre as habilidades SPRING e o conhecimento implícito (pai) ORMJAVA, mas todas elas já foram atendidas em solicitações anteriores, por isso esta solicitação não foi registrada." + a lista com pai, habilidades e **Sua justificativa**.
 
 > **Corrigido em 2026-10-08:** na execução, a tela dizia "Sugestão enviada" para um pedido que **não** foi registrado. Agora o servidor responde 208 e a tela avisa que a solicitação está completa e que o e-mail está sendo enviado. Ao reabrir o ⊕, a tela mostra o pedido avaliado anterior.
 
@@ -127,10 +127,10 @@ O usuário será avisado por e-mail.
 
 - [ ] 4.1 Clique no **🗑** de `SQLDATABASE`. Esperado: modal "Sugira remover habilidades que você acredita que não dependem do conhecimento em SQLDATABASE"; a lista traz **só** as 11 habilidades listadas em SQLDATABASE.
 - [ ] 4.2 Selecione **LINQ**. Justificativa: `LINQ é do mundo .NET e não depende de banco SQL.` → **Enviar**.
-- [ ] 4.3 E-mail: "Olá, você solicitou **desassociação** entre os termos LINQ e SQLDATABASE ...". Telegram: `/fixSkillHierarchy remove <email> SQLDATABASE`.
+- [ ] 4.3 E-mail: "Olá, você solicitou **desassociação** entre as habilidades LINQ e o conhecimento implícito (pai) SQLDATABASE ...", com a sua justificativa. Telegram: `/fixSkillHierarchy remove <email> SQLDATABASE`.
 - [ ] 4.4 Operador envia o comando. Esperado: cabeçalho "Solicitação de **desassociação** ..." e só o item LINQ.
 - [ ] 4.5 Responde `aprovar LINQ realmente é de outra plataforma`. Esperado: "Aprovados: LINQ", "Reprovados: -".
-- [ ] 4.6 `vis_skill?q=skill:LINQ`: `parent` **sem** SQLDATABASE (se a consulta logo depois ainda mostrar, recarregue em 1 s — refresh do Elasticsearch). E-mail de avaliação: "desassociação com o termo SQLDATABASE", só "Itens aprovados" (sem o bloco de reprovados).
+- [ ] 4.6 `vis_skill?q=skill:LINQ`: `parent` **sem** SQLDATABASE (se a consulta logo depois ainda mostrar, recarregue em 1 s — refresh do Elasticsearch). E-mail de avaliação: "desassociação com o conhecimento implícito (pai) SQLDATABASE", só "Itens aprovados" (sem o bloco de reprovados).
 - [ ] 4.7 Reprocesse o currículo. Esperado: **SQLDATABASE (10)**, sem LINQ.
   > **Visto na execução:** confirmado na tela (`SQLDATABASE (11)` → `(10)`).
 - [ ] 4.8 Na tela: 🗑 de SQLDATABASE mostra o pedido avaliado (LINQ); ⊕ de SQLDATABASE abre vazio, com **Enviar**. Um não interfere no outro.
@@ -157,6 +157,16 @@ O usuário será avisado por e-mail.
 - [ ] 6.5 Reabra o ⊕ → "status: Pendente", campos desabilitados → **Desistir da sugestão** → **Sim, desistir**. Esperado: "Sugestão retirada — Sua sugestão não será mais analisada."; o pedido some de `..._pending`; o item `ORMJAVA/add/ORACLE` some de `..._item_pending` (nenhum outro pedido o usa).
 - [ ] 6.6 Reabra o ⊕. Esperado: o **último pedido avaliado** desse termo e tipo (o do H2, "status: Avaliado", com **Nova sugestão**); clicando em Nova sugestão, dá para mandar o pedido corrigido. Sem histórico anterior, os campos viriam vazios, com **Enviar**.
 - [ ] 6.7 Operador envia o comando que tinha chegado. Esperado: "Não há itens pendentes de ajuste (add) na hierarquia de conhecimentos para o e-mail '<email>' e o termo 'ORMJAVA'".
+
+### Desistência repetida (desde 2026-10-11)
+- [ ] 6.8 Logo depois do 6.5, refaça o mesmo pedido (ORACLE em ORMJAVA) → "Sugestão enviada" (pedir de novo é permitido; chegam o e-mail e o aviso ao operador).
+- [ ] 6.9 Reabra o ⊕ → **Desistir da sugestão** → **Sim, desistir**. Esperado: **"Desistência não permitida — Você já desistiu de uma sugestão de associação com ORMJAVA há pouco. Não é possível desistir dela de novo dentro de uma hora: ela continua em análise."** (Network **429**). O pedido continua em `..._pending`; `vis_skill_fix_hierarchy_withdrawn` tem o registro (e-mail + termo + tipo). O bloqueio vence na virada da hora.
+- [ ] 6.10 O bloqueio é por termo **e** tipo: desistir de um pedido do 🗑 de ORMJAVA continua permitido.
+
+### Operador avaliando quando o candidato desiste (desde 2026-10-11)
+- [ ] 6.11 Faça um pedido com **duas** habilidades em algum termo. Operador: envie o comando e responda `um a um` → "Item 1 de 2 ...".
+- [ ] 6.12 Na tela, desista do pedido. Operador: responda `aprovar <justificativa>`. Esperado: **"O usuário <email> desistiu da solicitação de associação com o termo <termo> enquanto ela era avaliada. A avaliação foi encerrada e as decisões tomadas até aqui foram descartadas."** Nada vai para aprovados/reprovados e o candidato não recebe e-mail de avaliação.
+- [ ] 6.13 Mesmo cenário, desistindo **antes** de o operador escolher o modo (logo depois de ele ver o pedido): a resposta seguinte do operador recebe o mesmo aviso.
 
 > **409 (opcional, só por fora da tela):** a tela não deixa reenviar um pedido pendente. Se ele chegar ao servidor por outra aba ou pelo Postman, a resposta é **409** e o aviso é "Sugestão já pendente — Você já tem uma sugestão pendente para ORMJAVA. Para alterá-la, desista dela e envie uma nova." (**Visto na execução:** 409 confirmado com o ORACLE pendente.)
 

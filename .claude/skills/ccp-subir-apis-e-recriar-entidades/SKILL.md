@@ -43,10 +43,10 @@ Use a scratchpad da sessão como `<scratch>` para classpaths e logs.
 
    Ele compila `ccp_rest-api-tests_jobsnow` (`mvn -o test-compile`), monta o classpath de teste
    num arquivo de argumentos do java (o classpath passa de 18 mil caracteres) e roda o `main` com a
-   pasta de trabalho no projeto de testes. **O `main` abre um diálogo Swing**: diga ao usuário que
-   marque os centros de custo (jn, vis, jb) na tela dele. Cancelar ou fechar o diálogo não recria nada.
-   Recriar só o jn apaga os templates que o vis semeia em índices jn; para restaurá-los, marque o vis
-   também. Quando terminar, leia o log e os arquivos de erro em `c:\logs\<centro de custo>\`
+   pasta de trabalho no projeto de testes. **Não há diálogo** (desde 2026-10-11): sem argumentos ele
+   recria jn, vis e jb, nessa ordem; para recriar só alguns, passe-os ao `.bat`
+   (`executaCcpCreateEntities.bat vis`). Recriar só o jn apaga os templates que o vis semeia em
+   índices jn; para restaurá-los, inclua o vis. Quando terminar, leia o log e os arquivos de erro em `c:\logs\<centro de custo>\`
    (`mappingJnEntitiesErrors.json`, `insertResults.json`).
 
 5. **Informar** o PID de cada porta, os 404 de confirmação e o resultado do CcpCreateEntities. Lembre

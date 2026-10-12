@@ -1,6 +1,6 @@
 ---
 name: ccp-commit-e-push
-description: Sugere a mensagem de commit do dia a partir do que mudou nos repositórios do workspace e já roda o fazPushEmTodosProjetosLocais.bat com ela (add, commit e push na raiz e em cada módulo), respondendo sozinho aos prompts do .bat. Use quando pedirem "sugira uma mensagem de commit", "mensagem para o fazPush", "faz o push de tudo", "commita e sobe tudo", "rode o fazPushEmTodosProjetosLocais".
+description: Sugere a mensagem de commit do dia a partir do que mudou nos repositórios do workspace e já roda o fazPushEmTodosProjetosLocais.bat com ela (add, commit e push na raiz e em cada módulo), respondendo sozinho aos prompts do .bat, e no fim mostra a mensagem que ficou gravada no commit. Use quando pedirem "sugira uma mensagem de commit", "mensagem para o fazPush", "faz o push de tudo", "commita e sobe tudo", "rode o fazPushEmTodosProjetosLocais".
 ---
 
 # Mensagem de commit e push de todos os repositórios
@@ -54,6 +54,17 @@ todo dia.
      credencial) com o repositório e a linha do log.
    - Se um push falhou, o commit local ficou feito: o repositório aparece com "Commits à frente" no `pendentes.sh`.
      Não tentar consertar sozinho; mostrar ao usuário.
+
+6. **Mostrar, no fim da resposta, a mensagem que foi de fato usada no commit** (pedido do usuário em 2026-10-11).
+   Leia a mensagem do próprio histórico, e não da que foi escrita no passo 3, para mostrar o que o git gravou:
+
+   ```bash
+   git -C C:/eclipse-workspaces/ccp log -1 --format=%s
+   ```
+
+   Apresente-a como última coisa da resposta, sozinha num bloco de código, precedida de "Mensagem usada no commit:".
+   Se algum repositório commitado tiver gravado uma mensagem diferente (`git -C <repo> log -1 --format=%s`), aponte
+   qual. Se nada foi commitado (nada pendente, ou o push foi barrado no passo 1), diga isso no lugar da mensagem.
 
 ## Restrições
 

@@ -202,7 +202,8 @@ async function main() {
     C.sessionToken = loginC.body.sessionToken;
     expectStatus('B: senha errada nº 3 (bloqueia a senha)', await api.login(B, 'Errada@333'), 429);
     expectStatus('B: senha CERTA depois do bloqueio continua recusada', await api.login(B, B.password), 423);
-    expectStatus('B: verificação do e-mail com a senha bloqueada', await api.checkEmail(B), 427);
+    // senha bloqueada é 423 em todo endpoint desde 2026-10-15 (até então a verificação do e-mail respondia 427)
+    expectStatus('B: verificação do e-mail com a senha bloqueada', await api.checkEmail(B), 423);
     expectStatus('C: sair', await api.logout(C), 200);
     expectStatus('C: senha errada depois do acerto conta do zero de novo', await api.login(C, 'Errada@444'), 427, attemptsIs(1), 'attempts=1');
     const loginC2 = await api.login(C, C.password);
@@ -310,9 +311,23 @@ async function main() {
     expectStatus('C: a troca de senha derrubou a sessão anterior', await api.validateSession(C, sessionBeforePasswordChangeC), 401);
     expectStatus('C: a sessão aberta pela troca de senha vale', await api.validateSession(C, C.sessionToken), 200);
     expectStatus('C: sair pela sessão corrente', await api.logout(C), 200);
-    expectStatus('C: sem sessão corrente, login com a senha nova entra', await api.login(C, C.password), 200);
+    const newLoginC = await api.login(C, C.password);
+    expectStatus('C: sem sessão corrente, login com a senha nova entra', newLoginC, 200);
+    C.sessionToken = newLoginC.body.sessionToken;
     expectStatus('A: sessão do A continua válida (não é afetada pelo C)', await api.validateSession(A, A.sessionToken), 200);
     expectStatus('B: sessão do B continua válida (não é afetada pelo C)', await api.validateSession(B, B.sessionToken), 200);
+
+    section('L10 — sessão vinda de outro navegador e login recusado sem sessionToken (desde 2026-10-15)');
+    const otherClient = { 'User-Agent': 'outro-navegador' };
+    for (let i = 1; i <= MAX_ATTEMPTS + 1; i++) {
+        const stolen = await request('GET', `/login/${C.email}/${C.sessionToken}`, {}, { sessionToken: C.sessionToken, email: C.email, ...otherClient });
+        expectStatus(`C: token da sessão corrente vindo de outro User-Agent (${i}ª vez)`, stolen, 401);
+    }
+    expectStatus('C: no navegador original a sessão segue valendo', await api.validateSession(C, C.sessionToken), 200);
+    const refusedLoginC = await api.login(C, C.password);
+    expectStatus('C: login de novo responde "Desbloqueie seu login", e não senha bloqueada', refusedLoginC, 409, (body) => !body.sessionToken, 'sem sessionToken');
+    const wrongPasswordC = await api.login(C, 'Errada@999');
+    expectStatus('C: login com senha errada não devolve sessionToken', wrongPasswordC, wrongPasswordC.status, (body) => !body.sessionToken, 'sem sessionToken');
 
     const failures = results.filter((r) => !r.ok);
     console.log(`\n${results.length - failures.length}/${results.length} verificações ok`);

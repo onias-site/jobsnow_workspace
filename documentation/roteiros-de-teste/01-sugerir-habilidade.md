@@ -6,7 +6,9 @@
 >
 > **Executado de novo em 2026-10-10**, de S1 a S8 (S8 com a conta `roteiro.s8@teste.com`). Tudo bateu, exceto uma sugestão perdida quando o Telegram caiu, já corrigida. Os passos 1.18, 3.4 e 5.8b foram atualizados. Veja [Observações da execução (2026-10-10)](#observações-da-execução-2026-10-10).
 
-> **Atualizado em 2026-10-11** (ainda não executado depois disso): validação ao sair do campo da habilidade, sinônimos e justificativa liberados só depois de uma habilidade válida, sinônimo virando etiqueta ao sair do campo, regras do sinônimo, sinônimos reconhecidos (cenário S9), desistência repetida bloqueada por uma hora (4.6b), "Justificativa do suporte:" nos e-mails e o comando `/listarUsuariosIgnorados` (5.8c). Veja [Mudanças de 2026-10-11](#mudanças-de-2026-10-11).
+> **Atualizado em 2026-10-11** (ainda não executado depois disso): validação ao sair do campo da habilidade, sinônimos e justificativa liberados só depois de uma habilidade válida, sinônimo virando etiqueta ao sair do campo, regras do sinônimo, sinônimos reconhecidos (cenário S9), desistência repetida bloqueada por uma hora (4.6b; bloqueio removido em 2026-10-15), "Justificativa do suporte:" nos e-mails e o comando `/listarUsuariosIgnorados` (5.8c). Veja [Mudanças de 2026-10-11](#mudanças-de-2026-10-11).
+
+> **Atualizado em 2026-10-15:** uma sugestão de habilidade por candidato por dia (429 a partir da segunda, cenário S10), com aviso no modal antes do envio. **Os cenários S1, S2, S4, S5, S6 e S9 enviam várias sugestões com o mesmo candidato: antes de cada "Enviar", libere o dia do candidato com o primeiro par de comandos do item 5A da preparação.** Sem isso, a segunda sugestão do dia recebe "Limite de 24 horas atingido".
 
 ## Como a funcionalidade funciona (resumo)
 
@@ -18,10 +20,11 @@
    - o que já está pendente (409);
    - um sinônimo de uma sugestão que o candidato já fez (409): sugerir `PTL` depois de sugerir `PICK BY LIGHT` com o sinônimo `PTL`.
 3. A sugestão fica **pendente** (`vis_skill_pending`): o candidato recebe um e-mail e o operador recebe no Telegram `/reviewSkillSuggestion <email> <habilidade>`.
-4. Enquanto pendente, o modal é **só leitura**. Para alterar a sugestão, o candidato desiste dela e envia de novo. Desistir de novo da mesma habilidade só depois que virar a hora (429).
+4. Enquanto pendente, o modal é **só leitura**. Para alterar a sugestão, o candidato desiste dela e envia de novo. Desistir de novo da mesma habilidade é permitido a qualquer momento (o bloqueio de uma hora foi removido em 2026-10-15).
 5. O operador **aprova** ou **rejeita** (sempre com justificativa de 10 a 500 caracteres) ou **ignora** o candidato. O "ignorar" vale para **todos os comandos** do suporte, não só para este.
 6. Se aprovada, vai para `vis_skill_approved`, entra em `vis_skill` e na tabela de leitura do currículo, com os sinônimos, e passa a ser reconhecida nos currículos. Se rejeitada, vai para `vis_skill_rejected`. Nos dois casos o candidato recebe um e-mail com a justificativa do operador.
 7. Uma sugestão por candidato e habilidade (chave: e-mail + habilidade).
+8. Uma sugestão por candidato **por dia**, de qualquer habilidade (desde 2026-10-15). A segunda recebe **429** `dailyLimitReached`. As recusas do item 2 vêm antes e não gastam a sugestão do dia. O limite dura 24 horas a partir do envio, não vira à meia-noite (`vis_skill_suggestion_daily_limit`, descartável diária).
 
 ## Palavras usadas neste roteiro (todas do `cv.txt`)
 
@@ -164,8 +167,8 @@ Abra o modal para cada item. Esperado (em todos): aviso amarelo, o modal continu
 - [ ] 4.5 Operador: envie ao bot o comando que tinha chegado (`/reviewSkillSuggestion onias85@gmail.com BOLETOS`). Esperado: "Não há sugestão pendente da habilidade 'BOLETOS' ...". O ticket some de `/pendingTickets`.
   > **Corrigido em 2026-10-08:** na execução, desistir pela tela não tirava o ticket de `/pendingTickets`. Agora a desistência cancela o ticket: no próximo `/pendingTickets` ele já não aparece (vale também para o ajuste de hierarquia).
 - [ ] 4.6 Sugira `BOLETOS` de novo (agora com outra justificativa). Esperado: aceita — desistir não é rejeição.
-- [ ] 4.6b Abra o modal, digite `BOLETOS`, saia do campo e clique em **Desistir da sugestão** → **Sim, desistir**. Esperado: aviso **"Desistência não permitida — Você já desistiu de uma sugestão da habilidade 'BOLETOS' há pouco. Não é possível desistir dela de novo dentro de uma hora: ela continua em análise."**; Network `DELETE ...skills/suggestion` → **429**; `vis_skill_pending` ainda tem BOLETOS e o ticket continua no `/pendingTickets`.
-  > O prazo não é de 60 minutos corridos: ele vence quando **vira a hora** (a desistência das 10:50 libera às 11:00). A variante abaixo desiste de `BOLETOS` de novo: faça-a depois que a hora virar, senão o 4.8 recebe este mesmo aviso.
+- [ ] 4.6b Abra o modal, digite `BOLETOS`, saia do campo e clique em **Desistir da sugestão** → **Sim, desistir**. Esperado: "Sugestão retirada — Sua sugestão não será mais analisada."; Network `DELETE ...skills/suggestion` → **200**; `vis_skill_pending` sem BOLETOS e o ticket fora do `/pendingTickets`.
+  > Desistir de novo da mesma habilidade é permitido desde 2026-10-15: o bloqueio de uma hora (429) foi removido, porque o limite de uma sugestão a cada 24 horas já limita os tickets. Antes da variante abaixo, sugira `BOLETOS` de novo (liberando o dia com o item 5A da preparação).
 
 **Variante — desistir durante a revisão:**
 - [ ] 4.7 Com `BOLETOS` pendente, o operador envia o comando e recebe a sugestão (não responda ainda).
@@ -262,6 +265,18 @@ Este cenário acompanha o S1: cada passo diz em que ponto do S1 ele deve ser fei
 
 ---
 
+## S10 — Uma sugestão por dia (desde 2026-10-15)
+
+> **Executado em 2026-10-15** pela tela (10.1 a 10.3) e pela API (10.4), com `tela.1792041421885.0@teste.com`: tudo como abaixo. O 10.5 não foi feito para não mandar outro aviso ao Telegram real.
+
+- [ ] 10.1 Libere o dia do candidato (item 5A da preparação). Abra o modal. Esperado: abaixo da justificativa, o aviso **"Atenção: você pode enviar apenas uma sugestão de habilidade a cada 24 horas. Confira os dados antes de enviar."** O aviso some quando o modal carrega uma sugestão já feita (pendente ou avaliada).
+- [ ] 10.2 Sugira uma habilidade do currículo que o sistema não conheça, com justificativa válida → **Enviar** → "Sugestão enviada". `jn_disposable_record?q=entity:vis_skill_suggestion_daily_limit` ganha um registro (e-mail em hash, `format: ddMMyyyy`).
+- [ ] 10.3 **Sem liberar o dia**, sugira outra habilidade válida → **Enviar**. Esperado: aviso vermelho **"Limite de 24 horas atingido — Você já enviou uma sugestão de habilidade nas últimas 24 horas. É permitida apenas uma a cada 24 horas: tente novamente em 24 horas."**; Network `POST ...skills/suggestion` → **429**; nada pendente em `vis_skill_pending`, nenhum e-mail, nada no Telegram; o modal continua aberto.
+- [ ] 10.4 Ainda sem liberar: sugira `JAVA` pelo Postman. Esperado: **412**, e não 429 (a recusa que não manda nada vem antes do limite).
+- [ ] 10.5 Libere o dia e repita o 10.3. Esperado: "Sugestão enviada".
+
+---
+
 ## Observações da execução (2026-10-08)
 
 | # | O que se viu | Gravidade |
@@ -294,7 +309,7 @@ Este cenário acompanha o S1: cada passo diz em que ponto do S1 ele deve ser fei
 | Sinônimo: de 2 a 50 caracteres e diferente da habilidade, sem contar a acentuação | 1.4b, 3.2, 3.4 |
 | A leitura do currículo traz os sinônimos de cada habilidade; a tela barra o sinônimo de uma habilidade da lista | 1.18, 9.4 |
 | Sinônimos das sugestões gravados em `vis_skill_synonym`; digitar um deles leva à sugestão já feita | S9 |
-| Desistir de novo da mesma habilidade só depois que virar a hora (429) | 4.6b |
+| Desistir de novo da mesma habilidade é permitido (sem bloqueio de uma hora desde 2026-10-15) | 4.6b |
 | E-mails de aprovação e de rejeição com "Justificativa do suporte:" antes da justificativa do operador | 1.13, 2.5 |
 | Comando `/listarUsuariosIgnorados`, com a mesma interação do `/pendingTickets` | 5.8c, 5.9 |
 | `Connection reset` ao avisar o Telegram depois de alguns minutos sem tráfego | 6.1 |
@@ -316,5 +331,6 @@ Este cenário acompanha o S1: cada passo diz em que ponto do S1 ele deve ser fei
 | Decisão do operador vale para todos os candidatos (410 `alreadyReviewed`, sem ticket novo) | S8 |
 | Validações da tela (ao sair do campo) e bloqueios locais | S3, S7 |
 | Sinônimos: regras, sinônimo de uma habilidade da lista, sinônimo de uma sugestão já feita (409) | S1, S3, S9 |
-| Desistência repetida dentro da hora (429) | S4 |
+| Desistência repetida da mesma habilidade aceita | S4 |
 | Lista de usuários ignorados (`/listarUsuariosIgnorados`) | S5 |
+| Uma sugestão por dia (aviso no modal, 429, recusas sem custo antes do limite) | S10 |

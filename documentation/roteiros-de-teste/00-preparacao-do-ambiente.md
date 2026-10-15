@@ -7,6 +7,8 @@ Estes roteiros testam, à mão e de ponta a ponta, as duas funcionalidades da ab
 | [01-sugerir-habilidade.md](01-sugerir-habilidade.md) | Sugerir uma habilidade que o sistema deixou de listar (`VisEntitySkillPending`) (executado de verdade em 2026-10-08) | Link **"Deixamos de listar alguma habilidade?"** |
 | [02-sugerir-ajuste-de-hierarquia.md](02-sugerir-ajuste-de-hierarquia.md) | Sugerir associar/desassociar habilidades de um conhecimento implícito (`VisEntitySkillFixHierarchyPending`) (executado de verdade em 2026-10-08) | Ícones ⊕ (`pi-plus-circle`) e 🗑 (`pi-trash`) no título de cada conhecimento implícito |
 | [03-modal-de-login.md](03-modal-de-login.md) | Modal de login: primeiro acesso, senha, bloqueios, desbloqueio e reenvio pelo suporte (executado de verdade no navegador) | Abre sozinho quando uma ação exige login |
+| [04-tela-do-curriculo.md](04-tela-do-curriculo.md) | Tela do currículo: preencher as 4 abas, salvar, carregar, inativar, reativar e excluir, LinkedIn compartilhado e agrupadores (desde 2026-10-15) | Menu **Como estou indo → Ver meu currículo** |
+| [05-endpoints-do-curriculo-pela-tela.md](05-endpoints-do-curriculo-pela-tela.md) | Os quatro endpoints de `VisRestApiResume` (ler, salvar, inativar/reativar, excluir) a partir da tela, com 401, 404 e respostas sem dados da sessão (desde 2026-10-15) | Tela "Ver meu currículo" |
 
 Cada roteiro é feito de **cenários**. Cada cenário tem: o que fazer na tela do candidato, o que fazer no Telegram como **operador do suporte**, e o que conferir (tela, e-mail, Telegram, Elasticsearch). Marque os `[ ]` à medida que avançar. Onde está escrito **⚠ Atenção**, o comportamento descrito é o atual do sistema e merece a sua avaliação — não é erro de quem testa.
 
@@ -47,7 +49,7 @@ As sugestões do candidato chegam ao operador **como uma mensagem do bot no Tele
 
 Os roteiros supõem que nenhuma sugestão foi feita ainda. Para isso:
 
-- [ ] 3.1 Rode `executaCcpCreateEntities.bat` na raiz do workspace (ou, no Eclipse, `com.ccp.random.CcpCreateEntities` do projeto `ccp_rest-api-tests_jobsnow`). Sem argumentos, ele recria **jn, vis e jb**, sem pedir nada (desde 2026-10-11 não há mais a janela de escolha). Para recriar só alguns, passe-os como argumentos (`executaCcpCreateEntities.bat vis`); recriar só o jn apaga os modelos de e-mail que o vis semeia nos índices do jn. **Obrigatório na primeira vez depois das mudanças de 2026-10-08**: mudaram a chave da tabela de usuários ignorados (agora só o e-mail), a ordem dos parâmetros do `/fixSkillHierarchy` e os textos do bot — índices antigos fazem o bot responder com os textos e o formato antigos. Desde 2026-10-09 a recriação também cria `jn_support_cancelled_command` (a desistência tira o ticket do `/pendingTickets`) e semeia os nomes "aprovado"/"reprovado" do painel Motivo. **Obrigatório de novo depois das mudanças de 2026-10-11**: a recriação cria `vis_skill_synonym` (sinônimos das sugestões) e `vis_skill_suggestion_withdrawn` (desistências da última hora), semeia os e-mails de aprovação/rejeição com "Justificativa do suporte:" e os textos do comando `/listarUsuariosIgnorados`.
+- [ ] 3.1 Rode `executaCcpCreateEntities.bat` na raiz do workspace (ou, no Eclipse, `com.ccp.random.CcpCreateEntities` do projeto `ccp_rest-api-tests_jobsnow`). Sem argumentos, ele recria **jn, vis e jb**, sem pedir nada (desde 2026-10-11 não há mais a janela de escolha). Para recriar só alguns, passe-os como argumentos (`executaCcpCreateEntities.bat vis`); recriar só o jn apaga os modelos de e-mail que o vis semeia nos índices do jn. **Obrigatório na primeira vez depois das mudanças de 2026-10-08**: mudaram a chave da tabela de usuários ignorados (agora só o e-mail), a ordem dos parâmetros do `/fixSkillHierarchy` e os textos do bot — índices antigos fazem o bot responder com os textos e o formato antigos. Desde 2026-10-09 a recriação também cria `jn_support_cancelled_command` (a desistência tira o ticket do `/pendingTickets`) e semeia os nomes "aprovado"/"reprovado" do painel Motivo. **Obrigatório de novo depois das mudanças de 2026-10-11**: a recriação cria `vis_skill_synonym` (sinônimos das sugestões), semeia os e-mails de aprovação/rejeição com "Justificativa do suporte:" e os textos do comando `/listarUsuariosIgnorados`. **Obrigatório de novo depois das mudanças de 2026-10-15**: a recriação cria `vis_resume_linkedin` (dono de cada endereço do LinkedIn, com o aviso ao suporte quando outro e-mail usa o mesmo endereço), `vis_skill_suggestion_daily_limit` e `vis_skill_fix_hierarchy_daily_limit` (uma sugestão de cada tipo por dia).
 - [ ] 3.2 Confira que `C:\logs\jn\mappingJnEntitiesErrors.json`, `C:\logs\vis\mappingJnEntitiesErrors.json` e `C:\logs\jb\mappingJnEntitiesErrors.json` estão **vazios**.
 - [ ] 3.3 Reinicie a API do vis e o leitor do bot (eles guardam cache em memória).
 
@@ -78,7 +80,28 @@ Recriar o jn apaga o seu login, mas o navegador ainda se lembra dele e entra num
 - [ ] 5.5 Clique em **Idiomas** e aguarde.
 - [ ] 5.6 Vá para a aba **Habilidades**. Esperado: três colunas — **Conhecimentos implícitos (36)**, "Habilidades pelas quais eu NÃO quero que o meu currículo seja encontrado" (vazia) e "Habilidades pelas quais eu quero que o meu currículo seja ENCONTRADO (105)", com o link **"Deixamos de listar alguma habilidade?"**.
 
+> **LinkedIn:** o endereço precisa terminar em letra, número, `_` ou `%` (pode ter `/` no fim). `https://www.linkedin.com/in/fulano-/` é recusado com 422 desde 2026-10-14.
+>
 > **Cache da leitura do currículo:** a lista de habilidades fica guardada por 1 hora para o mesmo texto. Quando um roteiro pedir para **"reprocessar o currículo"**, acrescente um espaço no fim do texto do currículo e clique em **Idiomas** de novo — assim a leitura é refeita.
+
+---
+
+## 5A. Uma sugestão de cada tipo por dia (desde 2026-10-15)
+
+Cada sugestão manda um e-mail ao candidato e abre um ticket ao operador. Por isso o candidato pode enviar **uma sugestão de habilidade e um pedido de ajuste de hierarquia a cada 24 horas**. Os dois modais avisam do limite antes do envio ("Atenção: você pode enviar apenas uma sugestão de ... a cada 24 horas"). A partir da segunda sugestão do mesmo tipo nas 24 horas seguintes à primeira, o vis responde **429** e a tela mostra **"Limite de 24 horas atingido"**. O limite não vira à meia-noite: dura 24 horas a partir do envio.
+
+As recusas que não mandam nada vêm antes do limite e **não gastam** a sugestão do dia: habilidade já conhecida (412), já pendente (409), já sugerida por sinônimo (409), já rejeitada ou já avaliada (410), usuário ignorado (403).
+
+Os roteiros 01 e 02 enviam várias sugestões com o mesmo candidato. **Antes de cada cenário que envia uma sugestão**, libere o dia do candidato (o registro não tem cache, então apagá-lo no Elasticsearch basta):
+
+```powershell
+# libera a sugestão de habilidade do dia (todos os candidatos; ambiente local)
+Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_disposable_record/_delete_by_query?refresh=true' -Body '{"query":{"term":{"entity":"vis_skill_suggestion_daily_limit"}}}'
+Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/vis_skill_suggestion_daily_limit/_delete_by_query?refresh=true' -Body '{"query":{"match_all":{}}}'
+# libera o pedido de ajuste de hierarquia do dia
+Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_disposable_record/_delete_by_query?refresh=true' -Body '{"query":{"term":{"entity":"vis_skill_fix_hierarchy_daily_limit"}}}'
+Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/vis_skill_fix_hierarchy_daily_limit/_delete_by_query?refresh=true' -Body '{"query":{"match_all":{}}}'
+```
 
 ---
 
@@ -115,7 +138,8 @@ O e-mail é gravado como **hash** — por isso as consultas filtram pela habilid
 | … avaliados | `http://localhost:9200/vis_skill_fix_hierarchy_fulfiled/_search?pretty` |
 | Itens de ajuste pendentes / aprovados / rejeitados | `.../vis_skill_fix_hierarchy_item_pending/_search?pretty`, `.../vis_skill_fix_hierarchy_item_approved/...`, `.../vis_skill_fix_hierarchy_item_rejected/...` |
 | Sinônimos das sugestões, cada um apontando para a habilidade sugerida | `http://localhost:9200/vis_skill_synonym/_search?pretty` |
-| Desistências da última hora (bloqueiam desistir de novo da mesma habilidade) | `http://localhost:9200/vis_skill_suggestion_withdrawn/_search?pretty` |
+| Sugestões do dia (uma por candidato; bloqueiam a segunda com 429) | `http://localhost:9200/jn_disposable_record/_search?pretty&q=entity:vis_skill_suggestion_daily_limit` e `...&q=entity:vis_skill_fix_hierarchy_daily_limit` |
+| Dono de cada endereço do LinkedIn (o e-mail é hash) | `http://localhost:9200/vis_resume_linkedin/_search?pretty` |
 | Usuários ignorados pelo suporte (o e-mail legível fica dentro de `description`) | `http://localhost:9200/vis_command_not_allowed_to_user/_search?pretty` |
 | … que voltaram a ser atendidos | `http://localhost:9200/vis_command_reallowed_to_user/_search?pretty` |
 | Caixa de tickets do operador | `http://localhost:9200/jn_support_pending_command/_search?pretty` e `http://localhost:9200/jb_pending_tickets/_search?pretty` |

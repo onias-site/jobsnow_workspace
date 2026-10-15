@@ -11,7 +11,7 @@ deve referenciar o centralizador — nunca o enum local homônimo.
 ```java
 // ANTES
 recordFromUnionAll.putSameValueInManyFields(command,
-        JbEntityBotCommandStep.Fields.stepName, JbEntityBotCommand.Fields.commandName)
+        JnEntityBotCommandStep.Fields.stepName, JnEntityBotCommand.Fields.commandName)
     .put(JbEntityBotExplanation.Fields.language, language);
 
 // DEPOIS

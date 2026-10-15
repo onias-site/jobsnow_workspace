@@ -6,6 +6,8 @@
 >
 > **Regra dos bloqueios:** a **3ª** senha errada seguida bloqueia a senha (`POST /login` → 429) e o **3º** token errado seguido bloqueia o token (`POST /password` → 429). O limite é a propriedade `maxAttempts` (3 se não estiver configurada). As tentativas são contadas **por e-mail**: o erro de um candidato nunca conta para outro, e um acerto zera só o contador de quem acertou.
 
+> **Atualizado em 2026-10-15** (correções da campanha `profissionais2`): senha bloqueada responde **423** em todo endpoint (antes, a verificação do e-mail e as respostas do primeiro acesso davam 427); login recusado não devolve `sessionToken`, e os pedidos de token também não; o token da sessão corrente vindo de **outro navegador** (outro User-Agent) é recusado com 401 **sem contar tentativa** (antes, quatro tentativas assim bloqueavam a senha do dono); a sessão não cai mais na virada da hora. Veja L10.
+
 ## Como o modal funciona (resumo)
 
 - **Não existe botão "Entrar".** O modal abre sozinho quando uma ação precisa de login e a API responde 401. Depois do login, a ação que pediu o login é **refeita sozinha**.
@@ -41,7 +43,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 | L1 | e-mail novo 404 → confirmação 201 → preferências 202 → token 200 para os três; tokens diferentes; segundo envio 429 |
 | Token errado | A erra 3 vezes (427 com `attempts` 1 e 2, depois 429) enquanto B erra 2 (inclusive com o token do A) e acerta, e C acerta de primeira; com o token bloqueado o A recebe 403 até com o token certo, na verificação do e-mail e no login; o B não é afetado |
 | L3 | sair 200, sair de novo 404 |
-| Senha errada | B erra 3 vezes (427, 427, 429) enquanto C erra 2 (inclusive com a senha do B) e acerta; senha certa do B bloqueado → 423; verificação do e-mail → 427; o acerto do C zera só o contador do C |
+| Senha errada | B erra 3 vezes (427, 427, 429) enquanto C erra 2 (inclusive com a senha do B) e acerta; senha certa do B bloqueado → 423; verificação do e-mail → 423 (era 427 até 2026-10-15); o acerto do C zera só o contador do C |
 | Desbloqueio da senha | senha nova + token → 200; a senha antiga passa a contar do zero |
 | Simultâneos | B e C erram e acertam a senha no mesmo instante: contadores e sessões separados; a sessão do C não vale para o B (401) |
 | L7 | pedido de desbloqueio 200, repetido 409; o B (não bloqueado) recebe 404; operador resolve; o token novo chega por e-mail e na resposta do bot; novo pedido 404 ("não está bloqueado"); token antigo conta do zero; token novo → 200 |
@@ -121,7 +123,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 - [ ] 4.4 Digite `Errada@111` de novo. Esperado: "Esta senha já foi digitada antes e está incorreta, tente outra senha!" (a tela registra a tentativa no envio, antes da resposta).
 - [ ] 4.5 `Errada@222` → "... você ainda tem direito a 1 tentativa(s)".
 - [ ] 4.6 `Errada@333` → `POST /login` → **429**. Esperado: tela **"Desbloqueie a sua senha"** com "Devido a tentativas de acessos suspeitos, sua senha foi preventivamente bloqueada. Preencha os campos acima, para desbloqueá-la." e a mensagem do token ainda válido (como no 2.2). *(Visto em 2026-10-11: as duas frases saem coladas com ponto duplo, "desbloqueá-la.. Seu token foi enviado...". É só texto.)*
-- [ ] 4.6b Com a senha bloqueada, a senha **certa** também é recusada: `POST /login` → **423** (a tela mostra "Desbloqueie a sua senha"); a verificação do e-mail responde **427**.
+- [ ] 4.6b Com a senha bloqueada, a senha **certa** também é recusada: `POST /login` → **423** (a tela mostra "Desbloqueie a sua senha"); a verificação do e-mail também responde **423** (desde 2026-10-15; antes, 427: a senha bloqueada agora é 423 em todo endpoint). Nenhuma resposta de login recusado traz `sessionToken`.
 - [ ] 4.7 Senha nova + confirmação + token válido → **Salvar senha** → 200, login feito, ação original refeita.
 - [ ] 4.8 Faça logout e entre com a senha nova: `POST /login` → **200** (medido: **14 s**), toast "Sucesso!!! O usuário '...' foi autenticado com sucesso!" e a ação original refeita.
   > Executado com um segundo e-mail de teste, porque o primeiro ficou com o token bloqueado (ver L7): **com o token bloqueado, nem a senha certa entra** — a verificação do e-mail responde 403 e a tela mostra só "Seu token está bloqueado!". Nesse estado o campo de e-mail também fica **somente leitura**; para usar outro e-mail é preciso fechar o modal e abri-lo de novo.
@@ -181,6 +183,19 @@ Use duas abas da mesma janela. A sessão fica no `sessionStorage`, que é de cad
 - [ ] 9.11 D: senha nova + token → login feito e ação refeita.
 
 *Executado em 2026-10-11 de 9.1 a 9.11: tudo como esperado. O `localStorage` ficou com uma entrada por e-mail (D com as respostas 403/429 do bloqueio, E com 200), sem uma afetar a outra.*
+
+---
+
+## L10 — Sessão de outro navegador e virada da hora (desde 2026-10-15)
+
+Feito pela automação (`automacao/03-modal-de-login.mjs`) ou com `curl`, porque a tela não troca de User-Agent.
+
+- [ ] 10.1 Faça login com um e-mail novo e guarde o `sessionToken`. Com ele, chame `GET /login/{email}/{sessionToken}` quatro vezes com o cabeçalho `User-Agent: outro-navegador`. Esperado: **401** nas quatro, e `jn_password_attempts` desse e-mail sem tentativas (o token roubado não bloqueia a senha do dono).
+- [ ] 10.2 A mesma chamada com o User-Agent do login. Esperado: **200**.
+- [ ] 10.3 Login de novo pelo navegador original. Esperado: **409** "Desbloqueie seu login" (a sessão corrente continua válida), e não 423.
+- [ ] 10.4 Errar a senha 3 vezes (429) e chamar `POST /login/{email}/token` (verificação do e-mail). Esperado: **423** `lockedPassword` (até 2026-10-14, 427).
+- [ ] 10.5 Nenhuma resposta recusada de `POST /login` traz `sessionToken` (veja o corpo no Network).
+- [ ] 10.6 Virada da hora: faça login alguns minutos antes da hora cheia e repita uma ação logada logo depois dela. Esperado: **200**. Até 2026-10-13 a sessão caía na virada da hora (401) e as repetições da tela bloqueavam a senha.
 
 ---
 

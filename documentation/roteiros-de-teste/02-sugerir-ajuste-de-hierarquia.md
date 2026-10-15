@@ -4,6 +4,8 @@
 
 > **Executado de verdade em 2026-10-08**, no navegador (conta `roteiro.login2@teste.com`) e com o bot de suporte, de H1 a H11, menos o H9 (precisa de um segundo login) e o 8.7. Os termos e as habilidades abaixo são os que a tela mostrou nesse dia. O que a execução revelou está nas notas **"Visto na execução"** e na seção [Observações da execução](#observações-da-execução-2026-10-08) no fim.
 
+> **Atualizado em 2026-10-15:** um pedido de ajuste de hierarquia por candidato por dia (429 a partir do segundo, cenário H12), com aviso no modal antes do envio. **Vários cenários enviam mais de um pedido com o mesmo candidato: antes de cada "Enviar", libere o dia do candidato com o segundo par de comandos do item 5A da preparação.**
+
 ## Como a funcionalidade funciona (resumo)
 
 1. Na coluna **Conhecimentos implícitos**, cada título (ex.: `ORMJAVA (2)`) é um conhecimento que o sistema deduziu do currículo, com as habilidades que dependem dele.
@@ -14,6 +16,7 @@
 6. O operador aprova tudo, rejeita tudo ou decide **item a item** (sempre com justificativa), ou ignora o candidato — e o "ignorar" vale para **todos os comandos** do suporte. Itens decididos em revisões anteriores (aprovados **ou** reprovados) não são perguntados de novo.
 7. O pedido vai sempre para **avaliado** (`vis_skill_fix_hierarchy_fulfiled`); cada item vai para **aprovado** ou **rejeitado**. Um item aprovado altera os "pais" da habilidade em `vis_skill` **e** na tabela que a leitura do currículo usa, então o conhecimento implícito da tela muda. O candidato recebe um e-mail com os itens aprovados e rejeitados e as justificativas.
 8. Um pedido cujas habilidades **todas** já foram decididas antes (mesmo termo e tipo) não é gravado: o candidato recebe o e-mail "já foram atendidos".
+9. Um pedido por candidato **por dia**, de qualquer termo e tipo (desde 2026-10-15). O segundo recebe **429** `dailyLimitReached`. O 403 (ignorado) e o 409 (o mesmo pedido ainda pendente) vêm antes e não gastam o pedido do dia. O pedido do item 8 (208) gasta, porque também manda e-mail. O limite dura 24 horas a partir do envio, não vira à meia-noite (`vis_skill_fix_hierarchy_daily_limit`).
 
 > **Cache:** a aprovação limpa, no mesmo instante, o cache da tabela que a leitura do currículo usa. Desde 2026-10-08 isso vale também entre os processos locais (o leitor do bot e a API do vis), como já acontece em produção com o Memcache. Para ver o efeito de uma aprovação (1.19, 4.7), basta reprocessar o currículo.
 
@@ -158,10 +161,10 @@ O usuário será avisado por e-mail.
 - [ ] 6.6 Reabra o ⊕. Esperado: o **último pedido avaliado** desse termo e tipo (o do H2, "status: Avaliado", com **Nova sugestão**); clicando em Nova sugestão, dá para mandar o pedido corrigido. Sem histórico anterior, os campos viriam vazios, com **Enviar**.
 - [ ] 6.7 Operador envia o comando que tinha chegado. Esperado: "Não há itens pendentes de ajuste (add) na hierarquia de conhecimentos para o e-mail '<email>' e o termo 'ORMJAVA'".
 
-### Desistência repetida (desde 2026-10-11)
-- [ ] 6.8 Logo depois do 6.5, refaça o mesmo pedido (ORACLE em ORMJAVA) → "Sugestão enviada" (pedir de novo é permitido; chegam o e-mail e o aviso ao operador).
-- [ ] 6.9 Reabra o ⊕ → **Desistir da sugestão** → **Sim, desistir**. Esperado: **"Desistência não permitida — Você já desistiu de uma sugestão de associação com ORMJAVA há pouco. Não é possível desistir dela de novo dentro de uma hora: ela continua em análise."** (Network **429**). O pedido continua em `..._pending`; `vis_skill_fix_hierarchy_withdrawn` tem o registro (e-mail + termo + tipo). O bloqueio vence na virada da hora.
-- [ ] 6.10 O bloqueio é por termo **e** tipo: desistir de um pedido do 🗑 de ORMJAVA continua permitido.
+### Desistência repetida (sem bloqueio desde 2026-10-15)
+- [ ] 6.8 Logo depois do 6.5, libere o dia do candidato (item 5A da preparação) e refaça o mesmo pedido (ORACLE em ORMJAVA) → "Sugestão enviada" (pedir de novo é permitido; chegam o e-mail e o aviso ao operador).
+- [ ] 6.9 Reabra o ⊕ → **Desistir da sugestão** → **Sim, desistir**. Esperado: "Sugestão retirada — Sua sugestão não será mais analisada." (Network **200**); o pedido some de `..._pending`.
+  > Até 2026-10-15 a segunda desistência do mesmo termo e tipo dentro da hora recebia 429 ("Desistência não permitida"). O bloqueio foi removido: o limite de um pedido a cada 24 horas já limita os tickets.
 
 ### Operador avaliando quando o candidato desiste (desde 2026-10-11)
 - [ ] 6.11 Faça um pedido com **duas** habilidades em algum termo. Operador: envie o comando e responda `um a um` → "Item 1 de 2 ...".
@@ -226,6 +229,18 @@ O item não tem e-mail na chave. Para ver isso:
 
 ---
 
+## H12 — Um pedido por dia (desde 2026-10-15)
+
+> **Executado em 2026-10-15** só o 12.1 pela tela (o aviso aparece no modal ⊕). Do 12.2 ao 12.5 vale o teste `SkillFixHierarchyThroughSupportBotTest.onlyOneRequestPerDay`; pela tela, cada envio vai ao Telegram real.
+
+- [ ] 12.1 Libere o dia do candidato (item 5A da preparação). Clique no ⊕ de um conhecimento implícito sem pedido. Esperado: abaixo da justificativa, o aviso **"Atenção: você pode enviar apenas uma sugestão de ajuste de hierarquia de habilidades a cada 24 horas. Confira os dados antes de enviar."** O aviso não aparece quando o modal carrega um pedido já feito.
+- [ ] 12.2 Selecione uma habilidade, justificativa válida → **Enviar** → "Sugestão enviada". `jn_disposable_record?q=entity:vis_skill_fix_hierarchy_daily_limit` ganha um registro.
+- [ ] 12.3 **Sem liberar o dia**, abra o 🗑 de **outro** conhecimento, selecione uma habilidade e envie. Esperado: aviso vermelho **"Limite de 24 horas atingido — Você já enviou uma sugestão de ajuste de hierarquia de habilidades nas últimas 24 horas. É permitida apenas uma a cada 24 horas: tente novamente em 24 horas."**; Network `POST ...skills/hierarchy` → **429**; nada novo em `vis_skill_fix_hierarchy_pending`, nenhum e-mail, nada no Telegram; o modal continua aberto.
+- [ ] 12.4 O limite é por tipo de sugestão: com o dia de hierarquia gasto, uma sugestão de habilidade (roteiro 01) ainda é aceita, se o dia dela estiver livre.
+- [ ] 12.5 Libere o dia e repita o 12.3. Esperado: "Sugestão enviada".
+
+---
+
 ## Resumo do que este roteiro cobre
 
 | Regra | Cenário |
@@ -240,6 +255,7 @@ O item não tem e-mail na chave. Para ver isso:
 | Ignorar com confirmação, global (403 nos dois modais); `/allowCommandToUser <email>` | H7 |
 | `/pendingTickets`: entra, "1", "2", baixa avulsa | H8 |
 | Comando malformado; abandonar revisão; termo com espaço | H10, H11 |
+| Um pedido por dia (aviso no modal, 429; 403 e 409 antes do limite) | H12 |
 
 ## Observações da execução (2026-10-08)
 

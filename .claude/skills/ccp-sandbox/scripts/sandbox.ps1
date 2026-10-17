@@ -1,10 +1,10 @@
 ﻿# Sandbox de testes manuais: uma cópia congelada do ambiente local (Elasticsearch, API jn, API vis, leitor do bot de
 # suporte e front end), em portas próprias, para o usuário testar enquanto o código do workspace muda.
 #
-#   ES 9201 (transporte 9301) | jn 18080 | vis 18081 | front 3100 | bot de suporte próprio (token em sandbox-config.json)
+#   ES 9201 (transporte 9301) | jn 18080 | vis 18081 | js 18082 (login) | front 3100 | bot de suporte próprio (token em sandbox-config.json)
 #
 # Tudo fica em C:\jobsnow-sandbox. O código (classes + jars) e o front são copiados do workspace no momento do snapshot
-# e não mudam depois disso; os dados vêm de um snapshot só dos índices jn_*, jb_* e vis_* do ES de desenvolvimento.
+# e não mudam depois disso; os dados vêm de um snapshot só dos índices js_*, jn_*, jb_* e vis_* do ES de desenvolvimento.
 # Os processos são criados pelo WMI, fora da árvore da sessão do Claude, e continuam no ar depois que ela termina.
 #
 # Uso: sandbox.ps1 -Action start | stop | status | refresh-code | refresh-data
@@ -26,12 +26,13 @@ $SandboxEs = 'http://localhost:9201'
 $SnapshotRepoName = 'jobsnow_sandbox'
 $SnapshotRepoPath = 'C:\jn\snapshots\jobsnow-sandbox'
 $SnapshotName = 'sandbox'
-$CopiedIndices = 'jn_*,jb_*,vis_*'
+$CopiedIndices = 'js_*,jn_*,jb_*,vis_*'
 $FrontPort = 3100
 
 $Apps = @(
 	@{ Name = 'jn-api'; Module = 'jn_rest-api_spring_jobsnow_dependency-chooser'; Main = 'com.jn.rest.api.JnRestApiSpringStarter'; Port = 18080 },
 	@{ Name = 'vis-api'; Module = 'vis_rest-api_spring_jobsnow_dependency-chooser'; Main = 'com.vis.rest.api.VisRestApiSpringStarter'; Port = 18081 },
+	@{ Name = 'js-api'; Module = 'js_rest-api_spring_jobsnow_dependency-chooser'; Main = 'com.js.rest.api.JsRestApiSpringStarter'; Port = 18082 },
 	@{ Name = 'bot'; Module = 'jb_instant-messenger-listener_jobsnow_dependency-chooser'; Main = 'com.jb.instant.messenger.reader.JbInstantMessengerReaderStarter'; Port = 0 }
 )
 
@@ -177,8 +178,8 @@ function New-FrontSnapshot {
 		Where-Object { $_.FullName -notlike "$modules\*" }
 	foreach ($file in $files) {
 		$text = [IO.File]::ReadAllText($file.FullName)
-		if ($text -notmatch 'localhost:808[01]') { continue }
-		$changed = $text -replace 'localhost:8080', 'localhost:18080' -replace 'localhost:8081', 'localhost:18081'
+		if ($text -notmatch 'localhost:808[012]') { continue }
+		$changed = $text -replace 'localhost:8080', 'localhost:18080' -replace 'localhost:8081', 'localhost:18081' -replace 'localhost:8082', 'localhost:18082'
 		[IO.File]::WriteAllText($file.FullName, $changed, $utf8)
 	}
 }
@@ -307,6 +308,7 @@ function Show-Status {
 		@{ Name = 'Elasticsearch'; Up = (Test-Port 9201); Where = $SandboxEs },
 		@{ Name = 'API jn'; Up = (Test-Port 18080); Where = 'http://localhost:18080' },
 		@{ Name = 'API vis'; Up = (Test-Port 18081); Where = 'http://localhost:18081' },
+		@{ Name = 'API js (login)'; Up = (Test-Port 18082); Where = 'http://localhost:18082' },
 		@{ Name = 'Leitor do bot'; Up = ((Get-SandboxProcesses 'JbInstantMessengerReaderStarter').Count -gt 0); Where = 'bot de suporte do sandbox' },
 		@{ Name = 'Front end'; Up = (Test-Port $FrontPort); Where = "http://localhost:$FrontPort" }
 	)

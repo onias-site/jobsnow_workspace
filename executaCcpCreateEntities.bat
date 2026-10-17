@@ -7,7 +7,7 @@ rem e roda a classe com a pasta de trabalho em ccp_rest-api-tests_jobsnow, que e
 rem de onde ela le os scripts em documentation\<centro de custo>\...
 rem Os demais modulos entram pelos jars do ~/.m2: rode antes "mvn -o install -DskipTests"
 rem nos modulos alterados (ou o buildEmTodosOsProjetos.bat) para usar o codigo atual.
-rem Sem argumentos recria jn, vis e jb (nessa ordem). Para recriar so alguns, passe-os:
+rem Sem argumentos recria jn, js, vis e jb (nessa ordem). Para recriar so alguns, passe-os:
 rem   executaCcpCreateEntities.bat vis
 rem   executaCcpCreateEntities.bat jn vis
 rem (recriar o jn sem o vis apaga os modelos de mensagem que o vis semeia nos indices do jn)

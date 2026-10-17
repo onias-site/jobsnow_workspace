@@ -1,9 +1,9 @@
 ---
 name: ccp-subir-apis-e-recriar-entidades
-description: Sobe (ou reinicia) as APIs locais fora do Eclipse — jn na porta 8080 e vis na 8081 — e executa com.ccp.random.CcpCreateEntities.main (recriação dos índices do Elasticsearch local) pelo executaCcpCreateEntities.bat. Use quando pedirem "subir as APIs", "reiniciar as APIs e recriar as entidades", "rodar o CcpCreateEntities", "recriar os índices", ou quando o build do Eclipse estiver com problema e for preciso rodar o ambiente local por fora dele.
+description: Sobe (ou reinicia) as APIs locais fora do Eclipse — jn na porta 8080, vis na 8081 e js (login) na 8082 — e executa com.ccp.random.CcpCreateEntities.main (recriação dos índices do Elasticsearch local) pelo executaCcpCreateEntities.bat. Use quando pedirem "subir as APIs", "reiniciar as APIs e recriar as entidades", "rodar o CcpCreateEntities", "recriar os índices", ou quando o build do Eclipse estiver com problema e for preciso rodar o ambiente local por fora dele.
 ---
 
-# Subir as APIs 8080/8081 e executar o CcpCreateEntities
+# Subir as APIs 8080/8081/8082 e executar o CcpCreateEntities
 
 Tudo roda fora do Eclipse, com o classpath montado pelo Maven a partir dos jars do `~/.m2`.
 
@@ -11,8 +11,8 @@ Tudo roda fora do Eclipse, com o classpath montado pelo Maven a partir dos jars 
 
 Use a scratchpad da sessão como `<scratch>` para classpaths e logs.
 
-1. **Parar o que estiver nas portas 8080 e 8081.** Ache os PIDs com
-   `Get-NetTCPConnection -LocalPort 8080,8081 -State Listen` e pare com `Stop-Process -Force`.
+1. **Parar o que estiver nas portas 8080, 8081 e 8082.** Ache os PIDs com
+   `Get-NetTCPConnection -LocalPort 8080,8081,8082 -State Listen` e pare com `Stop-Process -Force`.
    Se o processo for `javaw.exe`, a API está rodando no Eclipse (talvez em debug). Avise o usuário
    antes de parar. Os avisos "failed" das tarefas em segundo plano que tinham subido as APIs
    antigas são esperados: vêm do processo que acabou de ser parado.
@@ -28,12 +28,13 @@ Use a scratchpad da sessão como `<scratch>` para classpaths e logs.
    ```
 
    Para o vis, use o mesmo comando com `vis_rest-api_spring_jobsnow_dependency-chooser`,
-   `vis-api-cp.txt`, `com.vis.rest.api.VisRestApiSpringStarter` e `vis-api.log`. Rode os dois
-   comandos na mesma resposta.
+   `vis-api-cp.txt`, `com.vis.rest.api.VisRestApiSpringStarter` e `vis-api.log`, e para o js (o login, desde
+   2026-10-17) com `js_rest-api_spring_jobsnow_dependency-chooser`, `js-api-cp.txt`,
+   `com.js.rest.api.JsRestApiSpringStarter` e `js-api.log`. Rode os três comandos na mesma resposta.
 
 3. **Conferir.** Aguarde alguns segundos (a compilação do Maven vem antes da subida). Depois peça
-   `http://localhost:8080/rota/inexistente` e `http://localhost:8081/rota/inexistente`: as duas
-   APIs no ar respondem **404**. Se alguma porta não abrir, leia o `<scratch>/*-api.log`.
+   `http://localhost:8080/rota/inexistente`, `http://localhost:8081/rota/inexistente` e
+   `http://localhost:8082/rota/inexistente`: as três APIs no ar respondem **404**. Se alguma porta não abrir, leia o `<scratch>/*-api.log`.
 
 4. **Executar o CcpCreateEntities** com o `.bat` da raiz, em segundo plano:
 
@@ -44,7 +45,7 @@ Use a scratchpad da sessão como `<scratch>` para classpaths e logs.
    Ele compila `ccp_rest-api-tests_jobsnow` (`mvn -o test-compile`), monta o classpath de teste
    num arquivo de argumentos do java (o classpath passa de 18 mil caracteres) e roda o `main` com a
    pasta de trabalho no projeto de testes. **Não há diálogo** (desde 2026-10-11): sem argumentos ele
-   recria jn, vis e jb, nessa ordem; para recriar só alguns, passe-os ao `.bat`
+   recria jn, js, vis e jb, nessa ordem; para recriar só alguns, passe-os ao `.bat`
    (`executaCcpCreateEntities.bat vis`). Recriar só o jn apaga os templates que o vis semeia em
    índices jn; para restaurá-los, inclua o vis. Quando terminar, leia o log e os arquivos de erro em `c:\logs\<centro de custo>\`
    (`mappingJnEntitiesErrors.json`, `insertResults.json`).

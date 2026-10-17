@@ -74,7 +74,7 @@ Depois de trocar os **usos**, a declaração do item no enum local segue esta re
   2. **descritores de validação** — heurística: *algum item do enum tem anotação*
      (`@CcpJsonFieldTypeX`, `@CcpJsonFieldValidatorRequired`, `@CcpJsonCopyFieldValidationsFrom`,
      `@CcpEntityFieldPrimaryKey`). São alcançados por `getJsonValidationClass()`,
-     `jsonValidation = X.class`, `classReferenceWithTheFields = X.class` ou `.values()`.
+     `jsonValidation = X.class`, `@CcpEntityFieldsValidator(X.class)` ou `.values()`.
      Remover apagaria regras de validação silenciosamente.
 - **REMOVE** nos demais (enums planos de nomes de campo) — e some com o enum se ficar vazio.
   **Antes de remover, confira se o projeto de testes referencia a constante**; se
@@ -109,7 +109,7 @@ mvn -o test -pl ccp_rest-api-tests_jobsnow
 ```
 
 Baseline esperado da suíte: **0 failures**; os erros restantes são pré-existentes e
-ficam todos em `com.jn.rest.api` (Connection refused na 8080) e `com.jn.services.login`.
+ficam todos em `com.jn.rest.api` (Connection refused na 8082, a API js do login) e `com.js.services.login`.
 Qualquer erro fora desses dois pacotes é regressão.
 
 Faça sempre backup antes de aplicar (`node scripts/backup.js`) — o repositório não é git.

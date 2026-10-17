@@ -72,8 +72,8 @@ Dois cuidados no parser, ambos necessários:
   entregaria `CcpJsonRepresentation` como se fosse supertipo.
 - **`@interface` é descartado** por lookbehind. Declaração de anotação não pertence ao grafo de
   herança, e sem o descarte uma anotação homônima rouba o `kind` e o arquivo do tipo real — foi
-  exatamente o que aconteceu com `JnEntityVersionable`, que existe como anotação **e** como
-  classe no mesmo módulo.
+  exatamente o que aconteceu com `JnEntityVersionable`, que até 2026-10-16 existia como anotação
+  **e** como classe no mesmo módulo (a anotação virou `@CcpEntityVersionable`, no ccp).
 
 Ao final o script confere, por conta própria, se algum nome do resultado é declarado em mais de
 um arquivo, e avisa quando encontra.

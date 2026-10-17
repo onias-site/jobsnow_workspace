@@ -65,13 +65,13 @@ async function readToken(email, since) {
     return '';
 }
 async function session(email) {
-    const login = await request(8080, 'POST', `/login/${email}`, { password: PASSWORD });
+    const login = await request(8082, 'POST', `/login/${email}`, { password: PASSWORD });
     if (login.status === 200 && login.body.sessionToken) return login.body.sessionToken;
     const since = Date.now();
-    const sent = await request(8080, 'POST', `/login/${email}/token/language/portuguese`);
+    const sent = await request(8082, 'POST', `/login/${email}/token/language/portuguese`);
     // 429: o token desta hora já foi enviado e continua valendo, então serve o último e-mail
     const token = await readToken(email, sent.status === 429 ? 0 : since);
-    const saved = await request(8080, 'POST', `/login/${email}/password`, { password: PASSWORD, confirmPassword: PASSWORD, token });
+    const saved = await request(8082, 'POST', `/login/${email}/password`, { password: PASSWORD, confirmPassword: PASSWORD, token });
     return saved.status === 200 && saved.body.sessionToken ? saved.body.sessionToken : '';
 }
 const auth = (email, token) => ({ sessionToken: token, email });

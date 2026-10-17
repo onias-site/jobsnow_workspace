@@ -123,6 +123,12 @@ call mvn clean install
 popd
 
 echo ######################
+echo Buildando o projeto: js_business_jobsnow
+pushd "%BASE%js_business_jobsnow"
+call mvn clean install
+popd
+
+echo ######################
 echo Buildando o projeto: jn_mensageria-consumer_gcp-pubsub-push-spring_dependency
 pushd "%BASE%jn_mensageria-consumer_gcp-pubsub-push-spring_dependency"
 call mvn clean install
@@ -137,6 +143,12 @@ popd
 echo ######################
 echo Buildando o projeto: jn_rest-api_spring_jobsnow_dependency-chooser
 pushd "%BASE%jn_rest-api_spring_jobsnow_dependency-chooser"
+call mvn clean install
+popd
+
+echo ######################
+echo Buildando o projeto: js_rest-api_spring_jobsnow_dependency-chooser
+pushd "%BASE%js_rest-api_spring_jobsnow_dependency-chooser"
 call mvn clean install
 popd
 

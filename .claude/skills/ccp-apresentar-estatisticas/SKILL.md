@@ -1,6 +1,6 @@
 ---
 name: ccp-apresentar-estatisticas
-description: Relatório por centro de custo (com.ccp, com.jn, com.jb, com.vis) com as classes e os métodos públicos do código de produção, o índice de métodos por classe (IMC), os testes JUnit (@Test) de cada pacote, o índice de testes por classe (ITC) e a fatia de cada pacote no total de métodos, de testes e de classes, mais a linha agregadora do módulo de testes, os @Ignore e os testes do front end à parte. Só lê o código-fonte, não compila nem roda nada. Use quando perguntarem "quantos testes temos", "tamanho da suíte", "quantos @Test", "quantos métodos públicos", "quantas classes por pacote", "proporção de testes por classe", ou antes/depois de uma campanha de testes para comparar.
+description: Relatório por centro de custo (com.ccp, com.js, com.jn, com.jb, com.vis) com as classes e os métodos públicos do código de produção, o índice de métodos por classe (IMC), os testes JUnit (@Test) de cada pacote, o índice de testes por classe (ITC) e a fatia de cada pacote no total de métodos, de testes e de classes, mais a linha agregadora do módulo de testes, os @Ignore e os testes do front end à parte. Só lê o código-fonte, não compila nem roda nada. Use quando perguntarem "quantos testes temos", "tamanho da suíte", "quantos @Test", "quantos métodos públicos", "quantas classes por pacote", "proporção de testes por classe", ou antes/depois de uma campanha de testes para comparar.
 ---
 
 # Classes, métodos públicos e testes por centro de custo

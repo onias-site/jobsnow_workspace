@@ -33,7 +33,7 @@ const STOP_ERROR_RATE = Number(process.env.STOP_ERROR_RATE || 0.05);
 const LOAD_DIR = process.env.CARGA || 'C:\\logs\\carga-profissionais2';
 const PASSWORD = 'Carga@2026Curriculo';
 const UA = 'carga-concorrente';
-const JN = 8080;
+const JS = 8082;
 const VIS = 8081;
 const JSTAT = 'C:\\Program Files\\Java\\jdk-17\\bin\\jstat.exe';
 const TOKEN_FILE = 'com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html';
@@ -57,7 +57,7 @@ function pidOfPort(port) {
     if (!listening) throw new Error(`nada escutando na porta ${port}`);
     return listening.trim().split(/\s+/).pop();
 }
-const samples = { [JN]: [], [VIS]: [] };
+const samples = { [JS]: [], [VIS]: [] };
 const monitors = [];
 function startMonitor(port) {
     const pid = pidOfPort(port);
@@ -106,7 +106,7 @@ function call(port, method, template, uri, body, headers = {}) {
         inFlight--;
         const ended = Date.now();
         const jvm = jvmAt(port, ended);
-        records.push({ level: currentLevel, phase: currentPhase, api: port === JN ? 'jn' : 'vis', endpoint: `${method} ${template}`, status, error,
+        records.push({ level: currentLevel, phase: currentPhase, api: port === JS ? 'js' : 'vis', endpoint: `${method} ${template}`, status, error,
             inBytes, outBytes: Buffer.byteLength(text || ''), concurrentAtStart, concurrentAtEnd: inFlight + 1, ms: ended - started,
             heapUsedMb: Math.round(jvm.usedMb), heapCapacityMb: Math.round(jvm.capacityMb), at: new Date(started).toISOString() });
         let json = {};
@@ -156,13 +156,13 @@ async function readToken(email, since) {
 // com sessão corrente o login dá 409: o token por e-mail + salvar a senha de novo derruba a outra sessão, como o modal faz
 async function login(item) {
     const email = item.email;
-    await call(JN, 'HEAD', '/login/{email}/token', `/login/${email}/token`);
-    const logged = await call(JN, 'POST', '/login/{email}', `/login/${email}`, { password: PASSWORD });
+    await call(JS, 'HEAD', '/login/{email}/token', `/login/${email}/token`);
+    const logged = await call(JS, 'POST', '/login/{email}', `/login/${email}`, { password: PASSWORD });
     if (logged.status === 200 && logged.body.sessionToken) { item.token = logged.body.sessionToken; return; }
     const since = Date.now();
-    const sent = await call(JN, 'POST', '/login/{email}/token/language/{language}', `/login/${email}/token/language/portuguese`, {});
+    const sent = await call(JS, 'POST', '/login/{email}/token/language/{language}', `/login/${email}/token/language/portuguese`, {});
     const token = await readToken(email, sent.status === 429 ? 0 : since);
-    const saved = await call(JN, 'POST', '/login/{email}/password', `/login/${email}/password`, { password: PASSWORD, confirmPassword: PASSWORD, token });
+    const saved = await call(JS, 'POST', '/login/{email}/password', `/login/${email}/password`, { password: PASSWORD, confirmPassword: PASSWORD, token });
     item.token = saved.status === 200 && saved.body.sessionToken ? saved.body.sessionToken : '';
 }
 const auth = (item) => ({ sessionToken: item.token, email: item.email });
@@ -284,7 +284,7 @@ async function resetFrom(dir, candidates) {
     progress(`reset: ${toFix.length} currículos fora da situação do backup (${toFix.filter((i) => i.resetMissing).length} ausentes)`);
     currentLevel = 0;
     currentPhase = 'reset';
-    agents = { [JN]: new http.Agent({ keepAlive: true, maxSockets: 10 }), [VIS]: new http.Agent({ keepAlive: true, maxSockets: 10 }) };
+    agents = { [JS]: new http.Agent({ keepAlive: true, maxSockets: 10 }), [VIS]: new http.Agent({ keepAlive: true, maxSockets: 10 }) };
     await pool(10, toFix, login);
     const logged = toFix.filter((item) => item.token);
     await awaitSessions('login do reset', logged);
@@ -294,7 +294,7 @@ async function resetFrom(dir, candidates) {
     const toToggle = logged.filter((item) => item.resetToggle);
     await pool(10, toToggle, (item) => call(VIS, 'DELETE', '/resume/{email}/language/{language}/status', `/resume/${item.email}/language/portuguese/status`, {}, auth(item)));
     await awaitWrites('situação do reset', toFix, async () => pending(await where()).length === 0);
-    await pool(10, logged, (item) => call(JN, 'DELETE', '/login/{email}/{sessionToken}', `/login/${item.email}/${item.token}`, {}, auth(item)));
+    await pool(10, logged, (item) => call(JS, 'DELETE', '/login/{email}/{sessionToken}', `/login/${item.email}/${item.token}`, {}, auth(item)));
     logged.forEach((item) => delete item.token);
     settles.length = 0;
     const left = pending(await where());
@@ -344,7 +344,7 @@ async function phase(name, threads, items, worker) {
 }
 async function runLevel(threads, items) {
     currentLevel = threads;
-    agents = { [JN]: new http.Agent({ keepAlive: true, maxSockets: threads }), [VIS]: new http.Agent({ keepAlive: true, maxSockets: threads }) };
+    agents = { [JS]: new http.Agent({ keepAlive: true, maxSockets: threads }), [VIS]: new http.Agent({ keepAlive: true, maxSockets: threads }) };
     const firstRecord = records.length;
     progress(`nível ${threads}: ${items.length} candidatos`);
 
@@ -371,7 +371,7 @@ async function runLevel(threads, items) {
     await awaitWrites('reinserir', reinserted, () => locationsAre(reinserted, () => 'A'));
     const withText = existing.filter((item) => item.resumeText.trim().length > 0);
     await phase('fromText', threads, withText, (item) => call(VIS, 'POST', '/skills/fromText', '/skills/fromText', { text: item.resumeText, excludedSkill: [] }, auth(item)));
-    await phase('logout', threads, logged, (item) => call(JN, 'DELETE', '/login/{email}/{sessionToken}', `/login/${item.email}/${item.token}`, {}, auth(item)));
+    await phase('logout', threads, logged, (item) => call(JS, 'DELETE', '/login/{email}/{sessionToken}', `/login/${item.email}/${item.token}`, {}, auth(item)));
 
     const levelRecords = records.slice(firstRecord);
     const errors = levelRecords.filter((r) => r.status === 0 || r.status >= 500).length;
@@ -447,7 +447,7 @@ if (process.env.RESET_FROM) {
 }
 await backup('vis_resume');
 await backup('vis_inactive_resume');
-startMonitor(JN);
+startMonitor(JS);
 startMonitor(VIS);
 await sleep(1500);
 
@@ -467,7 +467,7 @@ for (let i = 0; i < LEVELS.length; i++) {
 // o que não voltou é refeito um a um, com login novo
 if (failures.length) {
     currentLevel = 1;
-    agents = { [JN]: new http.Agent({ keepAlive: true, maxSockets: 1 }), [VIS]: new http.Agent({ keepAlive: true, maxSockets: 1 }) };
+    agents = { [JS]: new http.Agent({ keepAlive: true, maxSockets: 1 }), [VIS]: new http.Agent({ keepAlive: true, maxSockets: 1 }) };
     await phase('reparo', 1, failures, async (item) => {
         await login(item);
         if (item.token) await awaitSessions('login do reparo', [item]);

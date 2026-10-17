@@ -1,5 +1,5 @@
 #!/bin/bash
-# Conta, por centro de custo (pacote de 2º nível: com.ccp, com.jn, com.jb, com.vis), as classes e os métodos públicos do
+# Conta, por centro de custo (pacote de 2º nível: com.ccp, com.js, com.jn, com.jb, com.vis), as classes e os métodos públicos do
 # código de produção e os testes JUnit (@Test) que exercitam cada pacote, sem compilar nem rodar nada.
 # Saída: linhas "chave<TAB>valores" para a skill montar a tabela.
 cd /c/eclipse-workspaces/ccp || exit 1
@@ -45,9 +45,10 @@ while read -r n arquivo; do
     listaIgnorados+="$(basename "$arquivo" .java) ($n)  "
 done < <(grep -HE '^\s*@Ignore\b' "${TESTE[@]}" | cut -d: -f1 | sort | uniq -c)
 
-# uma linha por pacote: pacote, classes, métodos públicos, testes (ordenadas por classes)
+# uma linha por pacote: pacote, classes, métodos públicos, testes (ordenadas por classes); os centros de custo saem
+# sempre, mesmo zerados (um módulo só com package-info não declara tipo e sumiria do relatório)
 declare -A todos
-for p in "${!classes[@]}" "${!testes[@]}"; do todos[$p]=1; done
+for p in com.ccp com.js com.jn com.jb com.vis "${!classes[@]}" "${!testes[@]}"; do todos[$p]=1; done
 for p in "${!todos[@]}"; do
     printf 'pacote\t%s\t%s\t%s\t%s\n' "$p" "${classes[$p]:-0}" "${metodos[$p]:-0}" "${testes[$p]:-0}"
 done | sort -t$'\t' -k3 -nr

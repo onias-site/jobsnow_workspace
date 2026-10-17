@@ -14,7 +14,7 @@ const TOKEN_TEMPLATE = 'com.jn.business.messages.JnMessages$JnNotifyUserAboutLog
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function jn(method, uri, body) {
-    const response = await fetch(`http://localhost:8080${uri}`, {
+    const response = await fetch(`http://localhost:8082${uri}`, {
         method, headers: { 'Content-Type': 'application/json', 'User-Agent': userAgent }, body: JSON.stringify(body || {}),
     });
     const text = await response.text();

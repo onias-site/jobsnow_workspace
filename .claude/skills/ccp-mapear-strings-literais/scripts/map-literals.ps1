@@ -308,7 +308,7 @@ function Get-Reason($x) {
 $out = foreach ($x in $records) {
     $res = Get-Reason $x
     $cc = 'outro'
-    if ($x.File -match '^ccp_') { $cc = 'ccp' } elseif ($x.File -match '^jn_') { $cc = 'jn' } elseif ($x.File -match '^jb_') { $cc = 'jb' } elseif ($x.File -match '^vis_') { $cc = 'vis' }
+    if ($x.File -match '^ccp_') { $cc = 'ccp' } elseif ($x.File -match '^js_') { $cc = 'js' } elseif ($x.File -match '^jn_') { $cc = 'jn' } elseif ($x.File -match '^jb_') { $cc = 'jb' } elseif ($x.File -match '^vis_') { $cc = 'vis' }
     [pscustomobject]@{ File = $x.File; Line = $x.Line; Value = $x.Value; Reason = $res[0]; Sub = $res[1]; CC = $cc }
 }
 $out | Export-Csv -Path (Join-Path $OutDir 'final.csv') -NoTypeInformation -Encoding UTF8

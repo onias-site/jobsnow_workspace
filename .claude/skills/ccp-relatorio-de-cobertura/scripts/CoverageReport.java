@@ -21,7 +21,7 @@ import org.jacoco.core.tools.ExecFileLoader;
 /**
  * Coverage report in the layout of the EclEmma Coverage view: workspace > project > source folder > package >
  * file, with Coverage, Covered Instructions, Missed Instructions and Total Instructions. Reads one or more .exec
- * files and analyzes, for every Maven module of the workspace (only com.ccp, com.jn, com.jb and com.vis
+ * files and analyzes, for every Maven module of the workspace (only com.ccp, com.js, com.jn, com.jb and com.vis
  * classes), the bytecode that actually ran: the module's jar in the local Maven repository (what the tests JVM
  * loads), an explicit override (the API runs from a snapshot of its target/classes), or target/classes as the
  * last resort. JaCoCo matches classes by a checksum of the bytecode, and Eclipse rewrites target/classes with
@@ -83,7 +83,7 @@ public class CoverageReport {
 			Node sourceFolder = project.child("src/main/java");
 			for (IClassCoverage c : builder.getClasses()) {
 				String pkg = c.getPackageName().replace('/', '.');
-				boolean ownPackage = pkg.startsWith("com.ccp") || pkg.startsWith("com.jn") || pkg.startsWith("com.jb") || pkg.startsWith("com.vis");
+				boolean ownPackage = pkg.startsWith("com.ccp") || pkg.startsWith("com.js") || pkg.startsWith("com.jn") || pkg.startsWith("com.jb") || pkg.startsWith("com.vis");
 				if (!ownPackage) continue;
 				String file = c.getSourceFileName() == null ? c.getName().substring(c.getName().lastIndexOf('/') + 1) + ".class" : c.getSourceFileName();
 				// a Spring Boot jar carries its dependencies (ccp_commons and the like) in BOOT-INF/lib, and the

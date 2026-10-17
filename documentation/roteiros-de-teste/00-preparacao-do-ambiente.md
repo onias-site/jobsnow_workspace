@@ -32,7 +32,7 @@ As sugestões do candidato chegam ao operador **como uma mensagem do bot no Tele
 | # | O quê | Como | Como saber que subiu |
 |---|---|---|---|
 | 2.1 | Elasticsearch local | o serviço de sempre | `http://localhost:9200` responde um JSON com `"cluster_name"` |
-| 2.2 | API do **jn** (login) — porta 8080 | Eclipse: rodar `com.jn.rest.api.JnRestApiSpringStarter` | `http://localhost:8080/rota/inexistente` responde 404 |
+| 2.2 | API do **js** (login) — porta 8082 | Eclipse: rodar `com.js.rest.api.JsRestApiSpringStarter` do projeto `js_rest-api_spring_jobsnow_dependency-chooser` (até 2026-10-17 o login ficava na API do jn, porta 8080) | `http://localhost:8082/rota/inexistente` responde 404 |
 | 2.3 | API do **vis** (habilidades) — porta 8081 | Eclipse: rodar `com.vis.rest.api.VisRestApiSpringStarter` | `http://localhost:8081/rota/inexistente` responde 404 |
 | 2.4 | Leitor do bot de suporte (Telegram) | Eclipse: rodar `com.jb.instant.messenger.reader.JbInstantMessengerReaderStarter` do projeto `jb_instant-messenger-listener_jobsnow_dependency-chooser` (sem argumentos = bot `support`, lendo para sempre) | mande `/chatId` ao bot no Telegram: ele responde `751717896` |
 | 2.5 | Front end | em `jn_frontend_calistrato-react`: `npm run dev` | `http://localhost:3000` abre |

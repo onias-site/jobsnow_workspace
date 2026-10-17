@@ -1,5 +1,5 @@
 // Carga de currículos pelo endpoint de salvamento (POST /resume/{email}/language/portuguese na API vis 8081), com
-// sessão válida de cada candidato: cadastra (ou loga) o candidato pela API jn 8080, como o modal de login faz, e salva
+// sessão válida de cada candidato: cadastra (ou loga) o candidato pela API js 8082, como o modal de login faz, e salva
 // o currículo montado pelo formulário simulado. Grava um resultado por currículo e um arquivo só com as falhas.
 //
 // Uso: node 04-carga-de-curriculos.mjs <curriculos.jsonl> <pasta de saída> [trabalhadores=8] [reservados.txt]
@@ -16,7 +16,7 @@ const [, , inputFile, outputDir, workersArg, reservedFile] = process.argv;
 const WORKERS = Number(workersArg || 8);
 const PASSWORD = 'Carga@2026Curriculo';
 const TOKEN_TEMPLATE = 'com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html';
-const JN = { host: 'localhost', port: 8080 };
+const JS = { host: 'localhost', port: 8082 };
 const VIS = { host: 'localhost', port: 8081 };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -63,19 +63,19 @@ async function readToken(email, since) {
 
 // loga com a senha da carga; se o candidato ainda não existe, faz o cadastro completo do modal
 async function getSession(email) {
-    const login = await request(JN, 'POST', `/login/${email}`, { password: PASSWORD });
+    const login = await request(JS, 'POST', `/login/${email}`, { password: PASSWORD });
     if (ok(login) && login.body.sessionToken) return { sessionToken: login.body.sessionToken };
 
-    const confirm = await request(JN, 'POST', `/login/${email}/token`);
+    const confirm = await request(JS, 'POST', `/login/${email}/token`);
     if (!ok(confirm)) return { step: 'confirmar e-mail', response: confirm };
-    const answers = await request(JN, 'POST', `/login/${email}/pre-registration`, { channel: 'telegram', goal: 'recruiting' });
+    const answers = await request(JS, 'POST', `/login/${email}/pre-registration`, { channel: 'telegram', goal: 'recruiting' });
     if (!ok(answers)) return { step: 'pré-cadastro', response: answers };
     const since = Date.now();
-    const send = await request(JN, 'POST', `/login/${email}/token/language/portuguese`);
+    const send = await request(JS, 'POST', `/login/${email}/token/language/portuguese`);
     if (!ok(send)) return { step: 'envio do token', response: send };
     const token = await readToken(email, since);
     if (!token) return { step: 'leitura do token', response: { status: 0, body: { error: 'o e-mail do token não chegou' } } };
-    const saved = await request(JN, 'POST', `/login/${email}/password`, { password: PASSWORD, confirmPassword: PASSWORD, token });
+    const saved = await request(JS, 'POST', `/login/${email}/password`, { password: PASSWORD, confirmPassword: PASSWORD, token });
     if (!ok(saved) || !saved.body.sessionToken) return { step: 'senha', response: saved };
     return { sessionToken: saved.body.sessionToken };
 }

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**jobsnow** is a multi-module Java backend framework paired with a legacy React frontend. The backend is built around a custom decorator/DI pattern framework with Elasticsearch as the primary database. All 26 modules live together under a single aggregator `pom.xml` at the root and are managed as one Eclipse workspace (`C:\eclipse-workspaces\ccp`), each module being a separate Eclipse project.
+**jobsnow** is a multi-module Java backend framework paired with a legacy React frontend. The backend is built around a custom decorator/DI pattern framework with Elasticsearch as the primary database. All 28 modules live together under a single aggregator `pom.xml` at the root and are managed as one Eclipse workspace (`C:\eclipse-workspaces\ccp`), each module being a separate Eclipse project.
 
 ## Module Structure
 
@@ -32,16 +32,18 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 | 2 | `ccp_db-query_elasticsearch` | Elasticsearch query builder (depends on `ccp_json_gson`) |
 | 2 | `vis_business_jobsnow` | Visualization business logic (depends on `jn_business_jobsnow`) |
 | 2 | `jb_business_jobsnow` | BackOffice business logic and the bot engine (depends on `jn_business_jobsnow`; does not import vis) |
+| 2 | `js_business_jobsnow` | JobsNow System business logic: the login service and its entities (depends on `jn_business_jobsnow`; does not import vis or jb) |
 | 3 | `ccp_mocking_jobsnow` | Test mocks and DI wiring (depends on `ccp_db-query_elasticsearch`) |
 | 4 | `jb_instant-messenger-listener_jobsnow_dependency-chooser` | BackOffice bot listener (brings `vis_business_jobsnow` to the classpath: the bot runs the vis steps by class name) |
 | 4 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app (has own Spring parent) |
-| 4 | `jn_rest-api_spring_jobsnow_dependency-chooser` | jobsnow REST API / Spring Boot app |
-| 4 | `vis_rest-api_spring_jobsnow_dependency-chooser` | Visualization REST API / Spring Boot app |
+| 4 | `jn_rest-api_spring_jobsnow_dependency-chooser` | jobsnow REST API / Spring Boot app (asynchronous tasks, port 8080) |
+| 4 | `js_rest-api_spring_jobsnow_dependency-chooser` | JobsNow System REST API / Spring Boot app (login and its Swagger, port 8082) |
+| 4 | `vis_rest-api_spring_jobsnow_dependency-chooser` | Visualization REST API / Spring Boot app (port 8081) |
 | 5 | `ccp_rest-api-tests_jobsnow` | Integration/API test suite (depends on every module above) |
 
 ## Repository Layout
 
-This workspace is **not** a monorepo. Every module directory is its own git repository (27 of them, counting `jn_frontend_calistrato-react`, which is not a Maven module). Retired modules are kept as plain source under `ccp_rest-api-tests_jobsnow/documentation/` (the legacy frontend in `jn/frontend/legado`, `ccp_text-extractor_apache-tika` in `ccp/text-extractor_apache-tika`, with a git bundle of its history). Above them sits an umbrella repository for the workspace root itself:
+This workspace is **not** a monorepo. Every module directory is its own git repository (29 of them, counting `jn_frontend_calistrato-react`, which is not a Maven module). Retired modules are kept as plain source under `ccp_rest-api-tests_jobsnow/documentation/` (the legacy frontend in `jn/frontend/legado`, `ccp_text-extractor_apache-tika` in `ccp/text-extractor_apache-tika`, with a git bundle of its history). Above them sits an umbrella repository for the workspace root itself:
 
 - **`onias-site/jobsnow_workspace`** versions only what is shared by every project: the aggregator `pom.xml`, the `.bat` scripts, this `CLAUDE.md`, `.claude/` (slash commands and skills), `documentation/`, and the root-level notes.
 - Its `.gitignore` excludes **every directory at the root** through a single `/*/` rule, so a new module is left out automatically with no edit needed; only `.claude/` and `documentation/` are re-included. Eclipse's `.metadata/` (~300 MB of machine-specific state) and `.claude/settings.local.json` are excluded as well.
@@ -110,7 +112,7 @@ npm start          # Start Node.js server
 Tests extend template base classes (`JnTemplateDeTestes`, `VisTemplateDeTestes`, `BaseTest`) that:
 1. Bootstrap DI with real implementations
 2. Load Elasticsearch schema from documentation scripts
-3. Provide HTTP testing utilities (port 8080 assumed for local API)
+3. Provide HTTP testing utilities (local APIs: login on 8082, vis on 8081, jn on 8080)
 4. Log full request/response for debugging
 
 Business test class names follow English BDD-style conventions (e.g., `OnEnteringPasswordRegistrationScreen`, `PasswordLoginScreen`).
@@ -123,8 +125,8 @@ Legacy React + Redux stack (React 15–16, Webpack 2, Bootstrap 3). Deployed to 
 
 - The project is internationalizable: class, method, variable and field names, Javadoc, comments, OpenAPI texts and exception messages are written in English. Local variables get names that describe the value (`jsonWithInstantMessageType`, never `put10`). User-facing message templates are seeded per `JnLanguage` (Portuguese and English records side by side). Persisted field names, JSON keys and URL paths are contracts and are not renamed for translation purposes.
 - Field names in JSON are defined as enums and passed to `CcpJsonRepresentation` accessors — avoid bare string keys.
-- Cost centers follow a strict dependency order: **ccp → jn → vis/jb**. A `com.ccp` class must never import `com.jn`, `com.vis` or `com.jb`; a `com.jn` class must never import `com.vis` or `com.jb`. `ccp_rest-api-tests_jobsnow` is the only module exempt from the rule. Module prefix and root package always agree (`ccp_*` → `com.ccp`, `jn_*` → `com.jn`, and so on), so a class that would violate the rule belongs in a different module.
-- vis and jb do not import each other. A bot command belongs to the cost center of the data it works on: its steps are classes of that cost center, and its configuration (command, steps, names, texts) goes to the bot entities of jn (`JnEntityBotCommand*`) through `JnBotConfigurationSeeds`, returned by `getFirstRecordsToInsert` of one of its entities. The bot engine (jb) finds the commands of a bot by `botName` and runs each step by its class name, as `CcpMensageriaReceiver` runs a topic.
+- Cost centers follow a strict dependency order: **ccp → jn → vis/jb/js**. A `com.ccp` class must never import `com.jn`, `com.vis`, `com.jb` or `com.js`; a `com.jn` class must never import `com.vis`, `com.jb` or `com.js`. `ccp_rest-api-tests_jobsnow` is the only module exempt from the rule. Module prefix and root package always agree (`ccp_*` → `com.ccp`, `jn_*` → `com.jn`, and so on), so a class that would violate the rule belongs in a different module.
+- vis, jb and js do not import one another. A bot command belongs to the cost center of the data it works on: its steps are classes of that cost center, and its configuration (command, steps, names, texts) goes to the bot entities of jn (`JnEntityBotCommand*`) through `JnBotConfigurationSeeds`, returned by `getFirstRecordsToInsert` of one of its entities. The bot engine (jb) finds the commands of a bot by `botName` and runs each step by its class name, as `CcpMensageriaReceiver` runs a topic.
 - Java target version is **17** across all modules. JDK 17 must be registered in Eclipse (Window → Preferences → Java → Installed JREs) and selected as the project's JRE System Library.
 - JUnit 4 (not 5) is used throughout.
 - Two modules use `spring-boot-starter-parent` as their own parent (`ccp_rest-api-handler-exception_spring` and `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency`) — they are included in the aggregator but do not inherit from the root POM.
@@ -137,14 +139,16 @@ Named rules that govern how classes are written and how requests are interpreted
 ### Data entities
 
 - **Automatic Entity Id (AEI)** — every entity's id is calculated from the fields annotated with `@CcpEntityFieldPrimaryKey`.
-- **Entity Decorators (ED)** — any change of an entity's behavior on create, read, update, transfer, copy or delete is a decorator listed in `@CcpEntityCustomDecorators`.
-- **Disposable Entity (DSE)** — records discarded after some time: `@CcpEntityCustomDecorator(value = JnEntityDisposableBuilder.class, priority = 1)` plus `@JnEntityDisposable(value = JnDisposableEntity.class, timeOption = <CcpEntityExpurgableOptions>)`.
-- **Versionable Entity (VE)** — versioned records: `@CcpEntityCustomDecorator(value = JnEntityVersionableBuilder.class, priority = 2)` plus `@JnEntityVersionable(JnVersionableEntity.class)`, always together with the purge of the history: `@CcpEntityCustomDecorator(value = JnEntityVersionablePurgeBuilder.class, priority = 5)` plus `@JnEntityVersionablePurge(JnVersionablePurgeEntity.class)`.
+- **Entity Decorators (ED)** — any change of an entity's behavior on create, read, update, transfer, copy or delete is a decorator catalogued in `CcpEntityDecoratorTypes` (ccp), activated by an annotation of its own and positioned in the chain by the catalog. Every entity decorator lives in the ccp cost center; there are no decorators in jn, vis, jb or js. What a decorator needs from another cost center (an entity, an implementation class, a collaborator) is passed as a parameter of its annotation, as `@CcpEntityTwin` does with its bulk executor. No annotation is nested in another one, and an annotation with a single parameter names it `value`.
+- **Side Effect Annotation (SEA)** — a business or a message run before or after a write or a transfer is an annotation whose name reads as a sentence: `@Ccp[Before|After][Save|Insert|Update|Delete|DeleteAnyWhere]From[Main|Twin]Entity(execute = {...}, operationHandlers = {...})`, `@Ccp[Before|After][TransferData|CopyData]From[Main|Twin]Entity(targetEntity = ..., execute = {...}, transferHandlers = {...})` (repeatable, one per target), `@Ccp<write>SendAn[Email|Instant]Message...AndIfFails[ThrowAnError|SaveAWarning|LogTheError](<message classes>)` and `@Ccp<transfer>SendAn...(messageTemplate = ..., targetEntity = ...)` (repeatable). The message classes implement `CcpEntityMessageTemplate` (in the platform, `JnMessageTemplate`).
+- **Disposable Entity (DSE)** — records discarded after some time: `@CcpEntityDisposable(value = JnDisposableEntity.class, timeOption = <CcpEntityExpurgableOptions>)`.
+- **Versionable Entity (VE)** — versioned records: `@CcpEntityVersionable(JnVersionableEntity.class)`, always together with the purge of the history: `@CcpEntityVersionablePurge(JnVersionablePurgeEntity.class)`.
 - **Twin Entity (TWE)** — records with a mirror table that receives what is deleted from the main one: `@CcpEntityTwin(twinEntityName = <twin table>, bulkExecutorClass = JnExecuteBulkOperation.class, functionToDeleteKeysInTheCacheClass = JnDeleteKeysFromCache.class)`.
 - **Read Only Entity (ROE)** — read-only records: `@CcpEntityOlyReadable` (spelled that way); they change only through bulk operations.
 - **Cache Entity (CE)** — cacheable records: `@CcpEntityCache(<ttl in seconds>)`.
-- **Async Entity (AE)** — records whose writes run asynchronously: `@CcpEntityCustomDecorator(value = JnEntityAsyncWriterBuilder.class, priority = 8)` plus `@JnEntityAsyncWriter(JnAsyncWriterEntity.class)`.
-- **LGPD Fields Entity (LFE)** — records holding sensitive data (e-mail, password): `@CcpEntityFieldsTransformer(classReferenceWithTheFields = <transformer catalog>)` on the entity, or `@CcpEntityFieldTransformer(<subclass of CcpJsonTransformersDefaultEntityField>)` on the field.
+- **Async Entity (AE)** — records whose writes run asynchronously: `@CcpEntityAsyncWriter(JnAsyncWriterEntity.class)`.
+- **Grouped Entity (GE)** — records kept in the groups of their parents: `@CcpEntityGrouperChild(value = <parent entity>, beforeDecoratorClass = JnGrouperChildEntityBeforeWrite.class, afterDecoratorClass = JnGrouperChildEntityAfterWrite.class)`, with the list field of the parent ids annotated with `@CcpStoredParentIdsField(<combinations producer>)`.
+- **LGPD Fields Entity (LFE)** — records holding sensitive data (e-mail, password): `@CcpEntityFieldsTransformer(<transformer catalog>)` on the entity, or `@CcpEntityFieldTransformer(<subclass of CcpJsonTransformersDefaultEntityField>)` on the field.
 
 ### Reading and writing data
 
@@ -165,6 +169,6 @@ Named rules that govern how classes are written and how requests are interpreted
 - **Enum as Decisor (EAD)** — when a decision depends on an enum, the enum declares an abstract method for it and each item implements it, whenever possible.
 - **Decorator Everywhere (DEW)** — APIs for files, input streams, collections, e-mail, JSON, folders, hashes, numbers, passwords, properties files, reflection, strings, text, time, URLs or anything else demanding many operations sit behind a decorator in package `com.ccp.decorators`.
 - **Extracted Expressions (EE)** — nested expressions are extracted into local variables before use, in method arguments, `if` conditions, loops and `return`s: instead of `takesString(human.getEye(Sides.LEFT).getColor().toString());` write `Eye eye = human.getEye(Sides.LEFT); Color color = eye.getColor(); String colorText = color.toString(); takesString(colorText);`. Safety exceptions that stay inline (each one breaks the code when extracted): calls to generic methods whose type comes from the target, `new X<>()` with diamond, the right side of `&&`/`||`, ternary branches and loop headers that are re-evaluated on every turn. Fluent interface chains (`CcpQueryOptions`, `CcpGetEntityId` and the like) are not split into variables either: breaking them hurts readability instead of helping it.
-- **Literal Less (LL)** — string literals are replaced by an item of an enum nested in the same file that implements `CcpJsonFieldName`. When the text cannot be an identifier, the item overrides `getValue`: `"S/A"` becomes `enum Fields implements CcpJsonFieldName { S_A { public String getValue() { return "S/A"; } } }`. Before creating an item, check whether it already exists in a centralizer enum the module can reach (`CcpJsonCommonsFields`; for jn, jb and vis also `JnJsonCommonsFields` and `JnJsonInstantMessengerFields`; for vis also `VisJsonCommonsFields`; any centralizer created later counts too) and use that one instead. Annotation attributes (`@SuppressWarnings`, OpenAPI texts, `@RequestMapping` paths and the like) keep their literals: they require compile-time constants, which `getValue()` is not.
+- **Literal Less (LL)** — string literals are replaced by an item of an enum nested in the same file that implements `CcpJsonFieldName`. When the text cannot be an identifier, the item overrides `getValue`: `"S/A"` becomes `enum Fields implements CcpJsonFieldName { S_A { public String getValue() { return "S/A"; } } }`. Before creating an item, check whether it already exists in a centralizer enum the module can reach (`CcpJsonCommonsFields`; for jn, jb, vis and js also `JnJsonCommonsFields` and `JnJsonInstantMessengerFields`; for vis also `VisJsonCommonsFields`; any centralizer created later counts too) and use that one instead. Annotation attributes (`@SuppressWarnings`, OpenAPI texts, `@RequestMapping` paths and the like) keep their literals: they require compile-time constants, which `getValue()` is not.
 - **One Type per File (OTF)** — every type gets its own file. Only two kinds stay nested: exceptions used solely inside the declaring file, and enums implementing `CcpJsonFieldName` whose only logic is `getValue` overrides (no other fields or methods).
 - **Abstraction Technology Provider (ATP)** — a business module (`*_business_*`) depends only on `ccp_commons_jobsnow`, `aspectjtools` and other business modules.

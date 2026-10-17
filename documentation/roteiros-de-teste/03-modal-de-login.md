@@ -18,7 +18,7 @@
   4. **"Criando uma nova senha"** / **"Refazer sua senha"** / **"Atualize sua senha"** / **"Desbloqueie a sua senha"** / **"Desbloqueie seu login"** — a mesma tela (senha + confirmação + token), com títulos diferentes conforme o motivo;
   5. **"Informe a senha para o login '...'"** — quem já tem senha.
 - O token chega por e-mail. Localmente o e-mail vira arquivo: `C:\logs\email\com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html` (procure "esse token é XXXXXXXX"; o arquivo é sobrescrito a cada envio, confira a hora).
-- Os pedidos ao suporte (desbloqueio e reenvio do token) chegam como comando no arquivo `C:\logs\telegram\support-751717896.txt` (é o "Telegram" local da API jn).
+- Os pedidos ao suporte (desbloqueio e reenvio do token) chegam como comando no arquivo `C:\logs\telegram\support-751717896.txt` (é o "Telegram" local da API js).
 - **Lentidão (corrigida em 2026-10-09):** na execução, login, gravação de senha e verificação de e-mail levavam de 5 a 10 segundos. A causa era BCrypt (cerca de 250 ms por hash) feito à toa em toda leitura das entidades de senha e de token. Agora a verificação de e-mail leva cerca de 50 ms e as leituras transformam só a chave primária, então o login leva cerca de 0,7 s (antes, 1 a 2 s): o que sobra é a conferência da senha, que é um BCrypt por natureza.
 
 ## Dados
@@ -30,9 +30,9 @@
 
 ## Automação da API com candidatos intercalados
 
-`documentation/roteiros-de-teste/automacao/03-modal-de-login.mjs` faz pela API jn as mesmas chamadas do modal, alternando três candidatos novos a cada execução (A, B e C), e confere status, contador de tentativas, bloqueios, tokens e sessões. O papel do operador (`/solveLoginTokenTicket`) é feito por `automacao/SupportBotCommand.java`, que entrega o comando ao bot de suporte neste computador, sem Telegram (a resposta do bot vai para `C:\logs\telegram\support-751717896.txt` e o e-mail com o token novo para `C:\logs\email`).
+`documentation/roteiros-de-teste/automacao/03-modal-de-login.mjs` faz pela API js as mesmas chamadas do modal, alternando três candidatos novos a cada execução (A, B e C), e confere status, contador de tentativas, bloqueios, tokens e sessões. O papel do operador (`/solveLoginTokenTicket`) é feito por `automacao/SupportBotCommand.java`, que entrega o comando ao bot de suporte neste computador, sem Telegram (a resposta do bot vai para `C:\logs\telegram\support-751717896.txt` e o e-mail com o token novo para `C:\logs\email`).
 
-- Pré-requisitos: ES 9200, API jn 8080 reiniciada depois de recriar os índices, e um `executaCcpCreateEntities.bat` já executado (ele gera `ccp_rest-api-tests_jobsnow\target\create-entities-args.txt`, o classpath usado pelo `SupportBotCommand`).
+- Pré-requisitos: ES 9200, API js 8082 reiniciada depois de recriar os índices, e um `executaCcpCreateEntities.bat` já executado (ele gera `ccp_rest-api-tests_jobsnow\target\create-entities-args.txt`, o classpath usado pelo `SupportBotCommand`).
 - Rodar, na raiz do workspace: `node documentation/roteiros-de-teste/automacao/03-modal-de-login.mjs`. Sai com código 1 se alguma verificação falhar e lista as falhas no fim. Não precisa recriar índices entre execuções.
 - Comando do operador avulso (pasta `ccp_rest-api-tests_jobsnow`): `java @target/create-entities-args.txt ../documentation/roteiros-de-teste/automacao/SupportBotCommand.java /solveLoginTokenTicket unlockToken <email>`. No Git Bash, prefixe com `MSYS_NO_PATHCONV=1`, senão o `/solveLoginTokenTicket` vira um caminho de arquivo.
 
@@ -79,7 +79,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 ### Preferências
 - [ ] 1.9 Esperado: "Informe suas preferências e objetivos" com "Como você nos conheceu?" (padrão "Por alguém ou por anúncio no linkedin"; opções linkedin, "Grupos de vagas no telegram", "Indicação de amigos", "outros") e "Qual seu objetivo?" (padrão "Salários e Empregos"; ou "Ver currículos").
 - [ ] 1.10 Escolha "Grupos de vagas no telegram" e "Ver currículos" → **Enviar**. Network: `POST /pre-registration` → **202**.
-- [ ] 1.11 Conferir: `http://localhost:9200/jn_login_answers/_search?pretty` tem `"channel":"telegram","goal":"recruiting"`.
+- [ ] 1.11 Conferir: `http://localhost:9200/js_login_answers/_search?pretty` tem `"channel":"telegram","goal":"recruiting"`.
 
 ### Criação da senha
 - [ ] 1.12 Esperado: "Criando uma nova senha" com **Senha**, **Confirme a senha** e **Token recebido no e-mail '...'**. O token é pedido sozinho (`POST /token/language/portuguese` → **200**, ~5 s) e aparece "Seu token está sendo enviado ao e-mail '...' nos próximos minutos. Por favor, verifique sua caixa de entrada e sua caixa de spam / lixo eletrônico." Os links "Não recebeu ou perdeu o token? Clique aqui para reenviar" e "Clique aqui para trocar o e-mail" somem enquanto carrega e aparecem depois.

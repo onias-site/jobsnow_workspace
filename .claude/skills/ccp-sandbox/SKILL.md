@@ -1,18 +1,19 @@
 ---
 name: ccp-sandbox
-description: Sobe, para, atualiza ou mostra o estado do sandbox de testes manuais — uma cópia congelada do ambiente local (Elasticsearch 9201, API jn 18080, API vis 18081, front end 3100 e leitor de um bot de suporte próprio no Telegram) que não é afetada pelas alterações de código feitas no workspace. Use quando pedirem "suba o sandbox", "pare o sandbox", "atualize o código do sandbox", "copie os dados de novo para o sandbox", "o sandbox está no ar?", ou quando o usuário quiser continuar testando enquanto o código muda.
+description: Sobe, para, atualiza ou mostra o estado do sandbox de testes manuais — uma cópia congelada do ambiente local (Elasticsearch 9201, API jn 18080, API vis 18081, API js 18082, front end 3100 e leitor de um bot de suporte próprio no Telegram) que não é afetada pelas alterações de código feitas no workspace. Use quando pedirem "suba o sandbox", "pare o sandbox", "atualize o código do sandbox", "copie os dados de novo para o sandbox", "o sandbox está no ar?", ou quando o usuário quiser continuar testando enquanto o código muda.
 ---
 
 # Sandbox de testes manuais
 
 Tudo é feito pelo script `scripts/sandbox.ps1`, que fica ao lado deste arquivo. O sandbox mora em `C:\jobsnow-sandbox` e
-roda em paralelo ao ambiente de desenvolvimento (ES 9200, jn 8080, vis 8081, front 3000), sem disputar porta nem dado.
+roda em paralelo ao ambiente de desenvolvimento (ES 9200, jn 8080, vis 8081, js 8082, front 3000), sem disputar porta nem dado.
 
 | Peça | Sandbox | Desenvolvimento |
 |---|---|---|
 | Elasticsearch | `http://localhost:9201` (transporte 9301) | 9200 |
 | API jn | `http://localhost:18080` | 8080 |
 | API vis | `http://localhost:18081` | 8081 |
+| API js (login) | `http://localhost:18082` | 8082 |
 | Front end | `http://localhost:3100` | 3000 |
 | Bot de suporte | bot próprio (token em `C:\jobsnow-sandbox\sandbox-config.json`) | bot `support` do `application_properties` |
 
@@ -44,8 +45,8 @@ sessão**, até um `stop` ou até o computador reiniciar. Depois de reiniciar o 
   `mvn install` no workspace não muda nada no sandbox até um `refresh-code`. O snapshot usa os jars do `~/.m2` **como
   estão no momento** (o mesmo critério da skill `ccp-subir-apis-e-recriar-entidades`). Se houver módulo alterado e
   ainda não instalado, instale antes de tirar o snapshot.
-- **Front**: o código é copiado para `C:\jobsnow-sandbox\front`, com `localhost:8080`/`8081` trocados por
-  `18080`/`18081`. O `node_modules` **não é copiado**: é uma junção para o do workspace. Se uma alteração mexer nas
+- **Front**: o código é copiado para `C:\jobsnow-sandbox\front`, com `localhost:8080`/`8081`/`8082` trocados por
+  `18080`/`18081`/`18082`. O `node_modules` **não é copiado**: é uma junção para o do workspace. Se uma alteração mexer nas
   dependências do front (`npm install`), o sandbox passa a usar as novas.
 - **Dados**: o ES do sandbox tem pasta de dados própria (`C:\jobsnow-sandbox\es\data`). Só os índices `jn_*`, `jb_*`
   e `vis_*` são copiados, pelo repositório de snapshot `jobsnow_sandbox` (`C:\jn\snapshots\jobsnow-sandbox`). Recriar

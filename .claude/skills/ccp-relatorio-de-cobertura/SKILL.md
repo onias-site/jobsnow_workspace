@@ -5,7 +5,7 @@ description: Relatório de porcentagem de cobertura de código do workspace — 
 
 # Relatório de cobertura de código
 
-Mede quanto do bytecode de `com.ccp`, `com.jn`, `com.jb` e `com.vis` é executado pelos testes, e
+Mede quanto do bytecode de `com.ccp`, `com.js`, `com.jn`, `com.jb` e `com.vis` é executado pelos testes, e
 apresenta no mesmo formato da view **Coverage** do EclEmma: uma árvore expansível
 workspace › módulo › `src/main/java` › pacote › arquivo, com barra, porcentagem e as contagens de
 instruções cobertas, perdidas e totais.
@@ -13,7 +13,7 @@ instruções cobertas, perdidas e totais.
 ## Como funciona
 
 1. `mvn -o test -fn -pl ccp_rest-api-tests_jobsnow` com
-   `-DargLine=-javaagent:jacocoagent.jar=destfile=jacoco.exec,includes=com.ccp.*:com.jn.*:com.jb.*:com.vis.*`.
+   `-DargLine=-javaagent:jacocoagent.jar=destfile=jacoco.exec,includes=com.ccp.*:com.js.*:com.jn.*:com.jb.*:com.vis.*`.
    O `-fn` faz o Maven seguir mesmo com testes falhando — teste vermelho também gera cobertura.
 2. `CoverageReport.java` (motor `org.jacoco.core`) lê os `.exec` e analisa, para **cada** módulo do
    workspace, o bytecode que de fato rodou: o jar do módulo no `~/.m2` (é o que a JVM dos testes
@@ -66,7 +66,7 @@ instruções cobertas, perdidas e totais.
        depois da rodada);
      - os jars do `~/.m2` iguais ao código (`mvn -o install -DskipTests` no agregador; se falhar, por lock do
        Eclipse por exemplo, cancela);
-     - as APIs **jn (8080) e vis (8081)**, medidas pelo `coverage-report.ps1 -RestartApis`: uma API já rodando
+     - as APIs **jn (8080), vis (8081) e js (8082, o login)**, medidas pelo `coverage-report.ps1 -RestartApis`: uma API já rodando
        fora do Eclipse é parada, substituída pela medida e devolvida sem agente no fim. Uma API do Eclipse
        (`javaw`) nunca é parada: é usada, mas não medida.
      - Telegram, e-mail, cache e mensageria não precisam de nada no ar: nos testes são falsos ou locais.
@@ -93,7 +93,7 @@ Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já est
 | `-OutDir` | `%TEMP%\ccp-coverage` | onde ficam exec, html e tsv — **não pode ter espaço** (quebra o `-javaagent`) |
 | `-SkipRun` | desligado | não roda testes; só regera o relatório a partir do `jacoco.exec` existente (e do `jacoco-api.exec`, se houver), sem regravar no histórico uma rodada que já está lá |
 | `-NoApi` | desligado | não sobe as APIs jn e vis; os testes REST só passam se elas já estiverem no ar |
-| `-RestartApis` | desligado | troca uma API que já esteja na 8080/8081 fora do Eclipse por uma medida, e a devolve sem agente no fim |
+| `-RestartApis` | desligado | troca uma API que já esteja na 8080/8081/8082 fora do Eclipse por uma medida, e a devolve sem agente no fim |
 | `-IncludeTestModule` | desligado | inclui no relatório o próprio `ccp_rest-api-tests_jobsnow`, que por padrão fica de fora |
 | `-HistoryFile` | `<skill>\history\coverage-projects.tsv` | histórico dos totais por projeto usado no comparativo; `-` desliga o comparativo |
 
@@ -155,10 +155,11 @@ Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já est
 
 ## Restrições e armadilhas
 
-- **As APIs jn e vis são medidas junto, por padrão** (a vis desde 2026-10-10: as classes
-  `com.vis.rest.api.resume.validations.*` chamam a 8081). Para cada porta livre (8080, 8081), o script sobe
+- **As APIs jn, vis e js são medidas junto, por padrão** (a vis desde 2026-10-10: as classes
+  `com.vis.rest.api.resume.validations.*` chamam a 8081; a js desde 2026-10-17: os testes de login
+  `com.jn.rest.api.login.*` chamam a 8082). Para cada porta livre (8080, 8081, 8082), o script sobe
   a API (classpath via `dependency:build-classpath`, como na memória "Subir a API jn sem Eclipse") com um
-  agente em modo `tcpserver` (portas 6300 e 6301), roda a suíte, coleta os dados com `AgentDump.java`
+  agente em modo `tcpserver` (portas 6300, 6301 e 6302), roda a suíte, coleta os dados com `AgentDump.java`
   (o processo é derrubado à força e não gravaria nada ao sair), para as APIs e entrega todos os `.exec`
   (`jacoco-api-jn.exec`, `jacoco-api-vis.exec`) juntos ao `CoverageReport`. Porta ocupada: os testes usam
   a API que está lá, mas o código dela não é medido, e o script avisa. Com `-RestartApis` (usado pela

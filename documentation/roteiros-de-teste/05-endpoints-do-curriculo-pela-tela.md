@@ -1,6 +1,6 @@
 # Roteiro 05 — Endpoints do currículo pela tela (`VisRestApiResume`)
 
-**Pré-requisito:** [00-preparacao-do-ambiente.md](00-preparacao-do-ambiente.md) até o item 4 (Elasticsearch, APIs jn 8080 e vis 8081, front 3000 e login).
+**Pré-requisito:** [00-preparacao-do-ambiente.md](00-preparacao-do-ambiente.md) até o item 4 (Elasticsearch, APIs js 8082 e vis 8081, front 3000 e login).
 
 > **Criado e executado em 2026-10-15**, no Chrome, com 10 candidatos novos (`roteiro05.*.593167@teste.com`) e o helper `automacao/08-tela-curriculo-helper.js`, que preenche as abas e clica nos botões de verdade. Resultado na seção [Execução de 2026-10-15](#execução-de-2026-10-15), no fim. Cobre só os quatro endpoints do controller `VisRestApiResume`, sempre a partir de uma ação do candidato na tela "Ver meu currículo" (`http://localhost:3000/portuguese-version/como-estou-indo/ver-meu-curriculo`). A sugestão de habilidade e a sugestão de ajuste de hierarquia (outros controllers) ficam fora: estão nos roteiros 01 e 02. As chamadas de apoio da tela (`skills/fromText`, `companies/search/autocomplete`) aparecem só porque a tela precisa delas para montar o currículo.
 
@@ -28,7 +28,7 @@
 
 ## Massa
 
-Use candidatos novos, um por cenário, para que um cenário não dependa do anterior: `roteiro05.<cenário>.<hora>@teste.com`. Abra a sessão de cada um pelo modal de login (roteiro 03) ou pela API jn com o User-Agent do navegador, como faz `automacao/07-amostra-para-tela.mjs`, e ponha no `sessionStorage` (`login` = `{email, sessionToken}`).
+Use candidatos novos, um por cenário, para que um cenário não dependa do anterior: `roteiro05.<cenário>.<hora>@teste.com`. Abra a sessão de cada um pelo modal de login (roteiro 03) ou pela API js com o User-Agent do navegador, como faz `automacao/07-amostra-para-tela.mjs`, e ponha no `sessionStorage` (`login` = `{email, sessionToken}`).
 
 ---
 

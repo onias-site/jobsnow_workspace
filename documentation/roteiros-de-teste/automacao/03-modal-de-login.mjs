@@ -1,10 +1,10 @@
-// Automação do roteiro 03 (modal de login) contra a API jn local, com vários usuários intercalados.
+// Automação do roteiro 03 (modal de login) contra a API js local, com vários usuários intercalados.
 //
 // Faz pela API exatamente as chamadas que o modal faz, alternando três candidatos (A, B e C) a cada passo, para
 // provar que tentativas, bloqueios, tokens e sessões de um não vazam para o outro. O papel do operador do suporte
 // (/solveLoginTokenTicket) é feito pelo SupportBotCommand.java, sem Telegram.
 //
-// Pré-requisitos: ES 9200, API jn 8080 (reiniciada depois de recriar os índices) e um executaCcpCreateEntities.bat
+// Pré-requisitos: ES 9200, API js 8082 (reiniciada depois de recriar os índices) e um executaCcpCreateEntities.bat
 // já rodado (ele gera ccp_rest-api-tests_jobsnow/target/create-entities-args.txt, o classpath do SupportBotCommand).
 //
 // Uso: node documentation/roteiros-de-teste/automacao/03-modal-de-login.mjs
@@ -17,7 +17,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-const API = { host: 'localhost', port: Number(process.env.JN_PORT || 8080) };
+const API = { host: 'localhost', port: Number(process.env.JS_PORT || 8082) };
 const MAX_ATTEMPTS = 3;
 const TOKEN_EMAIL_FILE = 'C:\\logs\\email\\com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html';
 const SUPPORT_CHAT_FILE = 'C:\\logs\\telegram\\support-751717896.txt';
@@ -144,7 +144,7 @@ async function firstAccess(u, name) {
 }
 
 async function main() {
-    console.log(`API jn em ${API.host}:${API.port} — candidatos:`);
+    console.log(`API js em ${API.host}:${API.port} — candidatos:`);
     for (const [name, u] of Object.entries(users)) console.log(`  ${name} = ${u.email}`);
 
     section('L1 — primeiro acesso dos três, intercalado');

@@ -1,0 +1,58 @@
+2026-10-16T01:53:08.347Z 4134 candidatos da carga; níveis 10, 50, 100, 250, 500, 1000; parada com mais de 5% de erros
+2026-10-16T01:53:10.017Z reset: 49 currículos fora da situação do backup (0 ausentes)
+2026-10-16T01:53:30.638Z   nível 0 | espera da escrita assíncrona depois de login do reset: 4358 ms
+2026-10-16T01:53:51.069Z   nível 0 | espera da escrita assíncrona depois de situação do reset: 7596 ms
+2026-10-16T01:53:55.966Z reset: 49 de 49 devolvidos à situação do backup; 0 restantes
+2026-10-16T01:54:04.627Z 4134 candidatos da carga; níveis 10, 50, 100, 250, 500, 1000; parada com mais de 5% de erros
+2026-10-16T01:54:10.332Z backup de vis_resume: 3964 documentos em C:\logs\carga-concorrente\2026-10-15-async\backup-vis_resume.jsonl
+2026-10-16T01:54:10.673Z backup de vis_inactive_resume: 177 documentos em C:\logs\carga-concorrente\2026-10-15-async\backup-vis_inactive_resume.jsonl
+2026-10-16T01:54:10.817Z jstat da porta 8080 (pid 22884) iniciado
+2026-10-16T01:54:10.915Z jstat da porta 8081 (pid 13092) iniciado
+2026-10-16T01:54:12.419Z nível 10: 22 candidatos
+2026-10-16T01:54:16.335Z   nível 10 | login: 44 requisições em 3.9 s
+2026-10-16T01:54:18.495Z   nível 10 | espera da escrita assíncrona depois de login: 2159 ms
+2026-10-16T01:54:18.749Z   nível 10 | get: 22 requisições em 0.3 s
+2026-10-16T01:54:19.411Z   nível 10 | inativar: 22 requisições em 0.6 s
+2026-10-16T01:54:22.160Z   nível 10 | espera da escrita assíncrona depois de inativar: 2747 ms
+2026-10-16T01:54:23.338Z   nível 10 | reativar: 22 requisições em 1.2 s
+2026-10-16T01:54:26.129Z   nível 10 | espera da escrita assíncrona depois de reativar: 2789 ms
+2026-10-16T01:54:27.942Z   nível 10 | excluir: 22 requisições em 1.8 s
+2026-10-16T01:54:31.721Z   nível 10 | espera da escrita assíncrona depois de excluir: 3777 ms
+2026-10-16T01:54:33.876Z   nível 10 | reinserir: 22 requisições em 2.2 s
+2026-10-16T01:54:36.411Z   nível 10 | espera da escrita assíncrona depois de reinserir: 2534 ms
+2026-10-16T01:54:38.157Z   nível 10 | fromText: 22 requisições em 1.7 s
+2026-10-16T01:54:39.192Z   nível 10 | logout: 22 requisições em 1.0 s
+2026-10-16T01:54:39.193Z nível 10: 198 requisições, 0 erros (0.00%), 22 currículos no ciclo, 0 sem login
+2026-10-16T01:54:39.194Z nível 50: 108 candidatos
+2026-10-16T01:55:12.191Z   nível 50 | login: 216 requisições em 33.0 s
+2026-10-16T01:55:13.498Z   nível 50 | espera da escrita assíncrona depois de login: 1306 ms
+2026-10-16T01:55:15.607Z   nível 50 | get: 108 requisições em 2.1 s
+2026-10-16T01:55:23.590Z   nível 50 | inativar: 106 requisições em 7.9 s
+2026-10-16T01:55:34.055Z   nível 50 | espera da escrita assíncrona depois de inativar: 10465 ms
+2026-10-16T01:55:47.296Z   nível 50 | reativar: 106 requisições em 13.2 s
+2026-10-16T01:56:02.734Z   nível 50 | espera da escrita assíncrona depois de reativar: 15437 ms
+2026-10-16T01:56:24.842Z   nível 50 | excluir: 106 requisições em 22.1 s
+2026-10-16T01:56:40.001Z   nível 50 | espera da escrita assíncrona depois de excluir: 15158 ms
+2026-10-16T01:56:46.638Z   nível 50 | reinserir: 106 requisições em 6.6 s
+2026-10-16T01:56:54.774Z   nível 50 | espera da escrita assíncrona depois de reinserir: 8136 ms
+2026-10-16T01:57:00.074Z   nível 50 | fromText: 106 requisições em 5.3 s
+2026-10-16T01:57:03.162Z   nível 50 | logout: 108 requisições em 3.1 s
+2026-10-16T01:57:03.163Z nível 50: 962 requisições, 0 erros (0.00%), 106 currículos no ciclo, 0 sem login
+2026-10-16T01:57:03.165Z nível 100: 216 candidatos
+2026-10-16T01:58:01.371Z   nível 100 | login: 432 requisições em 58.2 s
+2026-10-16T01:58:06.085Z   nível 100 | espera da escrita assíncrona depois de login: 4714 ms
+2026-10-16T01:58:08.738Z   nível 100 | get: 216 requisições em 2.7 s
+2026-10-16T01:58:37.554Z   nível 100 | inativar: 215 requisições em 28.6 s
+2026-10-16T01:59:28.211Z   nível 100 | espera da escrita assíncrona depois de inativar: 50654 ms
+2026-10-16T02:00:38.219Z   nível 100 | reativar: 215 requisições em 70.0 s
+2026-10-16T02:00:53.078Z   nível 100 | espera da escrita assíncrona depois de reativar: 14858 ms
+2026-10-16T02:01:47.534Z   nível 100 | excluir: 215 requisições em 54.5 s
+2026-10-16T02:02:22.855Z   nível 100 | espera da escrita assíncrona depois de excluir: 35320 ms
+2026-10-16T02:02:39.848Z   nível 100 | reinserir: 215 requisições em 17.0 s
+2026-10-16T02:03:19.160Z   nível 100 | espera da escrita assíncrona depois de reinserir: 39311 ms
+2026-10-16T02:03:27.860Z   nível 100 | fromText: 215 requisições em 8.7 s
+2026-10-16T02:03:36.733Z   nível 100 | logout: 216 requisições em 8.9 s
+2026-10-16T02:03:36.734Z nível 100: 1939 requisições, 194 erros (10.01%), 215 currículos no ciclo, 0 sem login
+2026-10-16T02:03:36.738Z nível 100 passou de 5% de erros: os níveis seguintes não rodam (os currículos deles não foram tocados)
+2026-10-16T02:03:36.740Z reparo: 0 de 0 reinseridos; 0 em falhas.jsonl
+2026-10-16T02:03:36.875Z fim: 3099 requisições; relatório em C:\logs\carga-concorrente\2026-10-15-async\summary.md (parou no nível 100)

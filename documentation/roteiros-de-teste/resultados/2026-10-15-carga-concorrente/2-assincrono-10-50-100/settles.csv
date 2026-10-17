@@ -1,0 +1,16 @@
+level;phase;items;ms;converged
+10;login;22;2159;true
+10;inativar;22;2747;true
+10;reativar;22;2789;true
+10;excluir;22;3777;true
+10;reinserir;22;2534;true
+50;login;108;1306;true
+50;inativar;106;10465;true
+50;reativar;106;15437;true
+50;excluir;106;15158;true
+50;reinserir;106;8136;true
+100;login;216;4714;true
+100;inativar;215;50654;true
+100;reativar;215;14858;true
+100;excluir;215;35320;true
+100;reinserir;215;39311;true

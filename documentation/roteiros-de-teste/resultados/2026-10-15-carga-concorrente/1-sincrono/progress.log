@@ -1,0 +1,49 @@
+2026-10-16T00:01:47.684Z 4134 candidatos da carga; níveis 10, 50, 100, 250, 500, 1000; parada com mais de 5% de erros
+2026-10-16T00:01:51.228Z backup de vis_resume: 3964 documentos em C:\logs\carga-concorrente\2026-10-15-completa\backup-vis_resume.jsonl
+2026-10-16T00:01:51.470Z backup de vis_inactive_resume: 177 documentos em C:\logs\carga-concorrente\2026-10-15-completa\backup-vis_inactive_resume.jsonl
+2026-10-16T00:01:51.544Z jstat da porta 8080 (pid 24000) iniciado
+2026-10-16T00:01:51.611Z jstat da porta 8081 (pid 22108) iniciado
+2026-10-16T00:01:53.114Z nível 10: 22 candidatos
+2026-10-16T00:01:58.309Z   nível 10 | login: 44 requisições em 5.2 s
+2026-10-16T00:01:59.390Z   nível 10 | get: 22 requisições em 1.1 s
+2026-10-16T00:02:05.362Z   nível 10 | inativar: 22 requisições em 5.9 s
+2026-10-16T00:02:10.674Z   nível 10 | reativar: 22 requisições em 5.3 s
+2026-10-16T00:02:14.855Z   nível 10 | excluir: 22 requisições em 4.2 s
+2026-10-16T00:02:19.805Z   nível 10 | reinserir: 22 requisições em 4.9 s
+2026-10-16T00:02:20.239Z   nível 10 | fromText: 22 requisições em 0.4 s
+2026-10-16T00:02:21.446Z   nível 10 | logout: 22 requisições em 1.2 s
+2026-10-16T00:02:21.447Z nível 10: 198 requisições, 0 erros (0.00%), 22 currículos no ciclo, 0 sem login
+2026-10-16T00:02:21.448Z nível 50: 108 candidatos
+2026-10-16T00:02:41.728Z   nível 50 | login: 216 requisições em 20.3 s
+2026-10-16T00:02:43.651Z   nível 50 | get: 108 requisições em 1.9 s
+2026-10-16T00:03:09.820Z   nível 50 | inativar: 106 requisições em 26.2 s
+2026-10-16T00:03:32.378Z   nível 50 | reativar: 106 requisições em 22.6 s
+2026-10-16T00:03:47.410Z   nível 50 | excluir: 106 requisições em 15.0 s
+2026-10-16T00:04:08.499Z   nível 50 | reinserir: 106 requisições em 21.1 s
+2026-10-16T00:04:10.539Z   nível 50 | fromText: 106 requisições em 2.0 s
+2026-10-16T00:04:12.622Z   nível 50 | logout: 108 requisições em 2.1 s
+2026-10-16T00:04:12.623Z nível 50: 962 requisições, 0 erros (0.00%), 106 currículos no ciclo, 0 sem login
+2026-10-16T00:04:12.624Z nível 100: 216 candidatos
+2026-10-16T00:04:51.872Z   nível 100 | login: 432 requisições em 39.2 s
+2026-10-16T00:04:54.730Z   nível 100 | get: 216 requisições em 2.9 s
+2026-10-16T00:06:51.819Z   nível 100 | inativar: 215 requisições em 117.1 s
+2026-10-16T00:08:48.442Z   nível 100 | reativar: 215 requisições em 116.6 s
+2026-10-16T00:09:53.268Z   nível 100 | excluir: 215 requisições em 64.8 s
+2026-10-16T00:11:20.230Z   nível 100 | reinserir: 215 requisições em 87.0 s
+2026-10-16T00:11:26.186Z   nível 100 | fromText: 215 requisições em 6.0 s
+2026-10-16T00:11:29.758Z   nível 100 | logout: 216 requisições em 3.6 s
+2026-10-16T00:11:29.759Z nível 100: 1939 requisições, 0 erros (0.00%), 215 currículos no ciclo, 0 sem login
+2026-10-16T00:11:29.761Z nível 250: 541 candidatos
+2026-10-16T00:13:19.342Z   nível 250 | login: 1308 requisições em 109.6 s
+2026-10-16T00:13:24.232Z   nível 250 | get: 457 requisições em 4.9 s
+2026-10-16T00:15:42.358Z   nível 250 | inativar: 455 requisições em 138.1 s
+2026-10-16T00:17:53.521Z   nível 250 | reativar: 455 requisições em 131.2 s
+2026-10-16T00:19:10.610Z   nível 250 | excluir: 455 requisições em 77.1 s
+2026-10-16T00:21:11.385Z   nível 250 | reinserir: 497 requisições em 120.8 s
+2026-10-16T00:21:16.280Z   nível 250 | fromText: 358 requisições em 4.9 s
+2026-10-16T00:21:24.186Z   nível 250 | logout: 457 requisições em 7.9 s
+2026-10-16T00:21:24.190Z nível 250: 4442 requisições, 550 erros (12.38%), 455 currículos no ciclo, 84 sem login
+2026-10-16T00:21:24.191Z nível 250 passou de 5% de erros: os níveis seguintes não rodam (os currículos deles não foram tocados)
+2026-10-16T00:21:42.275Z   nível 1 | reparo: 18 requisições em 18.1 s
+2026-10-16T00:21:42.276Z reparo: 6 de 6 reinseridos; 0 em falhas.jsonl
+2026-10-16T00:21:42.389Z fim: 7559 requisições; relatório em C:\logs\carga-concorrente\2026-10-15-completa\summary.md (parou no nível 250)

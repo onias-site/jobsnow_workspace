@@ -1,0 +1,26 @@
+2026-10-16T02:04:08.192Z 541 candidatos da carga; níveis 250; parada com mais de 100% de erros
+2026-10-16T02:04:09.781Z reset: 14 currículos fora da situação do backup (0 ausentes)
+2026-10-16T02:04:13.124Z   nível 0 | espera da escrita assíncrona depois de login do reset: 1601 ms
+2026-10-16T02:04:20.195Z   nível 0 | espera da escrita assíncrona depois de situação do reset: 4513 ms
+2026-10-16T02:04:22.388Z reset: 14 de 14 devolvidos à situação do backup; 0 restantes
+2026-10-16T02:04:26.313Z backup de vis_resume: 3964 documentos em C:\logs\carga-concorrente\2026-10-15-async-250\backup-vis_resume.jsonl
+2026-10-16T02:04:26.508Z backup de vis_inactive_resume: 177 documentos em C:\logs\carga-concorrente\2026-10-15-async-250\backup-vis_inactive_resume.jsonl
+2026-10-16T02:04:26.595Z jstat da porta 8080 (pid 22884) iniciado
+2026-10-16T02:04:26.670Z jstat da porta 8081 (pid 13092) iniciado
+2026-10-16T02:04:28.173Z nível 250: 541 candidatos
+2026-10-16T02:06:04.743Z   nível 250 | login: 1198 requisições em 96.6 s
+2026-10-16T02:06:15.885Z   nível 250 | espera da escrita assíncrona depois de login: 11141 ms
+2026-10-16T02:06:21.234Z   nível 250 | get: 541 requisições em 5.3 s
+2026-10-16T02:06:34.448Z   nível 250 | inativar: 538 requisições em 13.0 s
+2026-10-16T02:06:43.809Z   nível 250 | espera da escrita assíncrona depois de inativar: 9360 ms
+2026-10-16T02:09:26.588Z   nível 250 | reativar: 538 requisições em 162.8 s
+2026-10-16T02:12:26.797Z   nível 250 | espera da escrita assíncrona depois de reativar: 180208 ms (não convergiu em 180 s)
+2026-10-16T02:13:30.361Z   nível 250 | excluir: 538 requisições em 63.6 s
+2026-10-16T02:14:01.998Z   nível 250 | espera da escrita assíncrona depois de excluir: 31636 ms
+2026-10-16T02:14:58.320Z   nível 250 | reinserir: 538 requisições em 56.3 s
+2026-10-16T02:15:49.986Z   nível 250 | espera da escrita assíncrona depois de reinserir: 51664 ms
+2026-10-16T02:16:02.981Z   nível 250 | fromText: 500 requisições em 13.0 s
+2026-10-16T02:16:16.441Z   nível 250 | logout: 541 requisições em 13.5 s
+2026-10-16T02:16:16.443Z nível 250: 4932 requisições, 96 erros (1.95%), 538 currículos no ciclo, 0 sem login
+2026-10-16T02:16:16.444Z reparo: 0 de 0 reinseridos; 0 em falhas.jsonl
+2026-10-16T02:16:16.587Z fim: 4932 requisições; relatório em C:\logs\carga-concorrente\2026-10-15-async-250\summary.md

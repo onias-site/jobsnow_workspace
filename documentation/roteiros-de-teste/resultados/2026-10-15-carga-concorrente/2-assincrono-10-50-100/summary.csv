@@ -1,0 +1,25 @@
+level;endpoint;api;requests;errors;statuses;errorCodes;avgInBytes;maxInBytes;avgOutBytes;maxOutBytes;avgConcurrent;maxConcurrent;p50Ms;p95Ms;maxMs;heapMinMb;heapAvgMb;heapMaxMb;heapCapacityMb
+10;DELETE /login/{email}/{sessionToken};jn;22;0;200;;2;2;0;0;8;10;143;213;1034;62;150;154;292
+10;DELETE /resume/{email}/language/{language};vis;22;0;200;;2;2;37;43;8;10;654;802;812;100;274;408;736
+10;DELETE /resume/{email}/language/{language}/status;vis;44;0;200;;2;2;37;43;8;10;299;546;637;93;224;471;736
+10;GET /resume/{email};vis;22;0;200;;0;0;2006;7154;8;10;97;145;170;93;93;93;736
+10;HEAD /login/{email}/token;jn;22;0;200;;0;0;0;0;8;10;77;108;109;42;114;190;292
+10;POST /login/{email};jn;22;0;200;;34;34;193;199;10;10;1355;1954;2083;42;119;190;292
+10;POST /resume/{email}/language/{language};vis;22;0;200;;1935;6998;1999;7146;8;10;525;1312;1871;165;355;471;736
+10;POST /skills/fromText;vis;22;0;200;;1949;4030;1282;6135;8;10;511;1278;1537;145;317;397;736
+50;DELETE /login/{email}/{sessionToken};jn;108;0;200;;2;2;0;0;39;50;1056;2412;2882;51;111;171;292
+50;DELETE /resume/{email}/language/{language};vis;106;0;200;;2;2;36;53;38;50;5525;13466;21224;126;474;750;1280
+50;DELETE /resume/{email}/language/{language}/status;vis;212;0;200;;2;2;36;53;38;50;1415;5161;7941;112;370;646;1064
+50;GET /resume/{email};vis;108;0;200;;0;0;3553;14047;39;50;880;1775;2031;104;249;470;736
+50;HEAD /login/{email}/token;jn;108;0;200;;0;0;0;0;39;50;666;6708;9320;50;120;206;292
+50;POST /login/{email};jn;108;0;200;;34;34;192;209;50;50;8585;15091;16671;47;140;206;292
+50;POST /resume/{email}/language/{language};vis;106;0;200;;3556;14015;3612;14033;38;50;2468;4225;5104;75;377;649;1280
+50;POST /skills/fromText;vis;106;0;200;;4159;12673;2929;13431;38;50;1963;4131;4900;280;599;831;1280
+100;DELETE /login/{email}/{sessionToken};jn;216;61;0 200;ECONNREFUSED:61;2;2;0;0;77;100;641;8138;8828;75;158;219;292
+100;DELETE /resume/{email}/language/{language};vis;215;0;200;;2;2;35;49;77;100;11628;34276;54449;329;706;1347;1832
+100;DELETE /resume/{email}/language/{language}/status;vis;430;0;200;;2;2;35;49;77;100;3185;15464;63429;125;656;1286;1832
+100;GET /resume/{email};vis;216;0;200;;0;0;5069;22389;77;100;973;2231;2453;368;540;814;1280
+100;HEAD /login/{email}/token;jn;216;0;200;;0;0;0;0;77;100;1609;9160;12684;58;123;214;292
+100;POST /login/{email};jn;216;0;200;;34;34;191;205;100;100;19034;27892;28960;62;130;218;292
+100;POST /resume/{email}/language/{language};vis;215;0;200;;5047;22365;5085;22383;77;100;4243;8295;12231;353;826;1357;1832
+100;POST /skills/fromText;vis;215;133;0 200;ECONNREFUSED:133;5037;21603;1874;23202;77;100;119;8117;8611;369;1152;1401;1832

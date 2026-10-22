@@ -14,6 +14,9 @@ function Get-TextHash([string]$text) {
 }
 
 function Get-CodeFingerprint([string]$Root) {
+	# o git escreve avisos no stderr (ex.: "LF will be replaced by CRLF"); sob o Stop do chamador, o PowerShell 5.1 os
+	# transforma em erro terminante mesmo com 2>$null
+	$ErrorActionPreference = 'Continue'
 	$lines = New-Object System.Collections.Generic.List[string]
 	$modules = Get-ChildItem $Root -Directory | Where-Object { (Test-Path (Join-Path $_.FullName 'pom.xml')) -and (Test-Path (Join-Path $_.FullName '.git')) } | Sort-Object Name
 	foreach ($module in $modules) {

@@ -23,9 +23,15 @@ Use a scratchpad da sessão como `<scratch>` para classpaths e logs.
    ```bash
    cd /c/eclipse-workspaces/ccp/jn_rest-api_spring_jobsnow_dependency-chooser \
      && mvn -o -q compile dependency:build-classpath -Dmdep.outputFile=<scratch>/jn-api-cp.txt \
-     && "C:/Program Files/Java/jdk-17/bin/java" -cp "target/classes;$(cat <scratch>/jn-api-cp.txt)" \
+     && "C:/Program Files/Java/jdk-17/bin/java" -Dspring.devtools.restart.enabled=false \
+        -cp "target/classes;$(cat <scratch>/jn-api-cp.txt)" \
         com.jn.rest.api.JnRestApiSpringStarter > <scratch>/jn-api.log 2>&1
    ```
+
+   O `-Dspring.devtools.restart.enabled=false` é obrigatório: sem ele o spring-devtools reinicia a API
+   quando outro build mexe no classpath (por exemplo, `mvn test-compile` no projeto de testes), e no
+   reinício jn e vis quebram com `Illegal factory instance for factory method 'emailFilter'` e a porta
+   fecha (visto em 2026-10-21).
 
    Para o vis, use o mesmo comando com `vis_rest-api_spring_jobsnow_dependency-chooser`,
    `vis-api-cp.txt`, `com.vis.rest.api.VisRestApiSpringStarter` e `vis-api.log`, e para o js (o login, desde

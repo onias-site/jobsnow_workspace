@@ -1,17 +1,16 @@
 ---
 name: ccp-sandbox
-description: Sobe, para, atualiza ou mostra o estado do sandbox de testes manuais — uma cópia congelada do ambiente local (Elasticsearch 9201, API jn 18080, API vis 18081, API js 18082, front end 3100 e leitor de um bot de suporte próprio no Telegram) que não é afetada pelas alterações de código feitas no workspace. Use quando pedirem "suba o sandbox", "pare o sandbox", "atualize o código do sandbox", "copie os dados de novo para o sandbox", "o sandbox está no ar?", ou quando o usuário quiser continuar testando enquanto o código muda.
+description: Sobe, para, atualiza ou mostra o estado do sandbox de testes manuais — uma cópia congelada do ambiente local (Elasticsearch 9201, API vis 18081, API js 18082, front end 3100 e leitor de um bot de suporte próprio no Telegram) que não é afetada pelas alterações de código feitas no workspace. Use quando pedirem "suba o sandbox", "pare o sandbox", "atualize o código do sandbox", "copie os dados de novo para o sandbox", "o sandbox está no ar?", ou quando o usuário quiser continuar testando enquanto o código muda.
 ---
 
 # Sandbox de testes manuais
 
 Tudo é feito pelo script `scripts/sandbox.ps1`, que fica ao lado deste arquivo. O sandbox mora em `C:\jobsnow-sandbox` e
-roda em paralelo ao ambiente de desenvolvimento (ES 9200, jn 8080, vis 8081, js 8082, front 3000), sem disputar porta nem dado.
+roda em paralelo ao ambiente de desenvolvimento (ES 9200, vis 8081, js 8082, front 3000), sem disputar porta nem dado.
 
 | Peça | Sandbox | Desenvolvimento |
 |---|---|---|
 | Elasticsearch | `http://localhost:9201` (transporte 9301) | 9200 |
-| API jn | `http://localhost:18080` | 8080 |
 | API vis | `http://localhost:18081` | 8081 |
 | API js (login) | `http://localhost:18082` | 8082 |
 | Front end | `http://localhost:3100` | 3000 |
@@ -34,7 +33,7 @@ Rode o script com o PowerShell, em segundo plano (a primeira subida leva alguns 
 | "copie os dados de novo" | `refresh-data` | Apaga os índices `jn_*`, `jb_*` e `vis_*` do sandbox e restaura um snapshot novo do ES 9200. Também reinicia as APIs, que têm cache em memória. |
 
 Depois, leia o log e informe ao usuário a tabela de estado que o script imprime no fim. Se alguma peça não subir, leia
-`C:\jobsnow-sandbox\logs\<peça>.log` (`es`, `jn-api`, `vis-api`, `bot`, `front`).
+`C:\jobsnow-sandbox\logs\<peça>.log` (`es`, `vis-api`, `js-api`, `bot`, `front`).
 
 Os processos são criados pelo WMI, fora da sessão do Claude: **continuam no ar depois de um `/clear` ou do fim da
 sessão**, até um `stop` ou até o computador reiniciar. Depois de reiniciar o computador, basta um `start`.

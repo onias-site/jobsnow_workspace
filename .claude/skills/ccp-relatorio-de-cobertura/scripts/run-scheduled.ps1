@@ -5,7 +5,7 @@
 #   1. Elasticsearch local (localhost:9200): sobe o $ElasticHome\bin\elasticsearch.bat se estiver parado;
 #   2. os jars do ~/.m2 iguais ao código (mvn install do agregador): os testes carregam os jars, e a cobertura compara
 #      com eles; um módulo alterado e não instalado seria medido errado ou ficaria de fora;
-#   3. as APIs jn (8080), vis (8081) e js (8082), medidas: coverage-report.ps1 -RestartApis sobe as três com o agente JaCoCo e,
+#   3. as APIs vis (8081) e js (8082), medidas: coverage-report.ps1 -RestartApis sobe as duas com o agente JaCoCo e,
 #      se já havia uma rodando fora do Eclipse, a devolve sem agente no fim (uma API do Eclipse nunca é parada).
 # Telegram, e-mail, cache e mensageria não precisam de nada no ar: nos testes são falsos ou locais.
 # Grava um log por execução em <OutDir>\scheduled-logs. Não publica o Artifact: isso continua sendo feito pelo Claude.
@@ -65,7 +65,7 @@ if ($mvnExit -ne 0) {
 	exit 1
 }
 
-# 4. suíte inteira com cobertura, APIs jn e vis medidas
+# 4. suíte inteira com cobertura, APIs vis e js medidas
 Write-Log 'Rodando coverage-report.ps1 -RestartApis'
 $exit = 0
 try {

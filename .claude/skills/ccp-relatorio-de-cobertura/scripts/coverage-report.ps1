@@ -14,15 +14,14 @@ param(
 	[string]$HistoryFile = (Join-Path (Split-Path $PSScriptRoot -Parent) 'history\coverage-projects.tsv')
 )
 
-# Coverage report of the workspace: starts the jn API (port 8080), the vis API (port 8081) and the js API (port 8082), each with a JaCoCo agent
+# Coverage report of the workspace: starts the vis API (port 8081) and the js API (port 8082), each with a JaCoCo agent
 # in tcpserver mode, runs the tests of $Module with another agent attached to the Surefire JVM, dumps the APIs' data,
 # stops the APIs, and then analyzes all the .exec files together against the bytecode of every module. Writes
 # coverage-report.html (collapsible, EclEmma layout) and coverage.tsv (one line per file) into $OutDir.
 
 # the APIs the suite calls: com.jn.rest.api.login.* (the login, since 2026-10-17 in the js API) uses 8082,
-# com.vis.rest.api.* (resume validations) uses 8081 and the jn API (asynchronous tasks) stays on 8080
+# com.vis.rest.api.* (resume validations) uses 8081; the jn API (port 8080) was removed on 2026-10-22
 $apis = @(
-	[pscustomobject]@{ Name = 'jn';  Module = 'jn_rest-api_spring_jobsnow_dependency-chooser';  Main = 'com.jn.rest.api.JnRestApiSpringStarter';   Port = 8080; AgentPort = 6300 },
 	[pscustomobject]@{ Name = 'vis'; Module = 'vis_rest-api_spring_jobsnow_dependency-chooser'; Main = 'com.vis.rest.api.VisRestApiSpringStarter'; Port = 8081; AgentPort = 6301 },
 	[pscustomobject]@{ Name = 'js';  Module = 'js_rest-api_spring_jobsnow_dependency-chooser';  Main = 'com.js.rest.api.JsRestApiSpringStarter';   Port = 8082; AgentPort = 6302 }
 )

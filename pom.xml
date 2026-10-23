@@ -50,7 +50,6 @@
 		<!-- Layer 4: dependem de módulos da Layer 3 (ccp_mocking_jobsnow, jb_business_jobsnow) -->
 		<module>jb_instant-messenger-listener_jobsnow_dependency-chooser</module>
 		<module>jn_mensageria-consumer_gcp-pubsub-push-spring_dependency</module>
-		<module>jn_rest-api_spring_jobsnow_dependency-chooser</module>
 		<module>js_rest-api_spring_jobsnow_dependency-chooser</module>
 		<module>vis_rest-api_spring_jobsnow_dependency-chooser</module>
 

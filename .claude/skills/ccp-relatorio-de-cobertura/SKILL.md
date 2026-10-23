@@ -66,7 +66,7 @@ instruções cobertas, perdidas e totais.
        depois da rodada);
      - os jars do `~/.m2` iguais ao código (`mvn -o install -DskipTests` no agregador; se falhar, por lock do
        Eclipse por exemplo, cancela);
-     - as APIs **jn (8080), vis (8081) e js (8082, o login)**, medidas pelo `coverage-report.ps1 -RestartApis`: uma API já rodando
+     - as APIs **vis (8081) e js (8082, o login)** (a API jn, na 8080, foi removida em 2026-10-22), medidas pelo `coverage-report.ps1 -RestartApis`: uma API já rodando
        fora do Eclipse é parada, substituída pela medida e devolvida sem agente no fim. Uma API do Eclipse
        (`javaw`) nunca é parada: é usada, mas não medida.
      - Telegram, e-mail, cache e mensageria não precisam de nada no ar: nos testes são falsos ou locais.
@@ -92,8 +92,8 @@ Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já est
 | `-Test` | vazio (suíte inteira) | filtro do Surefire, ex. `'com.jn.services.login.**'` ou `'SavePassword,ExecuteLogin'` |
 | `-OutDir` | `%TEMP%\ccp-coverage` | onde ficam exec, html e tsv — **não pode ter espaço** (quebra o `-javaagent`) |
 | `-SkipRun` | desligado | não roda testes; só regera o relatório a partir do `jacoco.exec` existente (e do `jacoco-api.exec`, se houver), sem regravar no histórico uma rodada que já está lá |
-| `-NoApi` | desligado | não sobe as APIs jn e vis; os testes REST só passam se elas já estiverem no ar |
-| `-RestartApis` | desligado | troca uma API que já esteja na 8080/8081/8082 fora do Eclipse por uma medida, e a devolve sem agente no fim |
+| `-NoApi` | desligado | não sobe as APIs vis e js; os testes REST só passam se elas já estiverem no ar |
+| `-RestartApis` | desligado | troca uma API que já esteja na 8081/8082 fora do Eclipse por uma medida, e a devolve sem agente no fim |
 | `-IncludeTestModule` | desligado | inclui no relatório o próprio `ccp_rest-api-tests_jobsnow`, que por padrão fica de fora |
 | `-HistoryFile` | `<skill>\history\coverage-projects.tsv` | histórico dos totais por projeto usado no comparativo; `-` desliga o comparativo |
 
@@ -155,13 +155,13 @@ Os jars (agente, core e ASM) vêm do `~/.m2` — JaCoCo 0.8.12 e ASM 9.7 já est
 
 ## Restrições e armadilhas
 
-- **As APIs jn, vis e js são medidas junto, por padrão** (a vis desde 2026-10-10: as classes
+- **As APIs vis e js são medidas junto, por padrão** (a vis desde 2026-10-10: as classes
   `com.vis.rest.api.resume.validations.*` chamam a 8081; a js desde 2026-10-17: os testes de login
-  `com.jn.rest.api.login.*` chamam a 8082). Para cada porta livre (8080, 8081, 8082), o script sobe
+  `com.jn.rest.api.login.*` chamam a 8082). Para cada porta livre (8081, 8082), o script sobe
   a API (classpath via `dependency:build-classpath`, como na memória "Subir a API jn sem Eclipse") com um
-  agente em modo `tcpserver` (portas 6300, 6301 e 6302), roda a suíte, coleta os dados com `AgentDump.java`
+  agente em modo `tcpserver` (portas 6301 e 6302), roda a suíte, coleta os dados com `AgentDump.java`
   (o processo é derrubado à força e não gravaria nada ao sair), para as APIs e entrega todos os `.exec`
-  (`jacoco-api-jn.exec`, `jacoco-api-vis.exec`) juntos ao `CoverageReport`. Porta ocupada: os testes usam
+  (`jacoco-api-vis.exec`, `jacoco-api-js.exec`) juntos ao `CoverageReport`. Porta ocupada: os testes usam
   a API que está lá, mas o código dela não é medido, e o script avisa. Com `-RestartApis` (usado pela
   execução agendada), uma API ocupando a porta fora do Eclipse é trocada pela medida e devolvida sem agente
   no fim. `-NoApi` desliga tudo isso. A API sobe com

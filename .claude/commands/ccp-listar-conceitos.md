@@ -33,10 +33,11 @@ texto, sem diferenciar maiúsculas.
    |---|---|---|
    | 1 | CCP | não registrado: é o framework (DI, decorators, interfaces de tecnologia) |
    | 2 | JB | BackOffice: suporte e dados estáticos |
-   | 3 | JN | JobsNow: a infraestrutura central, com login e utilitários |
-   | 4 | VIS | Visualização: cobrança por visualização de currículo |
+   | 3 | JN | JobsNow: a infraestrutura central, com entidades e utilitários compartilhados |
+   | 4 | JS | JobsNow System: o serviço de login e suas entidades |
+   | 5 | VIS | Visualização: cobrança por visualização de currículo |
 
-   Se o `CLAUDE.md` passar a citar outro centro de custo na regra de dependência (`ccp → jn → vis/jb`), acrescentar
+   Se o `CLAUDE.md` passar a citar outro centro de custo na regra de dependência (`ccp → jn → vis/jb/js`), acrescentar
    a linha na posição alfabética.
 
 4. **Fechar** com uma linha com o total de regras e quantas estão em cada seção. Se alguma sigla aparecer repetida,

@@ -51,17 +51,19 @@ Cada pasta tem `summary.md` (nível x endpoint: bytes de entrada e saída, requi
 
 ## Correção feita no caminho
 
-`AsyncMensageriaListener` passou a chamar `CcpMensageriaReceiver.executeProcessAndRecordOutcome` (método abstrato
-novo; o `JnMensageriaReceiver` grava sucesso ou erro em `jn_async_task`). Antes a falha de uma tarefa de fundo ia só
-para o stderr. Teste: `ReceiverOutcomeTest.aFailureInTheLocalAsynchronousMessagingIsRecorded`.
+`AsyncMensageriaListener` passou a chamar `CcpMensageriaReceiver.executeProcessAndRecordOutcome`, que gravava sucesso
+ou erro em `jn_async_task`. Em 2026-10-22 a entidade `jn_async_task` foi excluída: o listener chama
+`CcpMensageriaReceiver.executeProcess(topic, json)`, a falha de uma tarefa de fundo volta a ir para o stderr da API, e
+cada mensagem deixa uma marca em `c:/logs/mensageria/running/` enquanto roda (`CcpLocalMensageriaRunningMarks`).
 
 ## Como continuar com uma nova implementação de CcpMensageriaSender
 
-1. **Onde trocar**: `JnRestApiSpringStarter.java` (linha 92) e `VisRestApiSpringStarter.java` (linha 93), no ternário
+1. **Onde trocar**: `JsRestApiSpringStarter.java` e `VisRestApiSpringStarter.java` (a API jn foi removida em 2026-10-22), no ternário
    `localEnvironment ? CcpLocalInstances.asyncMensageriaListener : new CcpGcpPubSubMensageriaSender()`. As
    implementações locais ficam em `ccp_mocking_jobsnow`, `com.ccp.local.testings.implementations` (`CcpLocalInstances`,
-   `SyncMensageriaListener`, `AsyncMensageriaListener`). Uma nova implementação deve chamar
-   `receiver.executeProcessAndRecordOutcome(topic, json)` para gravar o resultado em `jn_async_task`.
+   `SyncMensageriaListener`, `AsyncMensageriaListener`). Uma nova implementação roda cada mensagem com
+   `receiver.executeProcess(topic, json)`; se ela for assíncrona, deve marcar e desmarcar cada mensagem em
+   `CcpLocalMensageriaRunningMarks`, como o `AsyncMensageriaListener`, senão a espera dos testes HTTP não a enxerga.
 2. **Instalar e reiniciar**: `mvn -o install -DskipTests -pl <módulos alterados>`, depois
    `mvn -q -o compile -pl jn_rest-api_spring_jobsnow_dependency-chooser,vis_rest-api_spring_jobsnow_dependency-chooser`
    e subir as APIs fora do Eclipse (ver a memória "Subir a API jn sem Eclipse"; o classpath de cada uma vem de

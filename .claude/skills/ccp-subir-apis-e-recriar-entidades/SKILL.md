@@ -1,9 +1,9 @@
 ---
 name: ccp-subir-apis-e-recriar-entidades
-description: Sobe (ou reinicia) as APIs locais fora do Eclipse — jn na porta 8080, vis na 8081 e js (login) na 8082 — e executa com.ccp.random.CcpCreateEntities.main (recriação dos índices do Elasticsearch local) pelo executaCcpCreateEntities.bat. Use quando pedirem "subir as APIs", "reiniciar as APIs e recriar as entidades", "rodar o CcpCreateEntities", "recriar os índices", ou quando o build do Eclipse estiver com problema e for preciso rodar o ambiente local por fora dele.
+description: Sobe (ou reinicia) as APIs locais fora do Eclipse — vis na porta 8081 e js (login) na 8082 — e executa com.ccp.random.CcpCreateEntities.main (recriação dos índices do Elasticsearch local) pelo executaCcpCreateEntities.bat. Use quando pedirem "subir as APIs", "reiniciar as APIs e recriar as entidades", "rodar o CcpCreateEntities", "recriar os índices", ou quando o build do Eclipse estiver com problema e for preciso rodar o ambiente local por fora dele.
 ---
 
-# Subir as APIs 8080/8081/8082 e executar o CcpCreateEntities
+# Subir as APIs 8081/8082 e executar o CcpCreateEntities
 
 Tudo roda fora do Eclipse, com o classpath montado pelo Maven a partir dos jars do `~/.m2`.
 
@@ -11,36 +11,34 @@ Tudo roda fora do Eclipse, com o classpath montado pelo Maven a partir dos jars 
 
 Use a scratchpad da sessão como `<scratch>` para classpaths e logs.
 
-1. **Parar o que estiver nas portas 8080, 8081 e 8082.** Ache os PIDs com
-   `Get-NetTCPConnection -LocalPort 8080,8081,8082 -State Listen` e pare com `Stop-Process -Force`.
+1. **Parar o que estiver nas portas 8081 e 8082.** Ache os PIDs com
+   `Get-NetTCPConnection -LocalPort 8081,8082 -State Listen` e pare com `Stop-Process -Force`.
    Se o processo for `javaw.exe`, a API está rodando no Eclipse (talvez em debug). Avise o usuário
    antes de parar. Os avisos "failed" das tarefas em segundo plano que tinham subido as APIs
    antigas são esperados: vêm do processo que acabou de ser parado.
 
-2. **Subir as duas APIs**, cada uma com o Bash em `run_in_background` e com a pasta de trabalho no
+2. **Subir as duas APIs** (a API jn, na 8080, foi removida em 2026-10-22), cada uma com o Bash em `run_in_background` e com a pasta de trabalho no
    módulo da API (o classpath começa por `target/classes`, que é relativo):
 
    ```bash
-   cd /c/eclipse-workspaces/ccp/jn_rest-api_spring_jobsnow_dependency-chooser \
-     && mvn -o -q compile dependency:build-classpath -Dmdep.outputFile=<scratch>/jn-api-cp.txt \
+   cd /c/eclipse-workspaces/ccp/vis_rest-api_spring_jobsnow_dependency-chooser \
+     && mvn -o -q compile dependency:build-classpath -Dmdep.outputFile=<scratch>/vis-api-cp.txt \
      && "C:/Program Files/Java/jdk-17/bin/java" -Dspring.devtools.restart.enabled=false \
-        -cp "target/classes;$(cat <scratch>/jn-api-cp.txt)" \
-        com.jn.rest.api.JnRestApiSpringStarter > <scratch>/jn-api.log 2>&1
+        -cp "target/classes;$(cat <scratch>/vis-api-cp.txt)" \
+        com.vis.rest.api.VisRestApiSpringStarter > <scratch>/vis-api.log 2>&1
    ```
 
    O `-Dspring.devtools.restart.enabled=false` é obrigatório: sem ele o spring-devtools reinicia a API
    quando outro build mexe no classpath (por exemplo, `mvn test-compile` no projeto de testes), e no
-   reinício jn e vis quebram com `Illegal factory instance for factory method 'emailFilter'` e a porta
+   reinício as APIs quebram com `Illegal factory instance for factory method 'emailFilter'` e a porta
    fecha (visto em 2026-10-21).
 
-   Para o vis, use o mesmo comando com `vis_rest-api_spring_jobsnow_dependency-chooser`,
-   `vis-api-cp.txt`, `com.vis.rest.api.VisRestApiSpringStarter` e `vis-api.log`, e para o js (o login, desde
-   2026-10-17) com `js_rest-api_spring_jobsnow_dependency-chooser`, `js-api-cp.txt`,
-   `com.js.rest.api.JsRestApiSpringStarter` e `js-api.log`. Rode os três comandos na mesma resposta.
+   Para o js (o login, desde 2026-10-17), use o mesmo comando com `js_rest-api_spring_jobsnow_dependency-chooser`, `js-api-cp.txt`,
+   `com.js.rest.api.JsRestApiSpringStarter` e `js-api.log`. Rode os dois comandos na mesma resposta.
 
 3. **Conferir.** Aguarde alguns segundos (a compilação do Maven vem antes da subida). Depois peça
-   `http://localhost:8080/rota/inexistente`, `http://localhost:8081/rota/inexistente` e
-   `http://localhost:8082/rota/inexistente`: as três APIs no ar respondem **404**. Se alguma porta não abrir, leia o `<scratch>/*-api.log`.
+   `http://localhost:8081/rota/inexistente` e
+   `http://localhost:8082/rota/inexistente`: as duas APIs no ar respondem **404**. Se alguma porta não abrir, leia o `<scratch>/*-api.log`.
 
 4. **Executar o CcpCreateEntities** com o `.bat` da raiz, em segundo plano:
 

@@ -34,7 +34,7 @@ texto, sem diferenciar maiúsculas.
    | 1 | CCP | não registrado: é o framework (DI, decorators, interfaces de tecnologia) |
    | 2 | JB | BackOffice: suporte e dados estáticos |
    | 3 | JN | JobsNow: a infraestrutura central, com entidades e utilitários compartilhados |
-   | 4 | JS | JobsNow System: o serviço de login e suas entidades |
+   | 4 | JS | JobsNow System: o serviço de login e suas entidades, e o fale conosco |
    | 5 | VIS | Visualização: cobrança por visualização de currículo |
 
    Se o `CLAUDE.md` passar a citar outro centro de custo na regra de dependência (`ccp → jn → vis/jb/js`), acrescentar

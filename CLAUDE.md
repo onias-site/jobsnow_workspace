@@ -1,10 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Project Overview
 
-**jobsnow** is a multi-module Java backend framework paired with a legacy React frontend. The backend is built around a custom decorator/DI pattern framework with Elasticsearch as the primary database. All 27 modules live together under a single aggregator `pom.xml` at the root and are managed as one Eclipse workspace (`C:\eclipse-workspaces\ccp`), each module being a separate Eclipse project.
+**jobsnow** is a multi-module Java backend framework built around a custom decorator/DI pattern framework with Elasticsearch as the primary database, paired with a Next.js frontend. All 27 Maven modules live under a single aggregator `pom.xml` at the root and are managed as one Eclipse workspace (`C:\eclipse-workspaces\ccp`), each module being a separate Eclipse project.
 
 ## Module Structure
 
@@ -28,97 +26,46 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 | 1 | `ccp_mensageria-sender_gcp-pubsub` | PubSub message sender |
 | 1 | `ccp_password_mindrot` | Password hashing via BCrypt |
 | 1 | `jn_business_jobsnow` | Core jobsnow business logic |
-| 1 | `ccp_rest-api-handler-exception_spring` | Spring Boot exception handler (has own Spring parent) |
-| 2 | `ccp_db-query_elasticsearch` | Elasticsearch query builder (depends on `ccp_json_gson`) |
-| 2 | `vis_business_jobsnow` | Visualization business logic (depends on `jn_business_jobsnow`) |
-| 2 | `jb_business_jobsnow` | BackOffice business logic and the bot engine (depends on `jn_business_jobsnow`; does not import vis) |
-| 2 | `js_business_jobsnow` | JobsNow System business logic: the login service, the login entities (`JsEntityLogin*`, indices `js_login_*`), the session validator seeded in `jn_session_validator` and the support bot command `solveLoginTokenTicket` (depends on `jn_business_jobsnow`; does not import vis or jb) |
-| 3 | `ccp_mocking_jobsnow` | Test mocks and DI wiring (depends on `ccp_db-query_elasticsearch`) |
-| 4 | `jb_instant-messenger-listener_jobsnow_dependency-chooser` | BackOffice bot listener (brings `vis_business_jobsnow` and `js_business_jobsnow` to the classpath: the bot runs their steps by class name) |
-| 4 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app (has own Spring parent) |
-| 4 | `js_rest-api_spring_jobsnow_dependency-chooser` | JobsNow System REST API / Spring Boot app (login and its Swagger, port 8082) |
-| 4 | `vis_rest-api_spring_jobsnow_dependency-chooser` | Visualization REST API / Spring Boot app (port 8081; brings `js_business_jobsnow` to the classpath: it validates the session with the business seeded in `jn_session_validator`, run by class name through `JnBusinessValidateSession`) |
+| 1 | `ccp_rest-api-handler-exception_spring` | Spring Boot exception handler (own Spring parent) |
+| 2 | `ccp_db-query_elasticsearch` | Elasticsearch query builder |
+| 2 | `vis_business_jobsnow` | Visualization business logic |
+| 2 | `jb_business_jobsnow` | BackOffice business logic and the bot engine (`/pendingTickets` sorted by `priority`, then date; a step may skip its ticket with `skipTheTicket`) |
+| 2 | `js_business_jobsnow` | JobsNow System: login service, login entities (`js_login_*`), session validator, bot command `solveLoginTokenTicket`; the contact us (`js_contact_us`, twin `js_contact_us_solved`, `POST /contact-us/{email}` without session) and its bot commands `answerContactUs` and `ignoredContactUs` |
+| 3 | `ccp_mocking_jobsnow` | Test mocks and DI wiring |
+| 4 | `jb_instant-messenger-listener_jobsnow_dependency-chooser` | BackOffice bot listener (vis and js on the classpath for the steps run by class name) |
+| 4 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app (own Spring parent) |
+| 4 | `js_rest-api_spring_jobsnow_dependency-chooser` | JobsNow System REST API (login and its Swagger, port 8082) |
+| 4 | `vis_rest-api_spring_jobsnow_dependency-chooser` | Visualization REST API (port 8081; js on the classpath for the session validator) |
 | 5 | `ccp_rest-api-tests_jobsnow` | Integration/API test suite (depends on every module above) |
 
 ## Repository Layout
 
-This workspace is **not** a monorepo. Every module directory is its own git repository (28 of them, counting `jn_frontend_calistrato-react`, which is not a Maven module). Retired modules are kept as plain source under `ccp_rest-api-tests_jobsnow/documentation/` (the legacy frontend in `jn/frontend/legado`, `ccp_text-extractor_apache-tika` in `ccp/text-extractor_apache-tika`, with a git bundle of its history). Above them sits an umbrella repository for the workspace root itself:
+Not a monorepo: each module directory (plus `jn_frontend_calistrato-react`) is its own git repository. The umbrella repository `onias-site/jobsnow_workspace` versions only the root files (aggregator `pom.xml`, `.bat` scripts, this file, `.claude/`, `documentation/`); its `.gitignore` excludes every root directory. Retired modules are kept as plain source under `ccp_rest-api-tests_jobsnow/documentation/`.
 
-- **`onias-site/jobsnow_workspace`** versions only what is shared by every project: the aggregator `pom.xml`, the `.bat` scripts, this `CLAUDE.md`, `.claude/` (slash commands and skills), `documentation/`, and the root-level notes.
-- Its `.gitignore` excludes **every directory at the root** through a single `/*/` rule, so a new module is left out automatically with no edit needed; only `.claude/` and `documentation/` are re-included. Eclipse's `.metadata/` (~300 MB of machine-specific state) and `.claude/settings.local.json` are excluded as well.
-
-Two scripts at the root drive all repositories at once. Both handle the workspace repository first, then every module repository beneath it:
-
-```bash
-fazPullEmTodosProjetosLocais.bat   # git reset --hard + git pull in each repository
-fazPushEmTodosProjetosLocais.bat   # asks for one commit message, then add/commit/push in each repository
-```
-
-Both anchor themselves to the script's own directory, so they work from any working directory. Note that the pull script resets hard: uncommitted work in any repository — the workspace root included — is discarded.
+`fazPullEmTodosProjetosLocais.bat` and `fazPushEmTodosProjetosLocais.bat` pull/push every repository at once. **The pull script runs `git reset --hard`: uncommitted work in any repository is discarded.**
 
 ## Build & Run Commands
 
-### Java (Maven) — from the root `jobsnow/` directory
-
 ```bash
-# Install all modules to local .m2 (required on first setup and after any module change)
-mvn clean install
-
-# Build without running tests
-mvn clean package -DskipTests
-
-# Run all tests
-mvn test
-
-# Run tests for a single module
-mvn test -pl ccp_rest-api-tests_jobsnow
-
-# Run a single test class
-mvn test -pl ccp_rest-api-tests_jobsnow -Dtest=ClassName
+mvn clean install                                              # from the root, after any module change
+mvn test -pl ccp_rest-api-tests_jobsnow -Dtest=ClassName       # a single test class
 ```
 
-### Frontend (in `documentation/jn/frontend/legado/`)
+Frontend (`jn_frontend_calistrato-react`: Next.js 14, React 18, TypeScript, Redux Toolkit, Tailwind, Jest; API client generated from `swagger.json` by orval):
 
 ```bash
-npm install
-npm run dev        # Dev server on port 2200
-npm run build-dev  # Dev build
-npm run build      # Production build
-npm start          # Start Node.js server
+npm run dev    # dev server
+npm run build
+npm test
 ```
 
 ## Core Architecture
 
-### Custom Framework (ccp_commons_jobsnow)
-
-**Decorator Pattern** — Everything wraps a target type. Base class is `CcpDecorator<T>`, with specializations:
-- `CcpJsonRepresentation` — the central value object; a map-like JSON container that flows through the entire system
-- `CcpCollectionDecorator`, `CcpStringDecorator` — typed wrappers with utility methods
-- `CcpReflectionConstructorDecorator`, `CcpReflectionFieldDecorator` — reflection utilities
-
-**Business Logic** — `CcpBusiness` implements `Function<CcpJsonRepresentation, CcpJsonRepresentation>` with built-in validation via `validate()`. All business operations accept and return `CcpJsonRepresentation`.
-
-**Dependency Injection** — `CcpDependencyInjection` provides interface-to-implementation binding at runtime. Tests wire real implementations; production may substitute mocks or cloud-specific implementations.
-
-**Database Layer** — `CcpCrud` interface backed by Elasticsearch:
-- `CcpQuery` / `CcpQueryBool` / `CcpQueryAggregations` — fluent query builder
-- `CcpBulkExecutor` — bulk CRUD with pluggable handlers
-- Schema definitions live in `documentation/jb/database/elasticsearch/scripts/entities/`
-- Local logs go to `c:/logs/`
+`CcpJsonRepresentation` (a map-like JSON container, ccp_commons_jobsnow) is the value object that flows through the whole system; every business is a `CcpBusiness` (`Function<CcpJsonRepresentation, CcpJsonRepresentation>`). `CcpDependencyInjection` binds interfaces to implementations at runtime. Persistence goes through `CcpCrud` over Elasticsearch, with the fluent query builder (`CcpQuery`, `CcpQueryBool`, `CcpQueryAggregations`) and `CcpBulkExecutor`. Schema definitions live in `documentation/jb/database/elasticsearch/scripts/entities/`; local logs go to `c:/logs/`.
 
 ### Testing
 
-Tests extend template base classes (`JnTemplateDeTestes`, `VisTemplateDeTestes`, `BaseTest`) that:
-1. Bootstrap DI with real implementations
-2. Load Elasticsearch schema from documentation scripts
-3. Provide HTTP testing utilities (local APIs: login on 8082, vis on 8081; the jn API was removed on 2026-10-22)
-4. Log full request/response for debugging
-
-Business test class names follow English BDD-style conventions (e.g., `OnEnteringPasswordRegistrationScreen`, `PasswordLoginScreen`).
-
-### Frontend
-
-Legacy React + Redux stack (React 15–16, Webpack 2, Bootstrap 3). Deployed to Google App Engine. State managed via Redux + redux-thunk; routing via react-router 3. Chart.js, Highcharts, and D3 used for data visualization.
+Tests extend template base classes (`JnTemplateDeTestes`, `VisTemplateDeTestes`, `BaseTest`) that bootstrap DI with real implementations, load the Elasticsearch schema, call the local APIs (login on 8082, vis on 8081) and log full request/response. Business test class names follow English BDD style (`OnEnteringPasswordRegistrationScreen`, `PasswordLoginScreen`).
 
 ## Key Conventions
 
@@ -126,9 +73,8 @@ Legacy React + Redux stack (React 15–16, Webpack 2, Bootstrap 3). Deployed to 
 - Field names in JSON are defined as enums and passed to `CcpJsonRepresentation` accessors — avoid bare string keys.
 - Cost centers follow a strict dependency order: **ccp → jn → vis/jb/js**. A `com.ccp` class must never import `com.jn`, `com.vis`, `com.jb` or `com.js`; a `com.jn` class must never import `com.vis`, `com.jb` or `com.js`. `ccp_rest-api-tests_jobsnow` is the only module exempt from the rule. Module prefix and root package always agree (`ccp_*` → `com.ccp`, `jn_*` → `com.jn`, and so on), so a class that would violate the rule belongs in a different module.
 - vis, jb and js do not import one another. A bot command belongs to the cost center of the data it works on: its steps are classes of that cost center, and its configuration (command, steps, names, texts) goes to the bot entities of jn (`JnEntityBotCommand*`) through `JnBotConfigurationSeeds`, returned by `getFirstRecordsToInsert` of one of its entities. The bot engine (jb) finds the commands of a bot by `botName` and runs each step by its class name, as `CcpMensageriaReceiver` runs a topic.
-- Java target version is **17** across all modules. JDK 17 must be registered in Eclipse (Window → Preferences → Java → Installed JREs) and selected as the project's JRE System Library.
-- JUnit 4 (not 5) is used throughout.
-- Two modules use `spring-boot-starter-parent` as their own parent (`ccp_rest-api-handler-exception_spring` and `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency`) — they are included in the aggregator but do not inherit from the root POM.
+- Java 17 across all modules; JUnit 4 (not 5).
+- `ccp_rest-api-handler-exception_spring` and `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` use `spring-boot-starter-parent` as their own parent and do not inherit from the root POM.
 - `instanceof` pattern matching against a variable already declared as the same type (e.g., `CcpBusiness x instanceof CcpBusiness y`) is rejected by the compiler — replace with a `!= null` check.
 
 ## Architectural Rules
@@ -139,14 +85,21 @@ Named rules that govern how classes are written and how requests are interpreted
 
 - **Automatic Entity Id (AEI)** — every entity's id is calculated from the fields annotated with `@CcpEntityFieldPrimaryKey`.
 - **Entity Decorators (ED)** — any change of an entity's behavior on create, read, update, transfer, copy or delete is a decorator catalogued in `CcpEntityDecoratorTypes` (ccp), activated by an annotation of its own and positioned in the chain by the catalog. Every entity decorator lives in the ccp cost center; there are no decorators in jn, vis, jb or js. What a decorator needs from another cost center (an entity, an implementation class, a collaborator) is passed as a parameter of its annotation, as `@CcpEntityTwin` does with its bulk executor. No annotation is nested in another one, and an annotation with a single parameter names it `value`.
-- **Side Effect Annotation (SEA)** — a business or a message run before or after a write or a transfer is an annotation whose name reads as a sentence: `@Ccp[Before|After][Save|Insert|Update|Delete|DeleteAnyWhere]From[Main|Twin]Entity(execute = {...}, operationHandlers = {...})`, `@Ccp[Before|After][TransferData|CopyData]From[Main|Twin]Entity(targetEntity = ..., execute = {...}, transferHandlers = {...})` (repeatable, one per target), `@Ccp<write>SendAn[Email|Instant]Message...AndIfFails[ThrowAnError|SaveAWarning|LogTheError](<message classes>)` and `@Ccp<transfer>SendAn...(messageTemplate = ..., targetEntity = ...)` (repeatable). The message classes implement `CcpEntityMessageTemplate` (in the platform, `JnMessageTemplate`).
+- **Side Effect Annotation (SEA)** — a business or a message run before or after a write or a transfer is an annotation whose name reads as a sentence. The message classes implement `CcpEntityMessageTemplate` (in the platform, `JnMessageTemplate`).
+  - Write: `@Ccp[Before|After][Save|Insert|Update|Delete|DeleteAnyWhere]From[Main|Twin]Entity(execute = {...}, operationHandlers = {...})`
+  - Transfer (repeatable, one per target): `@Ccp[Before|After][TransferData|CopyData]From[Main|Twin]Entity(targetEntity = ..., execute = {...}, transferHandlers = {...})`
+  - Message on write: `@Ccp<write>SendAn[Email|Instant]Message...AndIfFails[ThrowAnError|SaveAWarning|LogTheError](<message classes>)`
+  - Message on transfer (repeatable): `@Ccp<transfer>SendAn...(messageTemplate = ..., targetEntity = ...)`
 - **Disposable Entity (DSE)** — records discarded after some time: `@CcpEntityDisposable(value = JnDisposableEntity.class, timeOption = <CcpEntityExpurgableOptions>)`.
 - **Versionable Entity (VE)** — versioned records: `@CcpEntityVersionable(JnVersionableEntity.class)`, always together with the purge of the history: `@CcpEntityVersionablePurge(JnVersionablePurgeEntity.class)`.
 - **Twin Entity (TWE)** — records with a mirror table that receives what is deleted from the main one: `@CcpEntityTwin(twinEntityName = <twin table>, bulkExecutorClass = JnExecuteBulkOperation.class, functionToDeleteKeysInTheCacheClass = JnDeleteKeysFromCache.class)`.
 - **Read Only Entity (ROE)** — read-only records: `@CcpEntityOlyReadable` (spelled that way); they change only through bulk operations.
 - **Cache Entity (CE)** — cacheable records: `@CcpEntityCache(<ttl in seconds>)`.
 - **Async Entity (AE)** — records whose writes run asynchronously: `@CcpEntityAsyncWriter(JnAsyncWriterEntity.class)`.
-- **Grouped Entity (GE)** — records kept in the groups of their parents: `@CcpEntityGrouperChild(value = {<parent entity>, ...}, beforeDecoratorClass = JnGrouperChildEntityBeforeWrite.class, afterDecoratorClass = JnGrouperChildEntityAfterWrite.class)`. Each parent entity is declared exactly once, in one of two ways: **oneToMany** (the parents come from the record's own values, e.g. a view has one recruiter and one resume) with `@CcpEntityGrouperParentCombinations(parent = <parent entity>, value = <combinations producer>)` on the entity, no field needed; **manyToMany** (the parents change with the record's contents, e.g. a resume in the group of each search it satisfies) with a list field of parent ids annotated with `@CcpStoredParentIdsField(value = <combinations producer>, parent = <parent entity>)`. If a stored-ids field is not asked for, the relationship is oneToMany. Records counted by key in the groups of their parents (one JSON of counters as the only child) use `@CcpEntityGrouperChildCounter(value = {<parent entity>, ...}, counterKeyClass = <key producer>, beforeDecoratorClass = JnGrouperChildCounterEntityBeforeWrite.class)`, each record counted once per parent.
+- **Grouped Entity (GE)** — records kept in the groups of their parents: `@CcpEntityGrouperChild(value = {<parent entity>, ...}, beforeDecoratorClass = JnGrouperChildEntityBeforeWrite.class, afterDecoratorClass = JnGrouperChildEntityAfterWrite.class)`. Each parent entity is declared exactly once, in one of two ways:
+  - **oneToMany** (the default; the parents come from the record's own values, e.g. a view has one recruiter and one resume): `@CcpEntityGrouperParentCombinations(parent = <parent entity>, value = <combinations producer>)` on the entity, no field needed.
+  - **manyToMany** (only when a stored-ids field is asked for; the parents change with the record's contents, e.g. a resume in the group of each search it satisfies): a list field of parent ids annotated with `@CcpStoredParentIdsField(value = <combinations producer>, parent = <parent entity>)`.
+  - **Counter** (one JSON of counters as the only child, each record counted once per parent): `@CcpEntityGrouperChildCounter(value = {<parent entity>, ...}, counterKeyClass = <key producer>, beforeDecoratorClass = JnGrouperChildCounterEntityBeforeWrite.class)`.
 - **LGPD Fields Entity (LFE)** — records holding sensitive data (e-mail, password): `@CcpEntityFieldsTransformer(<transformer catalog>)` on the entity, or `@CcpEntityFieldTransformer(<subclass of CcpJsonTransformersDefaultEntityField>)` on the field.
 
 ### Reading and writing data
@@ -155,7 +108,11 @@ Named rules that govern how classes are written and how requests are interpreted
 - **Complex Query Dsl (CQD)** — complex queries use the fluent interface of `CcpQueryOptions`.
 - **Multi Get Id Entity (MGIE)** — fetching from several entities with no complex query, only id formation, uses `CcpCrud.unionAll`.
 - **Flow Batch Operation Entity (FBOE)** — batches whose target entity is chosen dynamically are written by `JnExecuteBulkOperation.executeSelectUnionAllThenExecuteBulkOperation`.
-- **Flow Status Entity Dsl (FSED)** — when throwing a `CcpErrorFlowDisturb` or running a `CcpBusiness` depends on which entity the record is (or is not) in, use `CcpGetEntityId` and its chained fluent interface. A flow goes to the database once for its presence checks: `CcpEntity.exists` is allowed only when it is the flow's sole presence check; two or more of them are rewritten as this fluent interface, and an `exists` next to the fluent interface becomes one more step of it (e.g. a daily limit checked inside the action is an `ifThisIdIsPresentInEntity` of the chain). An `exists` followed by `getOneById` of the same record is a single read: `ifThisIdIsPresentInEntity(...).executeAction(...)` (the action finds the record under `_entities`), `loadThisIdFromEntity` when the record is optional, or a pair of present/not present steps when both branches act; the same check repeated over several keys of one entity (a loop) is one read too: the loop only builds the array of keys passed to the `CcpGetEntityId` constructor, and `forEachIdPresentInEntity(...).executeAction(...)` runs the action once per key found, over that key with its own record under `_entities` (`ifThisIdIsPresentInEntity` holds when any key is present and hands over only the first record). A check that depends on a value read from another record cannot be a step and stays outside the chain.
+- **Flow Status Entity Dsl (FSED)** — when throwing a `CcpErrorFlowDisturb` or running a `CcpBusiness` depends on which entity the record is (or is not) in, use `CcpGetEntityId` and its chained fluent interface. A flow goes to the database once for its presence checks:
+  - `CcpEntity.exists` is allowed only as the flow's sole presence check; two or more become the fluent interface, and an `exists` next to the fluent interface becomes one more step of it (e.g. a daily limit checked inside the action is an `ifThisIdIsPresentInEntity` of the chain).
+  - `exists` followed by `getOneById` of the same record is one read: `ifThisIdIsPresentInEntity(...).executeAction(...)` (the action finds the record under `_entities`), `loadThisIdFromEntity` when the record is optional, or a pair of present/not present steps when both branches act.
+  - The same check over several keys of one entity (a loop) is one read: the loop only builds the array of keys passed to the `CcpGetEntityId` constructor, and `forEachIdPresentInEntity(...).executeAction(...)` runs the action once per key found, with its own record under `_entities` (`ifThisIdIsPresentInEntity` holds when any key is present and hands over only the first record).
+  - A check that depends on a value read from another record cannot be a step and stays outside the chain.
 
 ### Code shape
 

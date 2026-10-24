@@ -1,6 +1,7 @@
 ---
 name: ccp-commit-e-push
 description: Sugere a mensagem de commit do dia a partir do que mudou nos repositórios do workspace e já roda o fazPushEmTodosProjetosLocais.bat com ela (add, commit e push na raiz e em cada módulo), respondendo sozinho aos prompts do .bat, e no fim mostra a mensagem que ficou gravada no commit. Use quando pedirem "sugira uma mensagem de commit", "mensagem para o fazPush", "faz o push de tudo", "commita e sobe tudo", "rode o fazPushEmTodosProjetosLocais".
+disable-model-invocation: true
 ---
 
 # Mensagem de commit e push de todos os repositórios

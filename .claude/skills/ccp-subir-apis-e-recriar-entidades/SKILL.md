@@ -1,6 +1,7 @@
 ---
 name: ccp-subir-apis-e-recriar-entidades
 description: Sobe (ou reinicia) as APIs locais fora do Eclipse — vis na porta 8081 e js (login) na 8082 — e executa com.ccp.random.CcpCreateEntities.main (recriação dos índices do Elasticsearch local) pelo executaCcpCreateEntities.bat. Use quando pedirem "subir as APIs", "reiniciar as APIs e recriar as entidades", "rodar o CcpCreateEntities", "recriar os índices", ou quando o build do Eclipse estiver com problema e for preciso rodar o ambiente local por fora dele.
+disable-model-invocation: true
 ---
 
 # Subir as APIs 8081/8082 e executar o CcpCreateEntities

@@ -1,6 +1,7 @@
 ---
 name: ccp-centralizar-field-names
 description: Troca referências a itens de enum de field name locais (Fields de entidade, JsonFieldNames de endpoint, enums validadores) pelos enums centralizadores globais de cada centro de custo (JnJsonCommonsFields, JnJsonInstantMessengerFields, VisJsonCommonsFields). Use quando pedirem para "centralizar field names", "usar o enum centralizador", "trocar X.Fields.campo por JnJsonCommonsFields.campo" ou ao criar/revisar código que declare nomes de campo já existentes nos centralizadores.
+disable-model-invocation: true
 ---
 
 # Centralizar field names nos enums globais por centro de custo

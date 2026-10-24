@@ -1,6 +1,7 @@
 ---
 name: ccp-mapear-ccpbusiness
-description: Lista o fecho transitivo de subtipos de um tipo Java do workspace — filhos diretos e indiretos, em qualquer profundidade, com nível, tipo de declaração, módulo e arquivo. Use quando pedirem "quem implementa X", "quantos filhos de X existem", "quem estende X direta ou indiretamente", "todas as implementações de CcpBusiness / CcpService / CcpEntityConfigurator", ou ao avaliar o impacto de mexer numa interface base.
+description: Lista o fecho transitivo de subtipos de um tipo Java do workspace — filhos diretos e indiretos, em qualquer profundidade, com nível, tipo de declaração, módulo e arquivo. Use quando pedirem "quem implementa X", "quantos filhos de X existem", "quem estende X direta ou indiretamente", "todas as implementações de CcpBusiness / CcpService / CcpEntityConfigurator", ou ao avaliar o impacto de mexer numa interface base. Também gera o relatório das implementações com projeto, bytes e linhas de cada uma e a marcação do que passa da média (o antigo comando /ccp-relatorio-ccpbusiness).
+disable-model-invocation: true
 ---
 
 # Mapear subtipos de um tipo Java
@@ -55,6 +56,44 @@ Nenhum obrigatório.
 4. Se o script emitir aviso de **colisão de nomes simples**, investigar antes de responder: o
    grafo é indexado por nome simples, então dois tipos homônimos em módulos diferentes seriam
    fundidos num nó só e o total ficaria errado.
+
+## Modo relatório: tamanho de cada implementação
+
+Fundido nesta skill em 2026-10-23 (era o comando `/ccp-relatorio-ccpbusiness`). Usar quando o pedido for o
+**relatório** das implementações, com bytes e linhas, em vez da contagem por nível. O argumento, se vier, é o nome
+**simples** do tipo raiz; vazio: `CcpBusiness`.
+
+1. Rodar o script, gravando o relatório completo na scratchpad da sessão (o nome do arquivo vem do tipo):
+
+   ```bash
+   python "C:/eclipse-workspaces/ccp/.claude/skills/ccp-mapear-ccpbusiness/scripts/relatorio_ccpbusiness.py" --tipo <tipo> --saida "<scratchpad>/relatorio_<tipo>.md"
+   ```
+
+   O script imprime o resumo (total, médias, quantos acima da média, quebra por tipo e por projeto) e grava o
+   Markdown com a tabela inteira.
+
+2. Ler o arquivo gravado e responder com:
+   - na primeira frase, o total de implementações e as duas médias (bytes e linhas);
+   - a quebra por tipo e por projeto, em uma linha cada;
+   - as tabelas como o script grava, sem alterar: **uma tabela Markdown por projeto** (título com quantidade, bytes
+     e linhas do projeto), colunas **#** | **Nome** | **Tipo** | **Bytes** | **Linhas**, ordenadas por bytes, com
+     `(acima)` ao lado do valor acima da média geral, e o total geral no fim. Tabela única de 6 colunas com
+     `(acima da média)` por extenso ficava larga demais e ilegível no terminal (reprovada pelo usuário em
+     2026-10-22), assim como a versão desenhada à mão com caracteres de caixa;
+   - o caminho completo do arquivo gravado.
+
+Como o relatório conta (diferente do `map-subtypes.ps1`):
+
+- **Projeto de testes incluído** sempre; `documentation/` e `.claude/` ficam de fora da varredura.
+- **Só implementações viram linha:** interfaces intermediárias (`CcpService`, `JnService`...) entram no grafo mas não
+  no relatório.
+- **Item de enum:** um enum do fecho vira uma linha **por item** (`JsServiceLogin.ExistsLoginEmail`), e o enum em si
+  não aparece. O tamanho do item é o trecho dele, do nome até a vírgula ou o ponto e vírgula, com o corpo, se houver.
+- **Tamanho de classe:** classe de topo = o arquivo inteiro (bytes no disco e linhas); classe aninhada = o trecho da
+  própria declaração. O tipo mostra `classe`, `classe aninhada`, `classe abstrata` ou `item de enum`.
+- **Média:** de todas as linhas da tabela; "acima da média" é estritamente maior.
+- **Nome simples repetido** (classes de apoio de teste com o mesmo nome em pacotes diferentes): cada declaração só
+  entra se ela própria estende ou implementa algo do fecho, e o pacote aparece entre parênteses na coluna Nome.
 
 ## Como funciona
 

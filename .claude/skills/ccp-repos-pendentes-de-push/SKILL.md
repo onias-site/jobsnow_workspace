@@ -1,6 +1,7 @@
 ---
 name: ccp-repos-pendentes-de-push
 description: Lista quais repositórios git do workspace (a raiz jobsnow_workspace e cada módulo) têm algo a enviar — arquivos modificados, arquivos novos não rastreados, arquivos removidos ou commits à frente do remoto. Use quando pedirem "quais repositórios estão pendentes de push", "o que falta subir", "tem algo sem commit", "quais projetos mudaram", ou antes de rodar o fazPushEmTodosProjetosLocais.bat / fazPullEmTodosProjetosLocais.bat.
+disable-model-invocation: true
 ---
 
 # Repositórios pendentes de push

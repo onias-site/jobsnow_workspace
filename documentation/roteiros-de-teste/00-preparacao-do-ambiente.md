@@ -49,7 +49,7 @@ As sugestões do candidato chegam ao operador **como uma mensagem do bot no Tele
 
 Os roteiros supõem que nenhuma sugestão foi feita ainda. Para isso:
 
-- [ ] 3.1 Rode `executaCcpCreateEntities.bat` na raiz do workspace (ou, no Eclipse, `com.ccp.random.CcpCreateEntities` do projeto `ccp_rest-api-tests_jobsnow`). Sem argumentos, ele recria **jn, vis e jb**, sem pedir nada (desde 2026-10-11 não há mais a janela de escolha). Para recriar só alguns, passe-os como argumentos (`executaCcpCreateEntities.bat vis`); recriar só o jn apaga os modelos de e-mail que o vis semeia nos índices do jn. **Obrigatório na primeira vez depois das mudanças de 2026-10-08**: mudaram a chave da tabela de usuários ignorados (agora só o e-mail), a ordem dos parâmetros do `/fixSkillHierarchy` e os textos do bot — índices antigos fazem o bot responder com os textos e o formato antigos. Desde 2026-10-09 a recriação também cria `jn_support_cancelled_command` (a desistência tira o ticket do `/pendingTickets`) e semeia os nomes "aprovado"/"reprovado" do painel Motivo. **Obrigatório de novo depois das mudanças de 2026-10-11**: a recriação cria `vis_skill_synonym` (sinônimos das sugestões), semeia os e-mails de aprovação/rejeição com "Justificativa do suporte:" e os textos do comando `/listarUsuariosIgnorados`. **Obrigatório de novo depois das mudanças de 2026-10-15**: a recriação cria `vis_resume_linkedin` (dono de cada endereço do LinkedIn, com o aviso ao suporte quando outro e-mail usa o mesmo endereço), `vis_skill_suggestion_daily_limit` e `vis_skill_fix_hierarchy_daily_limit` (uma sugestão de cada tipo por dia).
+- [ ] 3.1 Rode `executaCcpCreateEntities.bat` na raiz do workspace (ou, no Eclipse, `com.ccp.random.CcpCreateEntities` do projeto `ccp_rest-api-tests_jobsnow`). Sem argumentos, ele recria **jn, vis e jb**, sem pedir nada (desde 2026-10-11 não há mais a janela de escolha). Para recriar só alguns, passe-os como argumentos (`executaCcpCreateEntities.bat vis`); recriar só o jn apaga os modelos de e-mail que o vis semeia nos índices do jn. **Obrigatório na primeira vez depois das mudanças de 2026-10-08**: mudaram a chave da tabela de usuários ignorados (agora só o e-mail), a ordem dos parâmetros do `/fixSkillHierarchy` e os textos do bot — índices antigos fazem o bot responder com os textos e o formato antigos. Desde 2026-10-09 a recriação também cria `jn_support_cancelled_command` (a desistência tira o ticket do `/pendingTickets`) e semeia os nomes "aprovado"/"reprovado" do painel Motivo. **Obrigatório de novo depois das mudanças de 2026-10-11**: a recriação cria `vis_skill_synonym` (sinônimos das sugestões), semeia os e-mails de aprovação/rejeição com "Justificativa do suporte:" e os textos do comando `/listarUsuariosIgnorados`. **Obrigatório de novo depois das mudanças de 2026-10-15**: a recriação cria `vis_resume_linkedin` (dono de cada endereço do LinkedIn, com o aviso ao suporte quando outro e-mail usa o mesmo endereço), `vis_skill_suggestion_daily_limit` e `vis_skill_fix_hierarchy_daily_limit` (uma sugestão de cada tipo por dia). **Desde 2026-10-23** esses dois índices não existem mais: a cota diária passou para `jn_ticket_daily_limit` (chave e-mail + `quotaGroup`), e a sugestão de habilidade e o ajuste de hierarquia dividem **uma** cota por dia (`sharedTickets`) com o fale conosco; os usuários ignorados passaram para `jn_command_not_allowed_to_user` / `jn_command_reallowed_to_user` e o e-mail de login para `jn_login_email`.
 - [ ] 3.2 Confira que `C:\logs\jn\mappingJnEntitiesErrors.json`, `C:\logs\vis\mappingJnEntitiesErrors.json` e `C:\logs\jb\mappingJnEntitiesErrors.json` estão **vazios**.
 - [ ] 3.3 Reinicie a API do vis e o leitor do bot (eles guardam cache em memória).
 
@@ -92,15 +92,12 @@ Cada sugestão manda um e-mail ao candidato e abre um ticket ao operador. Por is
 
 As recusas que não mandam nada vêm antes do limite e **não gastam** a sugestão do dia: habilidade já conhecida (412), já pendente (409), já sugerida por sinônimo (409), já rejeitada ou já avaliada (410), usuário ignorado (403).
 
-Os roteiros 01 e 02 enviam várias sugestões com o mesmo candidato. **Antes de cada cenário que envia uma sugestão**, libere o dia do candidato (o registro não tem cache, então apagá-lo no Elasticsearch basta):
+Os roteiros 01 e 02 enviam várias sugestões com o mesmo candidato, e desde 2026-10-23 a sugestão de habilidade e o ajuste de hierarquia gastam a **mesma** cota do dia. **Antes de cada cenário que envia uma sugestão ou um pedido de ajuste**, libere o dia do candidato (apagá-lo no Elasticsearch basta):
 
 ```powershell
-# libera a sugestão de habilidade do dia (todos os candidatos; ambiente local)
-Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_disposable_record/_delete_by_query?refresh=true' -Body '{"query":{"term":{"entity":"vis_skill_suggestion_daily_limit"}}}'
-Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/vis_skill_suggestion_daily_limit/_delete_by_query?refresh=true' -Body '{"query":{"match_all":{}}}'
-# libera o pedido de ajuste de hierarquia do dia
-Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_disposable_record/_delete_by_query?refresh=true' -Body '{"query":{"term":{"entity":"vis_skill_fix_hierarchy_daily_limit"}}}'
-Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/vis_skill_fix_hierarchy_daily_limit/_delete_by_query?refresh=true' -Body '{"query":{"match_all":{}}}'
+# libera as cotas do dia (sugestão de habilidade, ajuste de hierarquia, fale conosco e dúvida; todos os candidatos; ambiente local)
+Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_disposable_record/_delete_by_query?refresh=true' -Body '{"query":{"term":{"entity":"jn_ticket_daily_limit"}}}'
+Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_ticket_daily_limit/_delete_by_query?refresh=true' -Body '{"query":{"match_all":{}}}'
 ```
 
 ---
@@ -138,10 +135,10 @@ O e-mail é gravado como **hash** — por isso as consultas filtram pela habilid
 | … avaliados | `http://localhost:9200/vis_skill_fix_hierarchy_fulfiled/_search?pretty` |
 | Itens de ajuste pendentes / aprovados / rejeitados | `.../vis_skill_fix_hierarchy_item_pending/_search?pretty`, `.../vis_skill_fix_hierarchy_item_approved/...`, `.../vis_skill_fix_hierarchy_item_rejected/...` |
 | Sinônimos das sugestões, cada um apontando para a habilidade sugerida | `http://localhost:9200/vis_skill_synonym/_search?pretty` |
-| Sugestões do dia (uma por candidato; bloqueiam a segunda com 429) | `http://localhost:9200/jn_disposable_record/_search?pretty&q=entity:vis_skill_suggestion_daily_limit` e `...&q=entity:vis_skill_fix_hierarchy_daily_limit` |
+| Cotas do dia (uma por candidato e grupo: `sharedTickets` para habilidade, hierarquia e fale conosco, `clarifyDoubts` para dúvida; bloqueiam a segunda com 429) | `http://localhost:9200/jn_ticket_daily_limit/_search?pretty` e `http://localhost:9200/jn_disposable_record/_search?pretty&q=entity:jn_ticket_daily_limit` |
 | Dono de cada endereço do LinkedIn (o e-mail é hash) | `http://localhost:9200/vis_resume_linkedin/_search?pretty` |
-| Usuários ignorados pelo suporte (o e-mail legível fica dentro de `description`) | `http://localhost:9200/vis_command_not_allowed_to_user/_search?pretty` |
-| … que voltaram a ser atendidos | `http://localhost:9200/vis_command_reallowed_to_user/_search?pretty` |
+| Usuários ignorados pelo suporte (o e-mail legível fica dentro de `description`) | `http://localhost:9200/jn_command_not_allowed_to_user/_search?pretty` |
+| … que voltaram a ser atendidos | `http://localhost:9200/jn_command_reallowed_to_user/_search?pretty` |
 | Caixa de tickets do operador | `http://localhost:9200/jn_support_pending_command/_search?pretty` e `http://localhost:9200/jb_pending_tickets/_search?pretty` |
 | Histórico de versões | `http://localhost:9200/jn_versionable/_search?pretty&q=entity:vis_skill_pending` |
 

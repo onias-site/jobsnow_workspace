@@ -23,7 +23,7 @@ Nomes simples repetidos em pacotes diferentes, identificados pelo pacote na colu
 | 7 | VisBusinessViewedResumeDetails | classe | 7.841 (acima) | 166 (acima) |
 | 8 | VisBusinessLoadRecruitersFromHtmlFolder | classe | 7.834 (acima) | 166 (acima) |
 | 9 | VisBusinessSkillFixHierarchyIgnoreUser | classe | 5.766 (acima) | 109 (acima) |
-| 10 | VisSupportIgnoredUsersChoose | classe | 5.590 (acima) | 110 (acima) |
+| 10 | JnSupportIgnoredUsersChoose | classe | 5.590 (acima) | 110 (acima) |
 | 11 | VisBusinessResumeViewersOfTheMonth | classe | 5.242 (acima) | 102 (acima) |
 | 12 | VisSupportSkillSuggestionDecide | classe | 4.595 (acima) | 79 (acima) |
 | 13 | VisSupportSkillFixHierarchyChooseMode | classe | 4.496 (acima) | 83 (acima) |
@@ -69,8 +69,8 @@ Nomes simples repetidos em pacotes diferentes, identificados pelo pacote na colu
 | 53 | VisBusinessMoveFixHierarchyItem | classe | 1.981 | 41 |
 | 54 | VisBusinessDeleteStoredFixHierarchyRequest | classe | 1.927 | 42 |
 | 55 | VisServiceResume.GetData | enum | 1.922 | 41 |
-| 56 | VisSupportAllowCommandToUser | classe | 1.901 | 43 |
-| 57 | VisSupportIgnoredUsersShow | classe | 1.880 | 45 |
+| 56 | JnSupportAllowCommandToUser | classe | 1.901 | 43 |
+| 57 | JnSupportIgnoredUsersShow | classe | 1.880 | 45 |
 | 58 | VisBusinessDeleteStoredSkillSuggestion | classe | 1.834 | 41 |
 | 59 | VisBusinessSaveFixHierarchyRequestAndSpendTheDay | classe | 1.804 | 42 |
 | 60 | VisBusinessCollectPendingFixHierarchyRequest | classe | 1.771 | 39 |

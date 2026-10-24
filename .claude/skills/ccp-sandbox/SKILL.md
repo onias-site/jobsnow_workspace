@@ -1,6 +1,7 @@
 ---
 name: ccp-sandbox
 description: Sobe, para, atualiza ou mostra o estado do sandbox de testes manuais — uma cópia congelada do ambiente local (Elasticsearch 9201, API vis 18081, API js 18082, front end 3100 e leitor de um bot de suporte próprio no Telegram) que não é afetada pelas alterações de código feitas no workspace. Use quando pedirem "suba o sandbox", "pare o sandbox", "atualize o código do sandbox", "copie os dados de novo para o sandbox", "o sandbox está no ar?", ou quando o usuário quiser continuar testando enquanto o código muda.
+disable-model-invocation: true
 ---
 
 # Sandbox de testes manuais

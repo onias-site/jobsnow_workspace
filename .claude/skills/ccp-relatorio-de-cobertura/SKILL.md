@@ -1,6 +1,7 @@
 ---
 name: ccp-relatorio-de-cobertura
 description: Relatório de porcentagem de cobertura de código do workspace — roda a suíte de ccp_rest-api-tests_jobsnow com o agente JaCoCo (o mesmo motor do EclEmma) e gera uma página HTML expansível no formato da view Coverage do Eclipse (workspace > projeto > src/main/java > pacote > arquivo, com Coverage, Covered/Missed/Total Instructions) mais um TSV por arquivo. Guarda o histórico de todas as rodadas (por projeto e total) com gráficos de linha da evolução, e roda sozinha todo dia às 12:00 pelo Agendador de Tarefas do Windows. Use quando pedirem "cobertura de código", "coverage", "porcentagem de cobertura", "quanto do código os testes cobrem", "relatório do EclEmma/JaCoCo", "quais classes não têm teste", ou para comparar a cobertura antes e depois de uma mudança.
+disable-model-invocation: true
 ---
 
 # Relatório de cobertura de código

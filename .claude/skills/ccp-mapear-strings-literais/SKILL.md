@@ -1,6 +1,7 @@
 ---
 name: ccp-mapear-strings-literais
 description: Varre todos os arquivos .java do workspace e produz um relatório que agrupa as strings literais por "razão de existir" (documentação OpenAPI, mensagem de erro, @SuppressWarnings, nome de campo JSON, concatenação, string solta, etc.), com contadores por categoria, por centro de custo e por arquivo. Use quando pedirem para "mapear as strings literais", "relatório de strings", "onde estão as strings soltas", "quantas strings literais existem" ou ao procurar candidatos a virar enum de field name / constante.
+disable-model-invocation: true
 ---
 
 # Mapear strings literais por razão de existir

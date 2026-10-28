@@ -8,17 +8,19 @@
 
 > **Atualizado em 2026-10-15** (correções da campanha `profissionais2`): senha bloqueada responde **423** em todo endpoint (antes, a verificação do e-mail e as respostas do primeiro acesso davam 427); login recusado não devolve `sessionToken`, e os pedidos de token também não; o token da sessão corrente vindo de **outro navegador** (outro User-Agent) é recusado com 401 **sem contar tentativa** (antes, quatro tentativas assim bloqueavam a senha do dono); a sessão não cai mais na virada da hora. Veja L10.
 
+> **Executado de novo em 2026-10-26**, com o login já no centro de custo **js** (API na 8082, índices `js_login_*`): a automação passou com **113 de 113** verificações (depois de passar a esperar as escritas assíncronas, ver [Automação](#automação-da-api-com-candidatos-intercalados)), e no navegador, com a conta `roteiro03.20261026@teste.com`, L1 a L8 conferiram passo a passo (L5 com duas abas). L9 e L10 ficaram por conta da automação, que intercala três candidatos e troca o User-Agent. As diferenças de texto e de caminho já estão corrigidas abaixo; o que é novo está em [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
+
 ## Como o modal funciona (resumo)
 
-- **Não existe botão "Entrar".** O modal abre sozinho quando uma ação precisa de login e a API responde 401. Depois do login, a ação que pediu o login é **refeita sozinha**.
+- O modal abre de dois jeitos: sozinho, quando uma ação precisa de login e a API responde 401 (depois do login, a ação que pediu o login é **refeita sozinha**); ou pelo menu do usuário (ícone no canto superior direito), que, sem login, mostra **"Entrar no sistema"** (desde 2026-10-17; até então não existia botão de entrar).
 - Telas do modal, pela ordem em que aparecem:
-  1. **"Diga quem é você, antes de continuar..."** — o e-mail (título "Trocar o e-mail" quando se volta a ela pelo link);
+  1. **"Diga quem é você, antes de continuar..."** (aberto por um 401) ou **"Entrar no sistema"** (aberto pelo menu) — o e-mail (título "Trocar o e-mail" quando se volta a ela pelo link);
   2. **"Por favor, confirme o e-mail '...'"** — só no primeiro acesso;
   3. **"Informe suas preferências e objetivos"** — só no primeiro acesso;
   4. **"Criando uma nova senha"** / **"Refazer sua senha"** / **"Atualize sua senha"** / **"Desbloqueie a sua senha"** / **"Desbloqueie seu login"** — a mesma tela (senha + confirmação + token), com títulos diferentes conforme o motivo;
   5. **"Informe a senha para o login '...'"** — quem já tem senha.
-- O token chega por e-mail. Localmente o e-mail vira arquivo: `C:\logs\email\com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html` (procure "esse token é XXXXXXXX"; o arquivo é sobrescrito a cada envio, confira a hora).
-- Os pedidos ao suporte (desbloqueio e reenvio do token) chegam como comando no arquivo `C:\logs\telegram\support-751717896.txt` (é o "Telegram" local da API js).
+- O token chega por e-mail. Localmente o e-mail vira arquivo, numa pasta por destinatário: `C:\logs\email\<e-mail>\com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html` (procure "esse token é XXXXXXXX"; o arquivo é sobrescrito a cada envio a esse e-mail, confira a hora).
+- Os pedidos ao suporte (desbloqueio e reenvio do token) chegam como ticket na caixa de entrada do suporte (`jn_support_pending_command`) e aparecem no `/pendingTickets` com prioridade 1 (antes de todos os outros). O operador os resolve pelo `automacao/SupportBotCommand.java` (item 6.2 da preparação); as respostas do bot vão para `C:\logs\telegram\support-751717896.txt`.
 - **Lentidão (corrigida em 2026-10-09):** na execução, login, gravação de senha e verificação de e-mail levavam de 5 a 10 segundos. A causa era BCrypt (cerca de 250 ms por hash) feito à toa em toda leitura das entidades de senha e de token. Agora a verificação de e-mail leva cerca de 50 ms e as leituras transformam só a chave primária, então o login leva cerca de 0,7 s (antes, 1 a 2 s): o que sobra é a conferência da senha, que é um BCrypt por natureza.
 
 ## Dados
@@ -26,7 +28,8 @@
 - E-mail de teste: use um e-mail que **ainda não existe** (ex.: `roteiro.login@teste.com`). Não use o seu e-mail real: o roteiro bloqueia senha e token.
 - Senhas: qualquer uma com 8+ caracteres, maiúscula, número e caractere especial (ex.: `Roteiro@2026`, `Roteiro@2027`...).
 - Antes de começar: **F12 → Console** → `localStorage.removeItem('logins'); sessionStorage.removeItem('login')` (o navegador guarda respostas de login por e-mail e pode pular telas).
-- **Vários candidatos ao mesmo tempo:** o arquivo do e-mail do token é **um só para todos os destinatários** e é sobrescrito a cada envio. Leia o token logo depois de cada envio e confira o e-mail dentro do arquivo (`...?email=<e-mail>&...`) antes de usar o token. Com o sandbox no ar, ele também escreve nesse arquivo (o `c:\logs` não é isolado).
+- **Vários candidatos ao mesmo tempo:** cada destinatário tem a sua pasta de e-mails, então os tokens de um não sobrescrevem os de outro (até 2026-10-17 o arquivo era um só para todos).
+- **Conferir no Elasticsearch:** os índices do login são `js_login_*` (até 2026-10-17, `jn_login_*`), e o campo `email` deles guarda o SHA-1 do e-mail (no Git Bash: `printf '<e-mail>' | sha1sum`).
 
 ## Automação da API com candidatos intercalados
 
@@ -54,11 +57,15 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 
 **Resultado em 2026-10-11:** antes da correção, 95 de 98 verificações ok (as 3 falhas eram os bugs 3 e 7). Depois da correção, **106 de 106**.
 
+**Resultado em 2026-10-26:** a primeira execução teve 72 ok e dezenas de falhas em cascata (sessão recém-criada respondendo 401, senha recém-salva respondendo 202), porque desde 2026-10-15 as APIs locais gravam pela mensageria **assíncrona** e a resposta chega antes da escrita. O script passou a esperar, depois de cada chamada, que não haja marca em `c:\logs\mensageria\running\` publicada depois dela (o mesmo que o `JnTestTemplate` faz nos testes Java), e também a ler o token na pasta do candidato. Resultado: **113 de 113**.
+
 ## Como abrir o modal
 
 1. Faça o item 5 da preparação (tela do currículo → **Idiomas** → aba **Habilidades**). Atenção: o 1º clique em **Idiomas** só valida o formulário (se faltar função ou LinkedIn, aparece "Falha!!! Deve-se informar ..." no canto); quando tudo está preenchido, ele lê o currículo.
 2. Clique em **"Deixamos de listar alguma habilidade?"** e digite uma habilidade que **está escrita no texto do currículo** e **não está** na lista de habilidades encontradas (ex.: `Tecnologia da Informacao`, `Ingles avancado`). Uma habilidade que não aparece no texto é recusada ("Habilidade fora do currículo") e uma que já está na lista (ex.: `Kanban`) deixa os outros campos desabilitados. Saia do campo (Tab): só então **Sinônimos** e **Justificativa** são habilitados. Escreva uma justificativa com 10+ caracteres e clique em **Enviar**.
 3. Sem login, abre **"Diga quem é você, antes de continuar..."**. A cada vez que precisar abrir o modal de novo, use outra habilidade do texto (uma sugestão já enviada abre só para leitura).
+
+**Mais simples (desde 2026-10-17):** sem login, clique no ícone do usuário (canto superior direito) → **Entrar no sistema**. O modal abre com o título "Entrar no sistema", sem ação para refazer depois do login. Foi o caminho usado em 2026-10-26.
 
 ---
 
@@ -83,7 +90,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 
 ### Criação da senha
 - [ ] 1.12 Esperado: "Criando uma nova senha" com **Senha**, **Confirme a senha** e **Token recebido no e-mail '...'**. O token é pedido sozinho (`POST /token/language/portuguese` → **200**, ~5 s) e aparece "Seu token está sendo enviado ao e-mail '...' nos próximos minutos. Por favor, verifique sua caixa de entrada e sua caixa de spam / lixo eletrônico." Os links "Não recebeu ou perdeu o token? Clique aqui para reenviar" e "Clique aqui para trocar o e-mail" somem enquanto carrega e aparecem depois.
-- [ ] 1.13 Com os três campos vazios, clique em **Salvar senha** (se estiver habilitado). Esperado: "Preencha a senha, a confirmação de senha e o token recebido por e-mail. A senha deve conter ao menos 8 caractéres, ...", **nada** no Network. *(Corrigido em 2026-10-08 — antes ia ao servidor, voltava 422 e a tela não dizia nada.)*
+- [ ] 1.13 Com os três campos vazios, clique em **Salvar senha** (se estiver habilitado; em 2026-10-26 ele já começou **desabilitado**, então não há o que clicar). Esperado: "Preencha a senha, a confirmação de senha e o token recebido por e-mail. A senha deve conter ao menos 8 caractéres, ...", **nada** no Network. *(Corrigido em 2026-10-08 — antes ia ao servidor, voltava 422 e a tela não dizia nada.)*
 - [ ] 1.14 Validações (mensagem em vermelho, botão desabilitado):
 
 | Faça | Esperado |
@@ -99,7 +106,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 - [ ] 1.15 Token errado de 8 caracteres (`ZZZZZZZZ`) → **Salvar senha**. Network `POST /password` → **427** (~6 s). Esperado: "O token informado está incorreto, você ainda pode tentar mais 2 vez(es)" e o campo do token limpo.
 - [ ] 1.16 Digite `ZZZZZZZZ` de novo. Esperado: "Este token já foi digitado antes e está incorreto, tente outro!" (sem ir ao servidor).
 - [ ] 1.17 Token certo (do arquivo do e-mail) → **Salvar senha**. Network `POST /password` → **200** (~10 s). Esperado: o modal fecha, toast **"Sucesso!!! O usuário 'roteiro.login@teste.com' foi autenticado com sucesso!"** e, em seguida, **"Sugestão enviada"** (a ação que abriu o modal foi refeita).
-- [ ] 1.18 Conferir: `http://localhost:9200/jn_login_token_attempts/_search?pretty` **não** tem tentativas pendentes para esse e-mail (o acerto zera as tentativas). *(Corrigido em 2026-10-08 — antes o erro do 1.15 ficava contando.)*
+- [ ] 1.18 Conferir: `http://localhost:9200/js_login_token_attempts/_count?q=email:<sha1 do e-mail>` é **0** (não há tentativas pendentes para esse e-mail) (o acerto zera as tentativas). *(Corrigido em 2026-10-08 — antes o erro do 1.15 ficava contando.)*
 
 ---
 
@@ -113,7 +120,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 ## L3 — Sair do sistema
 
 - [ ] 3.1 Menu do usuário → **Sair do Sistema**. Network `DELETE /login/{email}/{sessionToken}` → **200**. Toast "Sucesso!!! O usuário '...' encerrou o login com sucesso!".
-- [ ] 3.2 Menu do usuário → **Sair do Sistema** de novo (sem login). Toast "Erro!!! Usuário não logado!!!". O mesmo vale para **Trocar Senha** sem login.
+- [ ] 3.2 Menu do usuário de novo (sem login). Esperado: só **"Entrar no sistema"** e **"Acessos"**; **Sair do Sistema** e **Trocar Senha** não aparecem mais (até 2026-10-17 apareciam e respondiam "Erro!!! Usuário não logado!!!"). O nome do último e-mail continua no topo do menu.
 
 ## L4 — Login de quem já tem senha (e bloqueio da senha)
 
@@ -122,10 +129,10 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 - [ ] 4.3 Senha errada `Errada@111` → **Login** → `POST /login/{email}` → **427** (~6 s). Esperado: "A senha informada está incorreta, você ainda tem direito a 2 tentativa(s)", campo limpo.
 - [ ] 4.4 Digite `Errada@111` de novo. Esperado: "Esta senha já foi digitada antes e está incorreta, tente outra senha!" (a tela registra a tentativa no envio, antes da resposta).
 - [ ] 4.5 `Errada@222` → "... você ainda tem direito a 1 tentativa(s)".
-- [ ] 4.6 `Errada@333` → `POST /login` → **429**. Esperado: tela **"Desbloqueie a sua senha"** com "Devido a tentativas de acessos suspeitos, sua senha foi preventivamente bloqueada. Preencha os campos acima, para desbloqueá-la." e a mensagem do token ainda válido (como no 2.2). *(Visto em 2026-10-11: as duas frases saem coladas com ponto duplo, "desbloqueá-la.. Seu token foi enviado...". É só texto.)*
+- [ ] 4.6 `Errada@333` → `POST /login` → **429**. Esperado: tela **"Desbloqueie a sua senha"** com a mensagem do token ainda válido (como no 2.2), que prevalece sobre "Devido a tentativas de acessos suspeitos, sua senha foi preventivamente bloqueada...". *(Até 2026-10-26 as duas frases saíam coladas, com ponto duplo: "desbloqueá-la.. Seu token foi enviado...".)*
 - [ ] 4.6b Com a senha bloqueada, a senha **certa** também é recusada: `POST /login` → **423** (a tela mostra "Desbloqueie a sua senha"); a verificação do e-mail também responde **423** (desde 2026-10-15; antes, 427: a senha bloqueada agora é 423 em todo endpoint). Nenhuma resposta de login recusado traz `sessionToken`.
 - [ ] 4.7 Senha nova + confirmação + token válido → **Salvar senha** → 200, login feito, ação original refeita.
-- [ ] 4.8 Faça logout e entre com a senha nova: `POST /login` → **200** (medido: **14 s**), toast "Sucesso!!! O usuário '...' foi autenticado com sucesso!" e a ação original refeita.
+- [ ] 4.8 Faça logout e entre com a senha nova: `POST /login` → **200** (medido: **14 s** em 2026-10-08; **0,8 s** em 2026-10-26), toast "Sucesso!!! O usuário '...' foi autenticado com sucesso!" e a ação original refeita.
   > Executado com um segundo e-mail de teste, porque o primeiro ficou com o token bloqueado (ver L7): **com o token bloqueado, nem a senha certa entra** — a verificação do e-mail responde 403 e a tela mostra só "Seu token está bloqueado!". Nesse estado o campo de e-mail também fica **somente leitura**; para usar outro e-mail é preciso fechar o modal e abri-lo de novo.
 
 ## L5 — Login concorrente (duas abas)
@@ -135,7 +142,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 - [ ] 5.3 Senha + confirmação + token válido → **Salvar senha** → 200, login feito na aba 2.
 - [ ] 5.4 Volte à aba 1 e faça uma ação que exige login (enviar uma sugestão). Esperado: a aba 1 perdeu o login (a API responde 401 e o modal de login abre). Se entrar de novo pela aba 1, recebe o 409 do 5.2, porque agora o login corrente é o da aba 2. *(Corrigido em 2026-10-11 — bug 3.)*
 - [ ] 5.5 Logo depois do 5.3, faça login com o mesmo e-mail numa **terceira** aba. Esperado: 409 de novo, porque a sessão da aba 2 é o login corrente. Vale para qualquer sessão aberta por **"Salvar senha"** (primeiro acesso, troca de senha, desbloqueio). *(Corrigido em 2026-10-11 — bug 7.)*
-- [ ] 5.6 Na aba 1 (sessão derrubada), clique em **Sair do Sistema**. Esperado: "O usuário '...' não está logado neste sistema!" (404), e a aba 2 **continua logada**.
+- [ ] 5.6 Na aba 1 (sessão derrubada), clique em **Sair do Sistema**. Esperado: "Aviso!!! — O usuário '...' não está logado neste sistema!" (404), e a aba 2 **continua logada** (confira abrindo **Acessos** nela). Para chegar ao menu na aba 1, feche antes o modal de login que o 5.4 abriu.
 - [ ] 5.7 Na aba 2, **Trocar Senha** (senha nova + token). Esperado: 200; qualquer outra sessão desse e-mail deixa de valer.
 
 > **Regra das sessões (desde 2026-10-11):** cada e-mail tem **uma** sessão corrente. Login com senha e "Salvar senha" (primeiro acesso, troca, desbloqueio, "desfazer o outro login") abrem uma sessão nova, e todas as anteriores deixam de valer na hora, no jn e no vis. Uma sessão derrubada recebe 401 **sem contar tentativa** (uma aba antiga repetindo requisições não bloqueia a senha do dono).
@@ -147,15 +154,15 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 
 ## L7 — Bloqueio do token e desbloqueio pelo suporte
 
-- [ ] 7.1 Na tela de senha nova (ex.: "Refazer sua senha"), preencha senha e confirmação e erre o token **3 vezes** (tokens diferentes). Esperado: as duas primeiras → "... você ainda pode tentar mais N vez(es)"; a terceira → `POST /password` → **429**, campos inativos e no rodapé, em vermelho, **"Seu token está bloqueado! Clique aqui para solicitar desbloqueio"**.
+- [ ] 7.1 Na tela de senha nova (ex.: "Refazer sua senha"), preencha senha e confirmação e erre o token **3 vezes** (tokens diferentes). Esperado: as duas primeiras → "... você ainda pode tentar mais N vez(es)"; a terceira → `POST /password` → **429**, **Salvar senha** desabilitado (os campos continuam editáveis) e no rodapé, em vermelho, **"Seu token está bloqueado! Clique aqui para solicitar desbloqueio"**.
 - [ ] 7.2 Clique em **solicitar desbloqueio** → `POST /token/request/unlocking` → **200**. Esperado: "A solicitação de desbloqueio do token para o e-mail '...' foi efetuada com sucesso, por favor, verifique a caixa de entrada, spam / lixo eletrônico deste e-mail para localizar o token que enviamos. Caso não o encontre, ..."
   > Observação: o texto fala em "token que enviamos", mas neste momento o suporte ainda não fez nada.
 - [ ] 7.3 Clique de novo → **409**: "A solicitação de desbloqueio do token para o e-mail '...' já foi feita na data DD/MM/AAAA - HH:MM, se necessário, poderá ser refeita na data (dia seguinte)".
-- [ ] 7.4 **Operador:** no arquivo `C:\logs\telegram\support-751717896.txt` chegou `/solveLoginTokenTicket unlockToken roteiro.login@teste.com`. Envie esse comando ao bot de suporte. Esperado (resposta do bot): "Ao endereço roteiro.login@teste.com, envie a seguinte mensagem: Você solicitou o desbloqueio de seu token ... O token que você deve informar no campo de token é XXXXXXXX".
+- [ ] 7.4 **Operador:** na caixa de entrada do suporte (`jn_support_pending_command`, e no `/pendingTickets`) chegou `/solveLoginTokenTicket unlockToken roteiro.login@teste.com`. Envie esse comando ao bot de suporte (pelo `SupportBotCommand`). Esperado (resposta do bot): "Ao endereço roteiro.login@teste.com, envie a seguinte mensagem: Você solicitou o desbloqueio de seu token ... O token que você deve informar no campo de token é XXXXXXXX".
   > Observação: o sistema **também** manda esse token novo por e-mail sozinho (o arquivo do e-mail é reescrito com ele); a instrução ao operador para mandar à mão é redundante.
 - [ ] 7.5 Candidato: clique em **solicitar desbloqueio** de novo. Esperado: "O token informado não está bloqueado" e os campos voltam a funcionar. *(Corrigido em 2026-10-08 — antes os campos voltavam, mas "Salvar senha" reaplicava o bloqueio guardado no navegador sem consultar o servidor, e o candidato ficava preso.)*
 - [ ] 7.6 Senha, confirmação e **o token novo** → **Salvar senha** → 200, login feito.
-- [ ] 7.7 Conferir: as tentativas de token desse e-mail foram zeradas pelo desbloqueio (`jn_login_token_attempts`). *(Corrigido em 2026-10-08 — antes os 3 erros continuavam contando e o primeiro erro depois do desbloqueio já bloqueava de novo.)*
+- [ ] 7.7 Conferir: as tentativas de token desse e-mail foram zeradas pelo desbloqueio (`js_login_token_attempts`, contagem 0 para o SHA-1 do e-mail). *(Corrigido em 2026-10-08 — antes os 3 erros continuavam contando e o primeiro erro depois do desbloqueio já bloqueava de novo.)*
   > Regra do sistema: **um desbloqueio por dia** (confirmado em 2026-10-11: depois do desbloqueio, 3 tokens errados bloqueiam de novo, e o novo pedido responde 429). Um segundo pedido no mesmo dia responde 429 "A solicitação de desbloqueio do token ... já foi resolvida na data ..., ... envie-nos um e-mail ao endereço onias85@gmail.com ou se preferir, aguarde até a data ... para refazer a sua solicitação".
 
 ## L8 — Reenvio do token pelo suporte
@@ -190,7 +197,7 @@ Use duas abas da mesma janela. A sessão fica no `sessionStorage`, que é de cad
 
 Feito pela automação (`automacao/03-modal-de-login.mjs`) ou com `curl`, porque a tela não troca de User-Agent.
 
-- [ ] 10.1 Faça login com um e-mail novo e guarde o `sessionToken`. Com ele, chame `GET /login/{email}/{sessionToken}` quatro vezes com o cabeçalho `User-Agent: outro-navegador`. Esperado: **401** nas quatro, e `jn_password_attempts` desse e-mail sem tentativas (o token roubado não bloqueia a senha do dono).
+- [ ] 10.1 Faça login com um e-mail novo e guarde o `sessionToken`. Com ele, chame `GET /login/{email}/{sessionToken}` quatro vezes com o cabeçalho `User-Agent: outro-navegador`. Esperado: **401** nas quatro, e `js_login_password_attempts` desse e-mail sem tentativas (o token roubado não bloqueia a senha do dono).
 - [ ] 10.2 A mesma chamada com o User-Agent do login. Esperado: **200**.
 - [ ] 10.3 Login de novo pelo navegador original. Esperado: **409** "Desbloqueie seu login" (a sessão corrente continua válida), e não 423.
 - [ ] 10.4 Errar a senha 3 vezes (429) e chamar `POST /login/{email}/token` (verificação do e-mail). Esperado: **423** `lockedPassword` (até 2026-10-14, 427).
@@ -221,3 +228,16 @@ Feito pela automação (`automacao/03-modal-de-login.mjs`) ou com `curl`, porque
 - Um desbloqueio por dia: se o token bloquear de novo no mesmo dia, o candidato só consegue por e-mail ao suporte — e, com o token bloqueado, **nem a senha certa entra**.
 - Com o token bloqueado o campo de e-mail fica somente leitura (não dá para trocar de e-mail sem fechar o modal).
 - "Sair do Sistema" respondeu 404 ("O usuário '...' não está logado neste sistema!") para uma sessão que continuava sendo aceita pela API do vis — mais um sintoma do bug 3, corrigido em 2026-10-11 (hoje a sessão que responde 404 no logout também é recusada pelo vis).
+
+## Observações da execução (2026-10-26)
+
+| # | O que se viu | Situação |
+|---|---|---|
+| 1 | A automação falhava em cascata porque as APIs locais gravam de forma assíncrona desde 2026-10-15; o script não esperava a escrita. Também lia o token no arquivo único de antes da pasta por destinatário. | **corrigido** no script (113/113) |
+| 2 | Existe "Entrar no sistema" no menu do usuário; sem login, "Sair do Sistema" e "Trocar Senha" somem do menu. | roteiro corrigido (Como o modal funciona, 3.2) |
+| 3 | Pedidos de desbloqueio e reenvio vão para a caixa de entrada do suporte (`/pendingTickets`), não para o arquivo do Telegram local. | roteiro corrigido (7.4) |
+| 4 | Com o token bloqueado, os campos continuam editáveis; só "Salvar senha" fica desabilitado. | roteiro corrigido (7.1); sem efeito prático |
+| 5 | "desbloqueá-la.. Seu token foi enviado" (ponto duplo) no 4.6. | **Corrigido em 2026-10-26** (`ServerRequests.ts`: a mensagem do token enviado prevalece e aparece sozinha) |
+| 6 | Depois de "Sair do Sistema" na tela **Acessos**, a lista de acessos continua na tela até navegar para outra página. Depois de entrar de novo, a lista também não se atualiza sozinha. | **a avaliar** (dado do usuário visível depois da saída) |
+| 7 | As respostas recusadas do login (409, 423) trazem `userAgent`, `ip` e `email` (sem `sessionToken`, como esperado). | informativo |
+| 8 | Login com senha medido em 0,8 s (eram 14 s em 2026-10-08). | informativo |

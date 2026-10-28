@@ -32,17 +32,17 @@ public class SupportBotCommand {
 		String command = String.join(" ", args);
 
 		CcpDependencyInjection.loadAllDependencies(
-				new CcpGsonJsonHandler(),
+				CcpGsonJsonHandler.INSTANCE,
 				CcpLocalInstances.email,
 				CcpLocalInstances.instantMessenger,
 				CcpLocalInstances.syncMensageriaListener,
 				CcpLocalCacheInstances.mock,
-				new CcpMindrotPasswordHandler(),
-				new CcpElasticSerchDbBulk(),
-				new CcpApacheMimeHttp(),
-				new CcpElasticSearchDbRequest(),
-				new CcpElasticSearchCrud(),
-				new CcpElasticSearchQueryExecutor()
+				CcpMindrotPasswordHandler.INSTANCE,
+				CcpElasticSerchDbBulk.INSTANCE,
+				CcpApacheMimeHttp.INSTANCE,
+				CcpElasticSearchDbRequest.INSTANCE,
+				CcpElasticSearchCrud.INSTANCE,
+				CcpElasticSearchQueryExecutor.INSTANCE
 		);
 
 		long now = System.currentTimeMillis();

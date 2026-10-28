@@ -6,6 +6,8 @@
 
 > **Atualizado em 2026-10-15:** um pedido de ajuste de hierarquia por candidato por dia (429 a partir do segundo, cenário H12), com aviso no modal antes do envio. **Vários cenários enviam mais de um pedido com o mesmo candidato: antes de cada "Enviar", libere o dia do candidato com o segundo par de comandos do item 5A da preparação.**
 
+> **Executado de novo em 2026-10-26**, inteiro (H1 a H12, inclusive o H9), no navegador com a conta `roteiro02.20261026@teste.com` e o bot de suporte rodado pelo `automacao/SupportBotCommand.java` (item 6.2 da preparação). O segundo candidato do H9 (`roteiro01b.20261026@teste.com`) foi feito por `curl` com a sessão dele (cabeçalhos `sessionToken` e `email`). Tudo conferiu, com as diferenças de texto já corrigidas nos passos abaixo e as notas em [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
+
 ## Como a funcionalidade funciona (resumo)
 
 1. Na coluna **Conhecimentos implícitos**, cada título (ex.: `ORMJAVA (2)`) é um conhecimento que o sistema deduziu do currículo, com as habilidades que dependem dele.
@@ -39,7 +41,7 @@
 
 - [ ] 1.1 Na coluna Conhecimentos implícitos, localize **ORMJAVA (2)**. Clique no título: abre a lista "Habilidades associadas a ORMJAVA": 1: HIBERNATE, 2: JPA.
 - [ ] 1.2 Clique no **⊕** ao lado de `ORMJAVA (2)`. Esperado: o accordion **não** abre/fecha nem muda a URL; abre o modal "Sugira adicionar (presentes no seu currículo) que você acredita que dependem do conhecimento em ORMJAVA", com uma lista de seleção ("Selecione as habilidades do seu currículo") e um texto ("Explique por que as habilidades selecionadas acima deveriam ser associadas a ORMJAVA"). Nenhum status aparece.
-- [ ] 1.3 Abra a lista: ela traz as habilidades do seu currículo **menos** HIBERNATE e JPA (104 de 106). Use o filtro: digite `jdb` → aparece só JDBC.
+- [ ] 1.3 Abra a lista: ela traz as habilidades do seu currículo **menos** HIBERNATE e JPA (104 de 106 em 2026-10-08; 103 de 105 em 2026-10-26 — o total acompanha a leitura do currículo). Use o filtro: digite `jdb` → aparece só JDBC.
 - [ ] 1.4 Selecione **JDBC** e **SPRING**. Justificativa: `JDBC e Spring são usados junto com ORM em todo projeto Java que fiz.`
 - [ ] 1.5 **Enviar**. (Se pedir login, faça o item 4 da preparação; o envio é refeito sozinho.)
 
@@ -96,9 +98,10 @@ O usuário será avisado por e-mail.
 - [ ] 1.15 `vis_skill?q=skill:JDBC`: o campo `parent` agora inclui `ORMJAVA`. `vis_skill?q=skill:SPRING`: **sem** ORMJAVA.
 - [ ] 1.16 E-mail `...$VisNotifyUserAboutFulfiledSkillHierarchy.html`: "Olá, a sua solicitação de associação com o conhecimento implícito (pai) ORMJAVA foi avaliada pelo nosso time." + a mesma lista do e-mail de recebimento (pai, habilidades, **Sua justificativa**) + "Itens aprovados:" (JDBC e a justificativa) + "Itens reprovados:" (SPRING e a justificativa).
 - [ ] 1.17 Ticket `/fixSkillHierarchy add <email> ORMJAVA` saiu de `/pendingTickets`.
-- [ ] 1.18 Na tela, clique no ⊕ de ORMJAVA. Esperado: **"status: Avaliado"**, painel **"Motivo"** com as duas linhas (uma embaixo da outra), campos desabilitados, botão **"Nova sugestão"** (sem "Desistir"). JDBC e SPRING aparecem selecionados mesmo que deixem de ser opções.
+- [ ] 1.18 Na tela, clique no ⊕ de ORMJAVA. Esperado: **"status: Avaliado"**, painel **"Justificativa do suporte"** (até 2026-10-26 este roteiro o chamava de "Motivo"; ele abre recolhido: clique no título) com as duas linhas (uma embaixo da outra), campos desabilitados, botão **"Nova sugestão"** (sem "Desistir"). JDBC e SPRING aparecem selecionados mesmo que deixem de ser opções.
   > **Visto na execução:** as duas linhas do Motivo apareciam coladas numa linha só e com `(approved)` / `(rejected)` em inglês. **Corrigido** em 2026-10-08: o parágrafo do Motivo respeita a quebra de linha, e a decisão é gravada no idioma do candidato (por enquanto travado em português: "aprovado" / "reprovado"). Pedidos avaliados antes da correção continuam com o texto antigo.
 - [ ] 1.19 **A aprovação aparece na tela:** feche o modal, **reprocesse o currículo** (espaço no fim do texto + **Idiomas**) e volte à aba Habilidades. Esperado: **ORMJAVA (3)** lista HIBERNATE, **JDBC**, JPA.
+  > **Atenção (2026-10-26):** a leitura das habilidades fica em cache por 1 hora **por texto**, para todos os usuários. Se esse mesmo texto (com o espaço no fim) já foi processado na última hora, o reprocessamento devolve a leitura antiga e a aprovação não aparece. Acrescente ao fim uma palavra que nunca foi usada (ex.: `r` + a hora atual) em vez do espaço.
   > **Visto na execução:** confirmado na tela (`ORMJAVA (2)` → `ORMJAVA (3)`). Em 2026-10-09, já sem reiniciar a API, uma aprovação em NOSQLDATABASE apareceu na tela no reprocessamento seguinte.
 
 ---
@@ -109,7 +112,7 @@ O usuário será avisado por e-mail.
 
 - [ ] 2.1 Ainda no ⊕ de ORMJAVA (status Avaliado), clique em **Nova sugestão**: seleção e justificativa se esvaziam e voltam a ficar habilitadas.
 - [ ] 2.2 Selecione **SPRING** (já reprovado em H1) e **MYSQL** (novo). Justificativa: `MySQL também é acessado via ORM nos projetos citados.` → **Enviar** → "Sugestão enviada".
-- [ ] 2.3 E-mail de recebimento lista **MYSQL, SPRING**.
+- [ ] 2.3 E-mail de recebimento lista as duas habilidades **na ordem em que foram selecionadas** (em 2026-10-26: "SPRING, MYSQL").
 - [ ] 2.4 Operador: `/fixSkillHierarchy add <email> ORMJAVA`. Esperado: "Itens pendentes: MYSQL" e "Já reprovados anteriormente (não serão perguntados): SPRING".
 - [ ] 2.5 Responde `rejeitar MySQL é banco de dados, não framework de mapeamento`. Esperado: "Aprovados: -" e "Reprovados: SPRING, MYSQL" — o SPRING entra no resumo com a decisão anterior.
 - [ ] 2.6 E-mail de avaliação: em "Itens reprovados", SPRING com a justificativa "item já reprovado em revisão anterior" e MYSQL com a sua.
@@ -152,7 +155,7 @@ O usuário será avisado por e-mail.
 
 ### Validações (nada vai ao servidor)
 - [ ] 6.1 ⊕ de ORMJAVA → **Nova sugestão** → **Enviar** sem selecionar nada. Esperado: "Nenhuma habilidade selecionada — Selecione ao menos uma habilidade para associar a ORMJAVA."
-- [ ] 6.2 Selecione **ORACLE**, justificativa `curta` → Enviar. Esperado: "Explicação inválida — A explicação deve ter entre 10 e 500 caracteres."
+- [ ] 6.2 Selecione **ORACLE**, justificativa `curta` → Enviar. Esperado: "Justificativa inválida — A justificativa deve ter entre 10 e 500 caracteres."
 - [ ] 6.3 No 🗑 de ORMJAVA, sem selecionar → "Selecione ao menos uma habilidade para desassociar de ORMJAVA."
 
 ### Desistir
@@ -167,7 +170,7 @@ O usuário será avisado por e-mail.
   > Até 2026-10-15 a segunda desistência do mesmo termo e tipo dentro da hora recebia 429 ("Desistência não permitida"). O bloqueio foi removido: o limite de um pedido a cada 24 horas já limita os tickets.
 
 ### Operador avaliando quando o candidato desiste (desde 2026-10-11)
-- [ ] 6.11 Faça um pedido com **duas** habilidades em algum termo. Operador: envie o comando e responda `um a um` → "Item 1 de 2 ...".
+- [ ] 6.11 Faça um pedido com **duas** habilidades em algum termo (em 2026-10-26 o ⊕ de MOCK só oferecia JUNIT; um termo com uma habilidade também serve: "Item 1 de 1"). Operador: envie o comando e responda `um a um` → "Item 1 de 2 ...".
 - [ ] 6.12 Na tela, desista do pedido. Operador: responda `aprovar <justificativa>`. Esperado: **"O usuário <email> desistiu da solicitação de associação com o termo <termo> enquanto ela era avaliada. A avaliação foi encerrada e as decisões tomadas até aqui foram descartadas."** Nada vai para aprovados/reprovados e o candidato não recebe e-mail de avaliação.
 - [ ] 6.13 Mesmo cenário, desistindo **antes** de o operador escolher o modo (logo depois de ele ver o pedido): a resposta seguinte do operador recebe o mesmo aviso.
 
@@ -184,8 +187,8 @@ O usuário será avisado por e-mail.
 - [ ] 7.3 `não` → "O usuário não será ignorado." + opções. `ignorar` → `sim` → "O usuário <email> foi ignorado pelo suporte, em todos os comandos. A solicitação para o termo SQLDATABASE foi descartada."
 - [ ] 7.4 Conferir: pedido e item pendentes descartados, **sem** e-mail ao candidato; `jn_command_not_allowed_to_user` com **um** registro do e-mail, `commandName: fixSkillHierarchy` e o pedido descartado na `description`.
 - [ ] 7.5 Candidato repete o pedido. Esperado: aviso vermelho "Falha ao enviar sugestão" (Network **403**); nada pendente; nada no Telegram.
-- [ ] 7.6 **Ignorar é global:** o candidato tenta sugerir uma habilidade **desconhecida** ("Deixamos de listar alguma habilidade?", ex.: `GEORREFERENCIAMENTO`). Esperado: também **403** / "Falha ao enviar sugestão". (Com uma habilidade já conhecida, o 412 vem antes do 403.) Se o operador rodar qualquer um dos dois comandos para esse e-mail, o bot responde: "O usuário <email> está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use /allowCommandToUser <email>"
-- [ ] 7.7 Operador: `/allowCommandToUser <email>`. Esperado: "O usuário <email> não é mais ignorado pelo suporte: as próximas solicitações dele, em todos os comandos, voltarão a chegar ao suporte."
+- [ ] 7.6 **Ignorar é global:** o candidato tenta sugerir uma habilidade **desconhecida** que esteja no texto do currículo ("Deixamos de listar alguma habilidade?", ex.: `SIGOM`, que está no `cv.txt`; uma palavra fora do currículo é barrada antes, pela própria tela, com "Habilidade fora do currículo"). Esperado: também **403** / "Falha ao enviar sugestão". (Com uma habilidade já conhecida, o 412 vem antes do 403.) Se o operador rodar qualquer um dos dois comandos para esse e-mail, o bot responde: "O usuário <email> está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use /permitirComandoAoUsuario <email>" (o nome do comando sai no idioma do operador; `/allowCommandToUser` é o nome canônico e também funciona)
+- [ ] 7.7 Operador: `/permitirComandoAoUsuario <email>` (ou `/allowCommandToUser <email>`). Esperado: "O usuário <email> não é mais ignorado pelo suporte: as próximas solicitações dele, em todos os comandos, voltarão a chegar ao suporte."
 - [ ] 7.8 Candidato repete 7.5. Esperado: agora "Sugestão enviada" e o comando chega ao Telegram. (Ele é resolvido no H10.3.)
 
 ---
@@ -193,11 +196,11 @@ O usuário será avisado por e-mail.
 ## H8 — Pelo `/pendingTickets`
 
 - [ ] 8.1 Crie dois pedidos: ⊕ de **NOSQLDATABASE** com **MEMCACHE** e 🗑 de **NOSQLDATABASE** com **DATASTORE** (justificativas válidas).
-- [ ] 8.2 Operador: `/pendingTickets`. Esperado: "Você tem N tickets para resolver" e "Ticket 1 de N => ..." com "Digite "1" para resolver ou "2" para ir ao próximo". Os novos estão no fim (ordem do mais antigo para o mais novo).
+- [ ] 8.2 Operador: `/pendingTickets`. Esperado: "Você tem N tickets para resolver" e "Ticket 1 de N => ..." com "Digite "1" para resolver ou "2" para ir ao próximo". A lista é ordenada pela **prioridade** (menor primeiro) e, no empate, do mais antigo para o mais novo: os tickets de login (prioridade 1) vêm antes dos de habilidade e hierarquia (prioridade 3), e os novos ficam no fim dos de prioridade 3. Os pedidos novos ainda estão na caixa de entrada (`jn_support_pending_command`) e só passam para `jb_pending_tickets` quando o `/pendingTickets` roda. (Em 2026-10-26 eram 42 tickets e os dois do roteiro eram o 41 e o 42: percorrer com "2" leva uns 5 minutos pelo `SupportBotCommand`.)
 - [ ] 8.3 `2` → mostra o próximo. `3` → "Não entendi a resposta." e o mesmo ticket.
 - [ ] 8.4 Ao chegar no `/fixSkillHierarchy add <email> NOSQLDATABASE`, responda `1`. Esperado: "Resolvendo o ticket ..." e o pedido de NOSQLDATABASE (associação) com as opções.
 - [ ] 8.5 Decida (`aprovar ...`). Esperado: o resumo da revisão e, em seguida, a lista de tickets reaberta sem esse.
-- [ ] 8.6 Resolva o `/fixSkillHierarchy remove <email> NOSQLDATABASE` digitando o comando à mão (fora da lista). Depois, `/pendingTickets` não o mostra mais (digitar avulso também dá baixa).
+- [ ] 8.6 Resolva o `/fixSkillHierarchy remove <email> NOSQLDATABASE` digitando o comando à mão (fora da lista). Depois, `/pendingTickets` não o mostra mais (digitar avulso também dá baixa). Consultando `jb_pending_tickets` logo em seguida, ele ainda pode aparecer por 1 s (refresh do Elasticsearch).
 - [ ] 8.7 Quando não houver mais nenhum: "Você não tem tickets para resolver." (Não executado em 2026-10-08: a base local tem 20 tickets de testes automáticos.)
 
 ---
@@ -208,7 +211,8 @@ O item não tem e-mail na chave. Para ver isso:
 - [ ] 9.1 Com outro e-mail (outra janela anônima, com o login da preparação para esse e-mail), peça ⊕ de **ORMJAVA** com **ORACLE**. Com o seu, peça o mesmo.
 - [ ] 9.2 Existe **um** item `ORMJAVA/add/ORACLE` pendente e **dois** pedidos.
 - [ ] 9.3 Um dos candidatos desiste: o item **continua** pendente (o outro pedido ainda o usa). O outro desiste: o item some.
-- [ ] 9.4 Variante: em vez de desistir, o operador aprova o pedido do primeiro. Ao revisar o do segundo, ORACLE aparece como "Já aprovados anteriormente" e a revisão termina sozinha (nada a perguntar).
+- [ ] 9.4 Variante: em vez de desistir, o operador aprova o pedido do primeiro. Ao revisar o do segundo, a revisão termina sozinha (nada a perguntar), direto no resumo "Revisão concluída para <segundo email> / ORMJAVA. Aprovados: ORACLE" e o e-mail ao segundo candidato. (Em 2026-10-26 o bot não mostrou a linha "Já aprovados anteriormente": ela só aparece quando sobra algum item a perguntar.)
+  > Se o `ORMJAVA` desse e-mail já tiver um pedido avaliado, o ⊕ abre em "status: Avaliado": clique em **Nova sugestão** antes.
 
 ---
 
@@ -233,10 +237,10 @@ O item não tem e-mail na chave. Para ver isso:
 
 > **Executado em 2026-10-15** só o 12.1 pela tela (o aviso aparece no modal ⊕). Do 12.2 ao 12.5 vale o teste `SkillFixHierarchyThroughSupportBotTest.onlyOneRequestPerDay`; pela tela, cada envio vai ao Telegram real.
 
-- [ ] 12.1 Libere o dia do candidato (item 5A da preparação). Clique no ⊕ de um conhecimento implícito sem pedido. Esperado: abaixo da justificativa, o aviso **"Atenção: você pode enviar apenas uma sugestão de ajuste de hierarquia de habilidades a cada 24 horas. Confira os dados antes de enviar."** O aviso não aparece quando o modal carrega um pedido já feito.
+- [ ] 12.1 Libere o dia do candidato (item 5A da preparação). Clique no ⊕ de um conhecimento implícito sem pedido. Esperado: abaixo da justificativa, o aviso **"Atenção: depois deste envio, um novo chamado (sugestão de habilidade, ajuste de hierarquia ou fale conosco) só poderá ser aberto quando completar 24 horas. Confira os dados antes de enviar."** *(texto de 2026-10-26)* O aviso não aparece quando o modal carrega um pedido já feito.
 - [ ] 12.2 Selecione uma habilidade, justificativa válida → **Enviar** → "Sugestão enviada". `jn_ticket_daily_limit` ganha um registro com `quotaGroup: sharedTickets`, e `jn_disposable_record?q=entity:jn_ticket_daily_limit` a sua cópia.
-- [ ] 12.3 **Sem liberar o dia**, abra o 🗑 de **outro** conhecimento, selecione uma habilidade e envie. Esperado: aviso vermelho **"Limite de 24 horas atingido — Você já enviou uma sugestão de ajuste de hierarquia de habilidades nas últimas 24 horas. É permitida apenas uma a cada 24 horas: tente novamente em 24 horas."**; Network `POST ...skills/hierarchy` → **429**; nada novo em `vis_skill_fix_hierarchy_pending`, nenhum e-mail, nada no Telegram; o modal continua aberto.
-- [ ] 12.4 O limite é por tipo de sugestão: com o dia de hierarquia gasto, uma sugestão de habilidade (roteiro 01) ainda é aceita, se o dia dela estiver livre.
+- [ ] 12.3 **Sem liberar o dia**, abra o 🗑 de **outro** conhecimento, selecione uma habilidade e envie. Esperado: aviso vermelho **"Limite de 24 horas atingido — Você já abriu um chamado (sugestão de habilidade, ajuste de hierarquia ou fale conosco) nas últimas 24 horas. A sugestão de ajuste de hierarquia de habilidades poderá ser enviada quando completar 24 horas do envio anterior."**; Network `POST ...skills/hierarchy` → **429**; nada novo em `vis_skill_fix_hierarchy_pending`, nenhum e-mail, nada no Telegram; o modal continua aberto.
+- [ ] 12.4 A cota é **dividida** (desde 2026-10-23): com o dia gasto por um ajuste de hierarquia, uma sugestão de habilidade (roteiro 01) também é recusada: "Limite de 24 horas atingido — Você já abriu um chamado (...) nas últimas 24 horas. A sugestão de habilidade poderá ser enviada quando completar 24 horas do envio anterior." (429). O mesmo vale para o fale conosco (exceto bug e dúvida). *(Até 2026-10-23 o limite era por tipo de sugestão.)*
 - [ ] 12.5 Libere o dia e repita o 12.3. Esperado: "Sugestão enviada".
 
 ---
@@ -246,16 +250,16 @@ O item não tem e-mail na chave. Para ver isso:
 | Regra | Cenário |
 |---|---|
 | Opções do ⊕ (currículo menos os já associados) e do 🗑 (só os associados) | H1, H4 |
-| Consulta ao abrir o modal: Pendente (só leitura, "Fechar") / Avaliado + Motivo ("Nova sugestão"); Desistir | H1, H2, H6 |
+| Consulta ao abrir o modal: Pendente (só leitura, "Fechar") / Avaliado + Justificativa do suporte ("Nova sugestão"); Desistir | H1, H2, H6 |
 | Item a item, aprovar tudo, rejeitar tudo; justificativa obrigatória | H1, H4, H5 |
 | Itens decididos antes não são perguntados e entram no resumo e no e-mail | H2, H9 |
 | Pedido só com itens já decididos é recusado e avisado por e-mail | H3 |
 | Item compartilhado entre candidatos; desistência só apaga item órfão | H6, H9 |
 | Aprovação altera `vis_skill.parent` e o conhecimento implícito da tela | H1, H4 |
-| Ignorar com confirmação, global (403 nos dois modais); `/allowCommandToUser <email>` | H7 |
+| Ignorar com confirmação, global (403 nos dois modais); `/permitirComandoAoUsuario <email>` | H7 |
 | `/pendingTickets`: entra, "1", "2", baixa avulsa | H8 |
 | Comando malformado; abandonar revisão; termo com espaço | H10, H11 |
-| Um pedido por dia (aviso no modal, 429; 403 e 409 antes do limite) | H12 |
+| Um pedido por dia, cota dividida com a sugestão de habilidade (aviso no modal, 429; 403 e 409 antes do limite) | H12 |
 
 ## Observações da execução (2026-10-08)
 
@@ -269,3 +273,16 @@ O item não tem e-mail na chave. Para ver isso:
 | 6 | Aprovação só aparecia na tela depois de reiniciar a API do vis. | **corrigido** no ambiente local: a limpeza do cache feita por um processo agora vale para todos (em produção o Memcache já é compartilhado) |
 | 8 | Desistir de um pedido pela tela não tirava o ticket do `/pendingTickets`. | **corrigido** |
 | 7 | `jn_command_not_allowed_to_user` tem registros duplicados de um e-mail antigo (chaves de antes da mudança para "só e-mail"). Recriar o índice (item 3.1 da preparação) limpa. | ambiente |
+
+## Observações da execução (2026-10-26)
+
+| # | O que se viu | Situação |
+|---|---|---|
+| 1 | A resposta 200 do `POST`/`DELETE .../skills/hierarchy` devolve `sessionToken`, `ip` e `userAgent` do candidato (o corpo da requisição enriquecido pela sessão). O mesmo acontece na sugestão de habilidade (roteiro 01). | **a avaliar** (dado de sessão na resposta) |
+| 2 | Painel do pedido avaliado chama-se "Justificativa do suporte", e a mensagem do 6.2 diz "Justificativa inválida". | roteiro corrigido |
+| 3 | O reprocessamento com espaço no fim não refaz a leitura se o mesmo texto foi lido na última hora (cache por texto). | roteiro corrigido (1.19) |
+| 4 | `/pendingTickets` ordena por prioridade; os pedidos só saem da caixa de entrada `jn_support_pending_command` quando a lista roda. | roteiro corrigido (8.2) |
+| 5 | O bot fala `/permitirComandoAoUsuario` (idioma do operador). | roteiro corrigido (7.6, 7.7) |
+| 6 | Cota dividida: o ajuste de hierarquia gasta o dia da sugestão de habilidade. | roteiro corrigido (12.4) |
+| 7 | No H9 com o item já aprovado, o resumo não traz a linha "Já aprovados anteriormente". | roteiro corrigido (9.4); comportamento coerente |
+| 8 | O 8.7 continua sem execução: a base tem 39 tickets de testes automáticos. | ambiente |

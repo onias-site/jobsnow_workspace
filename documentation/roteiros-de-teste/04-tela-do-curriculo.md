@@ -4,9 +4,11 @@
 
 > **Criado e executado em 2026-10-15**, pela automação no Chrome, com 36 currículos (30 já carregados do `profissionais2` e 6 novos), de C1 a C8. Resultado em `resultados/2026-10-14-profissionais2/achados.md`, seção "Madrugada de 2026-10-15".
 
+> **Executado de novo em 2026-10-26**, à mão no Chrome (a amostra da automação depende da carga `profissionais2`, que o reset do vis apagou: a base tinha só 2 currículos). Tela em `/meus-dados/sobre-mim`. C1 pela tela com um currículo de TI (`roteiro03.20261026@teste.com`); um operacional (tipo 4) foi salvo pela API com a sessão de `roteiro01b.20261026@teste.com` para o C6 e o 4.2. Tudo conferiu; os avisos ao operador do C6 vão para o Telegram real (a API do vis não usa o arquivo local) e não foram vistos. Notas em [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
+
 ## Como a tela funciona (resumo)
 
-1. Abas, nesta ordem: **Currículo**, **Idiomas**, **N Habilidades** (só no tipo 1, Tecnologia da Informação, depois de ler o texto colado), **Opções** e **Salários**. O botão de cada aba avança para a próxima e fica desabilitado enquanto houver pendência; o da última é **Salvar dados**.
+1. Abas, nesta ordem: **Currículo**, **Idiomas**, **N Habilidades** (só no tipo 1, Tecnologia da Informação, depois de ler o texto colado), **Opções** e **Salários**. O botão de cada aba avança para a próxima e fica desabilitado enquanto houver pendência; o da última é **Salvar dados**. Clicar no título de uma aba distante anda **uma aba por vez** na direção dela (de Currículo, um clique em Salários leva a Idiomas); para chegar, clique de novo.
 2. Ao abrir, a tela lê o currículo gravado (`GET /resume/{email}`) e preenche as abas. A faixa do topo mostra a situação: "Você ainda não tem currículo salvo", "Currículo ativo: visível para os recrutadores" ou "Currículo inativo: oculto dos recrutadores". Sem login, não mostra nada e não abre o modal de login.
 3. O texto do currículo não é gravado (LGPD). O TI já salvo dispensa o texto; colar um texto novo refaz a lista de habilidades (`POST skills/fromText`).
 4. Na faixa de situação, no topo e visíveis em todas as abas (desde 2026-10-15; antes só ao lado de **Salvar dados**, na última aba): **Inativar** (ativo), **Reativar** (inativo) e **Excluir**, cada um com confirmação. Excluir apaga de vez e limpa o formulário.
@@ -36,6 +38,7 @@ Na página, cada passo é: `eval(await fetch('http://127.0.0.1:3999/helper.js').
 - [ ] 1.1 Para cada tipo (TI, recrutamento, superior, operacional): preencha função buscada, última função, LinkedIn, empresas (uma pelo autocomplete, uma digitada + Enter), tipo e, no TI, o texto do currículo. Avance.
 - [ ] 1.2 Idiomas: marque "Tenho conhecimento em outro(s) idioma(s)", escolha os idiomas e o nível de cada um. Avance (no TI, a aba Habilidades mostra a contagem lida do texto).
 - [ ] 1.3 Opções: regiões, PCD, viagens, experiência, disponibilidade, temporário. Salários: CLT, PJ, bitcoin, negociável. **Salvar dados**.
+  > Os campos numéricos aparecem ao **desmarcar** as caixas: "Estou pleiteando meu primeiro emprego" → **Anos de experiência**; "Tenho disponibilidade imediata" → **Dias necessários**; "Não aceito empregos temporários" → **Total mínimo de duração (em meses)**; "Não aceito empregos CLT/PJ" → a pretensão de cada um. Todas começam marcadas, exceto PCD e viagens.
 - [ ] 1.4 Esperado: toast "Currículo salvo com sucesso", com o detalhe "Seu currículo está ativo e visível para os recrutadores." (sem repetir o título: achado 29), e a faixa "Currículo ativo", com **Inativar** e **Excluir**; `vis_resume` com os campos enviados (experiência como ano de início) e `vis_resume_linkedin` com o endereço e o hash do e-mail em `emails`.
 
 ## C2 — Recarga (GET /resume)
@@ -58,6 +61,7 @@ Na página, cada passo é: `eval(await fetch('http://127.0.0.1:3999/helper.js').
 
 - [ ] 5.1 LinkedIn `https://www.linkedin.com/in/fulano-` → o avançar da aba Currículo fica desabilitado, com "O endereço do linkedin deve ter o formato ...".
 - [ ] 5.2 Empresa com mais de 50 caracteres → "Cada empresa / consultoria deve ter de 2 a 50 caracteres".
+  > **Visto em 2026-10-26:** enquanto se digita o nome longo, o autocomplete consulta o servidor com o texto inteiro, e a recusa dele aparece como aviso cru, em inglês: "search — The field search has a value ... that is a string whith a length 62 that is greater than specified value 50". Ver observação 1.
 - [ ] 5.2b Autocomplete: digite `Tra` e escolha "Transportadoraaricanduva" (24 caracteres). Esperado: a empresa entra e o avançar continua habilitado (achado 23, corrigido em 2026-10-15 subindo o limite para 50).
 - [ ] 5.3 Experiência 71 → "Os anos de experiência devem estar entre 1 e 70" e o avançar desabilitado; 70 salva.
 - [ ] 5.4 Home office e depois uma região. Esperado: só a região fica marcada, com o aviso "Home office desmarcado — Ao escolher uma região, o home office foi desmarcado: os dois não podem ficar juntos." O mesmo ao marcar "qualquer estado / cidade" com o home office marcado.
@@ -76,4 +80,14 @@ Na página, cada passo é: `eval(await fetch('http://127.0.0.1:3999/helper.js').
 ## C8 — Limite diário das sugestões, a partir desta tela
 
 - [ ] 8.1 Siga o S10 do roteiro 01 e o H12 do roteiro 02 com um currículo de TI recarregado.
-- [ ] 8.2 Sem colar o texto do currículo depois de recarregar, abra "Deixamos de listar alguma habilidade?". Esperado: aviso "Para sugerir uma habilidade, cole o texto do seu currículo na aba Currículo..." no topo do modal, campo da habilidade bloqueado e **Enviar** desabilitado (achado 26, corrigido em 2026-10-15). Cole o texto e reabra: o campo libera.
+- [ ] 8.2 (Executado em 2026-10-26: confere.) Sem colar o texto do currículo depois de recarregar, abra "Deixamos de listar alguma habilidade?". Esperado: aviso "Para sugerir uma habilidade, cole o texto do seu currículo na aba Currículo..." no topo do modal, campo da habilidade bloqueado e **Enviar** desabilitado (achado 26, corrigido em 2026-10-15). Cole o texto e reabra: o campo libera.
+
+## Observações da execução (2026-10-26)
+
+| # | O que se viu | Situação |
+|---|---|---|
+| 1 | O autocomplete de empresas manda ao servidor o texto digitado mesmo com mais de 50 caracteres; o 422 da validação vira um aviso cru, em inglês, com o nome técnico do campo (`search`). | **Corrigido em 2026-10-26** (`NotAllowedCompany.tsx` não consulta acima de 50 caracteres; conferido no Chrome: 3 e 50 consultam, 51 não, sem aviso) |
+| 2 | Clicar no título de uma aba distante anda uma aba por vez. | **a avaliar**; o roteiro descreve o comportamento |
+| 3 | C1 a C5, C7 e o 8.2 pela tela; 4.2 e C6 pela API (2 contas). Pretensões, idiomas, regiões (DDD 11 e 19), experiência gravada como ano de início (12 anos → 2014) e empresas conferidos no `vis_resume`. | ok |
+| 4 | Excluir o único dono de um LinkedIn apaga o registro de `vis_resume_linkedin`; com dois donos, a saída de um deixa só o outro. | ok |
+| 5 | Os avisos ao operador do C6 saem pelo Telegram real da API do vis; não há como conferir no arquivo local. | ambiente |

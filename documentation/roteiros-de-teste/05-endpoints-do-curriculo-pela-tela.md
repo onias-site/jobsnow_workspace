@@ -2,7 +2,9 @@
 
 **Pré-requisito:** [00-preparacao-do-ambiente.md](00-preparacao-do-ambiente.md) até o item 4 (Elasticsearch, APIs js 8082 e vis 8081, front 3000 e login).
 
-> **Criado e executado em 2026-10-15**, no Chrome, com 10 candidatos novos (`roteiro05.*.593167@teste.com`) e o helper `automacao/08-tela-curriculo-helper.js`, que preenche as abas e clica nos botões de verdade. Resultado na seção [Execução de 2026-10-15](#execução-de-2026-10-15), no fim. Cobre só os quatro endpoints do controller `VisRestApiResume`, sempre a partir de uma ação do candidato na tela "Ver meu currículo" (`http://localhost:3000/portuguese-version/como-estou-indo/ver-meu-curriculo`). A sugestão de habilidade e a sugestão de ajuste de hierarquia (outros controllers) ficam fora: estão nos roteiros 01 e 02. As chamadas de apoio da tela (`skills/fromText`, `companies/search/autocomplete`) aparecem só porque a tela precisa delas para montar o currículo.
+> **Criado e executado em 2026-10-15**, no Chrome, com 10 candidatos novos (`roteiro05.*.593167@teste.com`) e o helper `automacao/08-tela-curriculo-helper.js`, que preenche as abas e clica nos botões de verdade. Resultado na seção [Execução de 2026-10-15](#execução-de-2026-10-15), no fim. Cobre só os quatro endpoints do controller `VisRestApiResume`, sempre a partir de uma ação do candidato na tela "Sobre mim" (`http://localhost:3000/meus-dados/sobre-mim`; até 2026-10-17, "Ver meu currículo" em `/portuguese-version/como-estou-indo/ver-meu-curriculo`).
+
+> **Executado de novo em 2026-10-26** no Chrome, junto com o roteiro 04, com `roteiro03.20261026@teste.com` (duas abas) e, para o tipo 4 e o LinkedIn emprestado, `roteiro01b.20261026@teste.com` pela API. Todos os passos conferiram, inclusive as correções R05-1 (aviso e formulário limpo depois do 404) e R05-2 (sem `hash` no `GET`). Para provocar o 401 com o currículo na tela (2.6, 3.5, 4.5), a sessão foi encerrada no servidor (`DELETE /login/{email}/{sessionToken}` na 8082) deixando a da aba como estava: trocar o `sessionToken` por um inventado faz o login seguinte cair em "Desbloqueie seu login" (409), porque a sessão verdadeira continua sendo a corrente. Resultado na seção [Execução de 2026-10-26](#execução-de-2026-10-26). A sugestão de habilidade e a sugestão de ajuste de hierarquia (outros controllers) ficam fora: estão nos roteiros 01 e 02. As chamadas de apoio da tela (`skills/fromText`, `companies/search/autocomplete`) aparecem só porque a tela precisa delas para montar o currículo.
 
 ## Os quatro endpoints
 
@@ -48,7 +50,7 @@ Use candidatos novos, um por cenário, para que um cenário não dependa do ante
 - [ ] 2.3 **Atualização**: troque a função buscada, avance até Salários e salve. Esperado: 200; `vis_resume` com a função nova; continua um só registro.
 - [ ] 2.4 **Tipos 2, 3 e 4**: com outro candidato para cada tipo, preencha e salve. Esperado: sem a aba Habilidades; nenhum `POST skills/fromText`; 200 e o registro com `skill` vazio.
 - [ ] 2.5 **Salvar um currículo inativo reativa**: com o currículo inativo (3.1), mude um campo e salve. Esperado: 200; faixa verde; o registro sai de `vis_inactive_resume` e volta a `vis_resume`.
-- [ ] 2.6 **Sessão expirada no salvar**: com a tela preenchida, troque o `sessionToken` do `sessionStorage` por um inventado e clique **Salvar dados**. Esperado: `POST` → 401 e o modal de login abre; depois de logar, o salvar é refeito sozinho e responde 200.
+- [ ] 2.6 **Sessão expirada no salvar**: com a tela preenchida, encerre a sessão no servidor (Console: `fetch('http://localhost:8082/login/<email>/<sessionToken>', {method:'DELETE', headers:{'Content-Type':'application/json', sessionToken:'<sessionToken>', email:'<email>'}, body:'{}'})`, com os valores do `sessionStorage.login`) e clique **Salvar dados**. Esperado: `POST` → 401 e o modal de login abre; depois de logar, o salvar é refeito sozinho e responde 200.
 - [ ] 2.7 **Validações da tela barram o salvar** (nada sai para o `POST`): LinkedIn terminado em hífen; empresa com mais de 50 caracteres; experiência 71; temporário 13; sem CLT nem PJ. Esperado: o botão da aba fica desabilitado, com a mensagem da regra.
 - [ ] 2.8 **Home office e regiões**: marque três regiões e depois home office; depois marque uma região. Esperado: os avisos "Regiões desmarcadas — ... as 3 regiões escolhidas foram desmarcadas." e "Home office desmarcado — ..."; salvar com home office sozinho → 200 com `ddd: [10]`.
 - [ ] 2.9 **LinkedIn de outro e-mail**: com um segundo candidato, salve com o LinkedIn do 2.1. Esperado: 200; `vis_resume_linkedin` com os dois hashes em `emails`; o operador recebe no Telegram (real) o aviso de LinkedIn compartilhado.
@@ -60,7 +62,7 @@ Use candidatos novos, um por cenário, para que um cenário não dependa do ante
 - [ ] 3.2 **Reativar**: **Reativar** → **Sim, reativar**. Esperado: 200; toast "Currículo reativado" com "Seu currículo voltou a aparecer para os recrutadores."; faixa verde; de volta a `vis_resume` e `jn_grouper`; e-mail `...ReactivatedResume.html`.
 - [ ] 3.3 **Desistir na confirmação**: **Inativar** → **Não**. Esperado: nenhuma requisição; nada muda.
 - [ ] 3.4 **Currículo excluído em outra aba**: abra a tela em duas abas com o mesmo candidato; exclua na primeira; na segunda, **Inativar** → **Sim**. Esperado: `DELETE .../status` → 404; a segunda aba relê a situação e mostra "Você ainda não tem currículo salvo", sem botões.
-- [ ] 3.5 **Sessão expirada**: troque o `sessionToken` por um inventado e clique **Inativar** → **Sim**. Esperado: 401, modal de login; depois de logar, a inativação é refeita (200).
+- [ ] 3.5 **Sessão expirada**: encerre a sessão no servidor como no 2.6 e clique **Inativar** → **Sim**. Esperado: 401, modal de login; depois de logar, a inativação é refeita (200).
 - [ ] 3.6 **Resposta sem dados da sessão**: a resposta do 3.1 não traz `sessionToken`, `ip` nem `userAgent`; a do 404 do 3.4 traz só `message` e `status`.
 
 ## E4 — Excluir (`DELETE /resume/{email}/language/portuguese`)
@@ -69,7 +71,7 @@ Use candidatos novos, um por cenário, para que um cenário não dependa do ante
 - [ ] 4.2 **Excluir um currículo inativo**: inative e depois exclua. Esperado: o mesmo do 4.1.
 - [ ] 4.3 **Desistir na confirmação**: **Excluir** → **Não**. Esperado: nenhuma requisição; nada muda.
 - [ ] 4.4 **Depois de excluir**: avance pelas abas vazias. Esperado: o salvar exige preencher tudo de novo (o formulário não guarda os dados apagados).
-- [ ] 4.5 **Sessão expirada**: troque o `sessionToken` e clique **Excluir** → **Sim**. Esperado: 401, modal de login; depois de logar, a exclusão é refeita (200).
+- [ ] 4.5 **Sessão expirada**: encerre a sessão no servidor como no 2.6 e clique **Excluir** → **Sim**. Esperado: 401, modal de login; depois de logar, a exclusão é refeita (200).
 
 ---
 
@@ -132,3 +134,29 @@ Ambiente: Elasticsearch local, APIs jn e vis fora do Eclipse (código com as dec
 | R05-2 | back | `GET /resume/{email}` devolve a lista `hash` (45 chaves internas de agrupamento, que a tela não usa) | Devolver só os campos que a tela usa | baixa | **corrigido** (decisão a): sem `hash` e `email` |
 | R05-3 | front (modal de login, jn) | O modal guarda no `localStorage` (`logins`) o 409 "já há um login corrente" e o reaproveita sem perguntar ao servidor; quando aquela sessão já acabou, o candidato cai em "Desbloqueie seu login" (token por e-mail) em vez de digitar a senha | Conferir o conflito no servidor a cada vez | média | **corrigido** (decisão a): 409 fora do cache |
 | R05-4 | back | `VisServiceResume.ChangeStatus` faz dois `exists` (principal e gêmea): fere a regra FSED registrada hoje | Uma leitura só, pela fluent interface | — | **corrigido**: `CcpGetEntityId` |
+
+## Execução de 2026-10-26
+
+Ambiente: Elasticsearch local, APIs js (8082) e vis (8081) fora do Eclipse com a mensageria assíncrona, front em `npm run dev`. Conferido pelo DOM, pelo Network do Chrome, pelo Elasticsearch e pelos e-mails em `C:\logs\email\<e-mail>\`.
+
+| Passo | Resultado | Observação |
+|---|---|---|
+| 1.1 | ✔ | sem faixa, sem modal |
+| 1.2 | ✔ | `GET` 401 em silêncio, sem modal |
+| 1.3 a 1.5 | ✔ | faixas cinza, verde e laranja com os botões certos |
+| 1.6 | ✔ | sem `sessionToken`, `ip`, `userAgent` e sem `hash` (R05-2 corrigido) |
+| 2.1 | ✔ | pela tela (roteiro 04, C1); e-mail `SavedResume` |
+| 2.2 | ✔ | resposta só com campos do currículo |
+| 2.3 | ✔ | um registro, função nova |
+| 2.4 | ✔ | tipo 2 pela tela (sem aba Habilidades, nenhum `skills/fromText`, `skill: []`); tipo 4 pela API |
+| 2.5 + 2.6 | ✔ | inativo, sessão encerrada, salvar → 401 → login com senha → salvar refeito → ativo |
+| 2.7, 2.8 | ✔ | roteiro 04, C5 |
+| 2.9, 2.10 | ✔ | pela API; aviso ao operador vai ao Telegram real |
+| 3.1, 3.2 | ✔ | e-mails `DeactivatedResume` e `ReactivatedResume` |
+| 3.3, 4.3 | ✔ | "Não" não chama nada |
+| 3.4 | ✔ | 404; aviso "Currículo não encontrado — Seu currículo não existe mais: ele foi excluído em outra janela." e formulário limpo (R05-1 corrigido) |
+| 3.5 | ✔ | 401 → login → inativação refeita |
+| 3.6 | ✔ | 404 só com `message` e `status` |
+| 4.1, 4.2 | ✔ | e-mail `DeletedResume`; registro do LinkedIn removido quando era o único |
+| 4.4 | ✔ | avançar desabilitado com as abas vazias |
+| 4.5 | ✔ | 401 → login → exclusão refeita |

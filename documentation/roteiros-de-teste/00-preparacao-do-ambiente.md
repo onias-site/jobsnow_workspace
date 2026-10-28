@@ -9,6 +9,9 @@ Estes roteiros testam, à mão e de ponta a ponta, as duas funcionalidades da ab
 | [03-modal-de-login.md](03-modal-de-login.md) | Modal de login: primeiro acesso, senha, bloqueios, desbloqueio e reenvio pelo suporte (executado de verdade no navegador) | Abre sozinho quando uma ação exige login |
 | [04-tela-do-curriculo.md](04-tela-do-curriculo.md) | Tela do currículo: preencher as 4 abas, salvar, carregar, inativar, reativar e excluir, LinkedIn compartilhado e agrupadores (desde 2026-10-15) | Menu **Como estou indo → Ver meu currículo** |
 | [05-endpoints-do-curriculo-pela-tela.md](05-endpoints-do-curriculo-pela-tela.md) | Os quatro endpoints de `VisRestApiResume` (ler, salvar, inativar/reativar, excluir) a partir da tela, com 401, 404 e respostas sem dados da sessão (desde 2026-10-15) | Tela "Ver meu currículo" |
+| [06-fale-conosco-e-chamados.md](06-fale-conosco-e-chamados.md) | Fale Conosco (com e sem login, cotas, stack trace), tela Chamados e o operador com `/answerContactUs` e `/ignoredContactUs` (criado e executado em 2026-10-26) | Botão **Fale Conosco** no canto inferior direito; menu **Meus dados → Chamados** |
+| [07-acessos-e-logout.md](07-acessos-e-logout.md) | Histórico de acessos (login e logout casados por cliente), logout e novo login pelo modal da tela (criado e executado em 2026-10-26) | Menu **Meus dados → Acessos** |
+| [08-recrutador-e-quem-me-viu.md](08-recrutador-e-quem-me-viu.md) | E-mail de currículos aos recrutadores (links assinados de ver currículo e descadastro), apelido, Quem me viu, Currículos visualizados e Currículos da semana (criado e executado em 2026-10-26) | Links do e-mail; menus **Meus dados → Quem me viu** e **Meu Recrutamento** |
 
 Cada roteiro é feito de **cenários**. Cada cenário tem: o que fazer na tela do candidato, o que fazer no Telegram como **operador do suporte**, e o que conferir (tela, e-mail, Telegram, Elasticsearch). Marque os `[ ]` à medida que avançar. Onde está escrito **⚠ Atenção**, o comportamento descrito é o atual do sistema e merece a sua avaliação — não é erro de quem testa.
 
@@ -49,7 +52,7 @@ As sugestões do candidato chegam ao operador **como uma mensagem do bot no Tele
 
 Os roteiros supõem que nenhuma sugestão foi feita ainda. Para isso:
 
-- [ ] 3.1 Rode `executaCcpCreateEntities.bat` na raiz do workspace (ou, no Eclipse, `com.ccp.random.CcpCreateEntities` do projeto `ccp_rest-api-tests_jobsnow`). Sem argumentos, ele recria **jn, vis e jb**, sem pedir nada (desde 2026-10-11 não há mais a janela de escolha). Para recriar só alguns, passe-os como argumentos (`executaCcpCreateEntities.bat vis`); recriar só o jn apaga os modelos de e-mail que o vis semeia nos índices do jn. **Obrigatório na primeira vez depois das mudanças de 2026-10-08**: mudaram a chave da tabela de usuários ignorados (agora só o e-mail), a ordem dos parâmetros do `/fixSkillHierarchy` e os textos do bot — índices antigos fazem o bot responder com os textos e o formato antigos. Desde 2026-10-09 a recriação também cria `jn_support_cancelled_command` (a desistência tira o ticket do `/pendingTickets`) e semeia os nomes "aprovado"/"reprovado" do painel Motivo. **Obrigatório de novo depois das mudanças de 2026-10-11**: a recriação cria `vis_skill_synonym` (sinônimos das sugestões), semeia os e-mails de aprovação/rejeição com "Justificativa do suporte:" e os textos do comando `/listarUsuariosIgnorados`. **Obrigatório de novo depois das mudanças de 2026-10-15**: a recriação cria `vis_resume_linkedin` (dono de cada endereço do LinkedIn, com o aviso ao suporte quando outro e-mail usa o mesmo endereço), `vis_skill_suggestion_daily_limit` e `vis_skill_fix_hierarchy_daily_limit` (uma sugestão de cada tipo por dia). **Desde 2026-10-23** esses dois índices não existem mais: a cota diária passou para `jn_ticket_daily_limit` (chave e-mail + `quotaGroup`), e a sugestão de habilidade e o ajuste de hierarquia dividem **uma** cota por dia (`sharedTickets`) com o fale conosco; os usuários ignorados passaram para `jn_command_not_allowed_to_user` / `jn_command_reallowed_to_user` e o e-mail de login para `jn_login_email`.
+- [ ] 3.1 Rode `executaCcpCreateEntities.bat` na raiz do workspace (ou, no Eclipse, `com.ccp.random.CcpCreateEntities` do projeto `ccp_rest-api-tests_jobsnow`). Sem argumentos, ele recria **jn, js, vis e jb**, sem pedir nada. **Atenção:** recriar o vis apaga também a carga de recrutadores (`vis_recruiter`) e os currículos; se quiser preservá-los, use contas e palavras novas em vez de recriar (desde 2026-10-11 não há mais a janela de escolha). Para recriar só alguns, passe-os como argumentos (`executaCcpCreateEntities.bat vis`); recriar só o jn apaga os modelos de e-mail que o vis semeia nos índices do jn. **Obrigatório na primeira vez depois das mudanças de 2026-10-08**: mudaram a chave da tabela de usuários ignorados (agora só o e-mail), a ordem dos parâmetros do `/fixSkillHierarchy` e os textos do bot — índices antigos fazem o bot responder com os textos e o formato antigos. Desde 2026-10-09 a recriação também cria `jn_support_cancelled_command` (a desistência tira o ticket do `/pendingTickets`) e semeia os nomes "aprovado"/"reprovado" do painel Motivo. **Obrigatório de novo depois das mudanças de 2026-10-11**: a recriação cria `vis_skill_synonym` (sinônimos das sugestões), semeia os e-mails de aprovação/rejeição com "Justificativa do suporte:" e os textos do comando `/listarUsuariosIgnorados`. **Obrigatório de novo depois das mudanças de 2026-10-15**: a recriação cria `vis_resume_linkedin` (dono de cada endereço do LinkedIn, com o aviso ao suporte quando outro e-mail usa o mesmo endereço), `vis_skill_suggestion_daily_limit` e `vis_skill_fix_hierarchy_daily_limit` (uma sugestão de cada tipo por dia). **Desde 2026-10-23** esses dois índices não existem mais: a cota diária passou para `jn_ticket_daily_limit` (chave e-mail + `quotaGroup`), e a sugestão de habilidade e o ajuste de hierarquia dividem **uma** cota por dia (`sharedTickets`) com o fale conosco; os usuários ignorados passaram para `jn_command_not_allowed_to_user` / `jn_command_reallowed_to_user` e o e-mail de login para `jn_login_email`.
 - [ ] 3.2 Confira que `C:\logs\jn\mappingJnEntitiesErrors.json`, `C:\logs\vis\mappingJnEntitiesErrors.json` e `C:\logs\jb\mappingJnEntitiesErrors.json` estão **vazios**.
 - [ ] 3.3 Reinicie a API do vis e o leitor do bot (eles guardam cache em memória).
 
@@ -65,7 +68,7 @@ Recriar o jn apaga o seu login, mas o navegador ainda se lembra dele e entra num
   2. "Por favor, confirme o e-mail": digite o e-mail de novo → **Confirmar**.
   3. "Informe suas preferências e objetivos": deixe como está → **Enviar**.
   4. "Criando uma nova senha": senha e confirmação (8+ caracteres, maiúscula, número e caractere especial) e o **token**.
-  5. O token está no arquivo `C:\logs\email\com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html` (abra no navegador e procure "esse token é ...").
+  5. O token está no arquivo `C:\logs\email\<e-mail>\com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html` (abra no navegador e procure "esse token é ..."). Desde 2026-10-22 cada destinatário tem a sua pasta em `C:\logs\email`, então candidatos diferentes não sobrescrevem o arquivo um do outro.
   6. **Salvar senha** → aparece "Sucesso!!! O usuário 'onias85@gmail.com' foi autenticado com sucesso!".
 - [ ] 4.3 Depois do login, a ação que pediu o login (o envio da sugestão) é **refeita sozinha** — não clique em Enviar de novo.
 
@@ -73,12 +76,12 @@ Recriar o jn apaga o seu login, mas o navegador ainda se lembra dele e entra num
 
 ## 5. Preparar a tela (usada pelos dois roteiros)
 
-- [ ] 5.1 Abra `http://localhost:3000/portuguese-version/como-estou-indo/ver-meu-curriculo`
+- [ ] 5.1 Abra `http://localhost:3000/meus-dados/sobre-mim` (menu **Meus dados → Sobre Mim**; a rota antiga `/portuguese-version/como-estou-indo/ver-meu-curriculo` responde 404)
 - [ ] 5.2 "Função / papel / emprego / ocupação que estou buscando:" → `Programador Beta`
 - [ ] 5.3 "Endereço (URL) para encontrar o meu linkedin:" → `https://www.linkedin.com/in/onias85/`
 - [ ] 5.4 "Todo o texto que copiei do meu currículo" → todo o conteúdo de `C:\eclipse-workspaces\ccp\cv.txt`
 - [ ] 5.5 Clique em **Idiomas** e aguarde.
-- [ ] 5.6 Vá para a aba **Habilidades**. Esperado: três colunas — **Conhecimentos implícitos (36)**, "Habilidades pelas quais eu NÃO quero que o meu currículo seja encontrado" (vazia) e "Habilidades pelas quais eu quero que o meu currículo seja ENCONTRADO (105)", com o link **"Deixamos de listar alguma habilidade?"**.
+- [ ] 5.6 Vá para a aba **Habilidades** (o título da aba traz a contagem: **105 Habilidades**). Esperado: três colunas — **Conhecimentos implícitos (36)**, "Habilidades pelas quais eu NÃO quero que o meu currículo seja encontrado" (vazia) e "Habilidades pelas quais eu quero que o meu currículo seja ENCONTRADO (105)", com o link **"Deixamos de listar alguma habilidade?"**.
 
 > **LinkedIn:** o endereço precisa terminar em letra, número, `_` ou `%` (pode ter `/` no fim). `https://www.linkedin.com/in/fulano-/` é recusado com 422 desde 2026-10-14.
 >
@@ -106,7 +109,7 @@ Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://loca
 
 ### 6.1 E-mails (gravados em arquivo, não são enviados de verdade)
 
-Pasta `C:\logs\email\`. Cada modelo tem **um arquivo, sobrescrito a cada envio** — confira a data/hora de modificação.
+Pasta `C:\logs\email\<e-mail do destinatário>\` (uma pasta por destinatário desde 2026-10-22). Cada modelo tem **um arquivo por destinatário, sobrescrito a cada envio** — confira a data/hora de modificação.
 
 | Arquivo | Quando é gerado |
 |---|---|
@@ -120,6 +123,14 @@ Pasta `C:\logs\email\`. Cada modelo tem **um arquivo, sobrescrito a cada envio**
 ### 6.2 Telegram
 
 O aviso ao operador chega **de verdade** no seu Telegram, no chat do bot de suporte, enviado pela API do vis. As respostas do bot também.
+
+**Operador sem o Telegram (e sem o leitor do bot no ar):** `automacao/SupportBotCommand.java` entrega uma mensagem ao bot de suporte neste computador, como o leitor do Telegram faria, e grava a resposta do bot em `C:\logs\telegram\support-751717896.txt`. A conversa continua de uma chamada para a outra (a sessão do bot fica no Elasticsearch), então dá para mandar o comando e depois as respostas (`aprovar ...`, `sim`, `2`...), uma por chamada. Na pasta `ccp_rest-api-tests_jobsnow`, depois de um `executaCcpCreateEntities.bat` (que gera o classpath em `target\create-entities-args.txt`):
+
+```bash
+MSYS_NO_PATHCONV=1 java @target/create-entities-args.txt ../documentation/roteiros-de-teste/automacao/SupportBotCommand.java "/reviewSkillSuggestion <email> PICK BY LIGHT"
+```
+
+No Git Bash, mensagens com acento (`não`, `rejeitar é ...`) devem vir de um arquivo, uma por linha, lido com `while read`: digitadas direto na linha de comando, o Bash da ferramenta falha.
 
 ### 6.3 Elasticsearch (abra as URLs no navegador)
 

@@ -90,7 +90,7 @@ Named rules that govern how classes are written and how requests are interpreted
   - Transfer (repeatable, one per target): `@Ccp[Before|After][TransferData|CopyData]From[Main|Twin]Entity(targetEntity = ..., execute = {...}, transferHandlers = {...})`
   - Message on write: `@Ccp<write>SendAn[Email|Instant]Message...AndIfFails[ThrowAnError|SaveAWarning|LogTheError](<message classes>)`
   - Message on transfer (repeatable): `@Ccp<transfer>SendAn...(messageTemplate = ..., targetEntity = ...)`
-- **Disposable Entity (DSE)** — records discarded after some time: `@CcpEntityDisposable(value = JnDisposableEntity.class, timeOption = <CcpEntityExpurgableOptions>)`.
+- **Disposable Entity (DSE)** — records discarded after some time: `@CcpEntityDisposable(value = JnDisposableEntity.class, timeOption = <CcpEntityExpurgableOptions>)`. The daily maintenance (`JnBusinessDailyDatabaseMaintenance`) deletes the expired periods and then backs the database up; an entity whose past periods feed charts or searches keeps them with `removeCompletely = false`.
 - **Versionable Entity (VE)** — versioned records: `@CcpEntityVersionable(JnVersionableEntity.class)`, always together with the purge of the history: `@CcpEntityVersionablePurge(JnVersionablePurgeEntity.class)`.
 - **Twin Entity (TWE)** — records with a mirror table that receives what is deleted from the main one: `@CcpEntityTwin(twinEntityName = <twin table>, bulkExecutorClass = JnExecuteBulkOperation.class, functionToDeleteKeysInTheCacheClass = JnDeleteKeysFromCache.class)`.
 - **Read Only Entity (ROE)** — read-only records: `@CcpEntityOlyReadable` (spelled that way); they change only through bulk operations.

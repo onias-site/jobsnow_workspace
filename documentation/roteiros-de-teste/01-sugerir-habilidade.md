@@ -10,6 +10,10 @@
 
 > **Atualizado em 2026-10-15:** uma sugestão de habilidade por candidato por dia (429 a partir da segunda, cenário S10), com aviso no modal antes do envio. **Os cenários S1, S2, S4, S5, S6 e S9 enviam várias sugestões com o mesmo candidato: antes de cada "Enviar", libere o dia do candidato com o primeiro par de comandos do item 5A da preparação.** Sem isso, a segunda sugestão do dia recebe "Limite de 24 horas atingido".
 
+> **Executado de novo em 2026-10-26**, de S1 a S10, pelo Chrome com automação (contas novas `roteiro01.20261026@teste.com` e, no S8, `roteiro01b.20261026@teste.com`; o papel do operador pelo `automacao/SupportBotCommand.java`). **Tudo funcionou.** Os textos que mudaram desde a execução anterior foram corrigidos nos passos 1.6, 1.15, 3.1, 5.8c, 6.2, 7.4, 8.1, 8.2 e 10.2. Veja [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
+>
+> **Base suja:** as decisões do operador valem para todos os candidatos (S8). Depois de uma execução, `PICK BY LIGHT` e `LINUX EMBARCADO` estão aprovadas e `KIPREV`, `CERENSA` e `JAB` rejeitadas. Para repetir o roteiro, recrie os índices do vis (item 3 da preparação) ou use outras palavras do `cv.txt`.
+
 ## Como a funcionalidade funciona (resumo)
 
 1. O candidato sugere uma habilidade que **consta no texto do currículo** e não foi listada, com sinônimos (várias frases) e uma justificativa. Os sinônimos e a justificativa só ficam habilitados depois que a habilidade passa pelas validações, feitas **ao sair do campo** da habilidade.
@@ -53,6 +57,7 @@ Conferidas contra o currículo e a base de habilidades em 2026-10-08:
 - [ ] 1.4c Digite `teste de saida` e, **sem teclar Enter**, clique no campo da justificativa. Esperado: vira a etiqueta `TESTE DE SAIDA`, como se tivesse teclado Enter. Remova-a no **x** da etiqueta.
 - [ ] 1.5 Justificativa: `Consta no projeto da Volkswagen (2012): sistema de automacao Pick By Light na linha de montagem.`
 - [ ] 1.6 **Enviar**. (Se for o primeiro envio desde o login, faça o login do item 4 da preparação; o envio é refeito sozinho.)
+  > No Network, logo depois do login, o primeiro `POST ...skills/suggestion` pode responder **401** e o segundo **200**: a sessão é gravada pela fila, depois da resposta do login, e a tela repete o envio sozinha (visto em 2026-10-26).
 
 Esperado na tela:
 - [ ] Mensagem verde **"Sugestão enviada — Obrigado! Sua sugestão será analisada e você será avisado do resultado."**
@@ -64,7 +69,7 @@ Esperado fora da tela:
 - [ ] Telegram: o bot manda `/reviewSkillSuggestion onias85@gmail.com PICK BY LIGHT`.
 - [ ] `vis_skill_pending`: um registro com `skill: PICK BY LIGHT`, os 3 sinônimos, a justificativa e o `email` em hash.
 - [ ] `jn_versionable?q=entity:vis_skill_pending`: ganha um registro de histórico (o índice é cumulativo — conte antes e depois).
-- [ ] `jn_support_pending_command`: `"command": "/reviewSkillSuggestion onias85@gmail.com PICK BY LIGHT"`.
+- [ ] `jn_support_pending_command`: `"command": "/reviewSkillSuggestion onias85@gmail.com PICK BY LIGHT"` e `"priority": 3` (desde 2026-10-23 todo ticket tem prioridade; a da sugestão de habilidade é 3).
 
 ### Candidato consulta a sugestão pendente
 
@@ -110,7 +115,7 @@ Esperado depois da aprovação:
 
 ### Candidato vê o resultado
 
-- [ ] 1.15 Abra o modal, digite `PICK BY LIGHT` e clique fora. Esperado: **"status: Aprovada"**, um painel **"Motivo"** com a justificativa do operador, os campos desabilitados, o botão **"Nova sugestão"** e nenhum "Desistir".
+- [ ] 1.15 Abra o modal, digite `PICK BY LIGHT` e clique fora. Esperado: **"status: Aprovada"**, um painel **"Motivo"** com a justificativa do operador, os campos desabilitados, o botão **"Nova sugestão"** e nenhum "Desistir". O painel **Motivo** vem fechado: clique no título dele para ver a justificativa (vale para todos os passos que falam do Motivo).
 - [ ] 1.16 Clique em **Nova sugestão**: os campos se esvaziam. Feche o modal.
 - [ ] 1.17 **Reprocesse o currículo** (espaço no fim do texto + **Idiomas**) e volte à aba Habilidades. Esperado: `PICK BY LIGHT` aparece agora na lista "Habilidades pelas quais eu quero que o meu currículo seja ENCONTRADO" (o contador passa de 105 para 106), sem nenhum conhecimento implícito associado.
   > **Visto na execução:** confirmado (105 → 106), mas na época só depois de reiniciar a API do vis. A aprovação limpa o cache no mesmo instante, porém roda em outro processo (o leitor do bot), e localmente cada processo tinha o seu cache em memória. **Corrigido em 2026-10-08:** localmente, a limpeza feita por um processo vale para todos, como já acontece em produção com o Memcache compartilhado. Não é mais preciso reiniciar nada.
@@ -142,11 +147,11 @@ Esperado depois da aprovação:
 
 ## S3 — Validações da tela (nenhuma chega ao servidor)
 
-Abra o modal para cada item. Esperado (em todos): aviso amarelo, o modal continua aberto e nada aparece no Network.
+Abra o modal para cada item. Esperado (em todos): aviso amarelo, o modal continua aberto e nenhum `POST ...skills/suggestion` aparece no Network. A única chamada é a consulta `POST ...skills/suggestion/search` feita ao sair do campo com uma habilidade válida (`BOLETOS` nos itens 3.2 a 3.4), que mostra se ela já foi sugerida.
 
 - [ ] 3.1 Habilidade `X` (ou ` X ` com espaços em volta) e saia do campo.
   Esperado: "Habilidade inválida — 'X' deve ter entre 2 e 50 caracteres." Os sinônimos, a justificativa e o **Enviar** continuam desabilitados.
-  > **Defesa do servidor (opcional, com Postman):** `POST /resume/<email>/skills/suggestion/search` com `{"skill": " X "}` responde **400**: o servidor também conta o tamanho depois do trim.
+  > **Defesa do servidor (opcional, com Postman):** `POST /resume/<email>/skills/suggestion/search` com `{"skill": " X "}` responde **422** (`stringRegex` no campo `skill`): o servidor também recusa o que tem menos de 2 caracteres depois do trim. (O roteiro dizia 400 até 2026-10-26; a tela barra antes, e o tratamento de 400 que ela tinha, nunca usado, foi removido.)
 - [ ] 3.2 Habilidade `BOLETOS` (saia do campo), sinônimo `G` + **Enter**.
   Esperado: "Sinônimo inválido — 'G' deve ter entre 2 e 50 caracteres." e nenhuma etiqueta.
 - [ ] 3.3 Habilidade `BOLETOS` (saia do campo), sem sinônimo, justificativa `curta` → **Enviar**.
@@ -194,7 +199,7 @@ Abra o modal para cada item. Esperado (em todos): aviso amarelo, o modal continu
 - [ ] 5.8 **Ignorar é global:** o candidato tenta um ajuste de hierarquia (⊕ de qualquer conhecimento implícito, uma habilidade, justificativa válida). Esperado: também **403** / "Falha ao enviar sugestão".
 - [ ] 5.8b Se o operador digitar `/reviewSkillSuggestion onias85@gmail.com JAB` (ou qualquer `/fixSkillHierarchy ... onias85@gmail.com ...`), o bot responde: "O usuário onias85@gmail.com está sendo ignorado pelo suporte e as solicitações dele não são atendidas em nenhum comando. Para voltar a atendê-lo, use /permitirComandoAoUsuario onias85@gmail.com"
   > O bot indica o comando pelo nome no idioma do operador (português aqui, desde 2026-10-10). O nome canônico `/allowCommandToUser` continua valendo.
-- [ ] 5.8c Operador envia `/listarUsuariosIgnorados` (ou `/ignoredUsers`). Esperado: "O suporte está ignorando 1 usuário" e, abaixo, "Usuário 1 de 1 => onias85@gmail.com", "Ignorado no comando reviewSkillSuggestion (AMGSTROM)" e "Digite "1" para voltar a atendê-lo ou "2" para ir ao próximo". Responda `talvez`: "Não entendi a resposta." e o mesmo usuário de novo. Responda `2`: o mesmo usuário (depois do último vem o primeiro). Não responda `1` ainda: o 5.9 desfaz o ignorar.
+- [ ] 5.8c Operador envia `/listarUsuariosIgnorados` (ou `/ignoredUsers`). Esperado: "O suporte está ignorando 1 usuário" e, abaixo, "Usuário 1 de 1 => onias85@gmail.com" (se os testes automáticos tiverem deixado outro ignorado, como `usuario.ignorado@teste.com`, a contagem é maior; use `2` até chegar ao seu e-mail), "Ignorado no comando reviewSkillSuggestion (AMGSTROM)" e "Digite "1" para voltar a atendê-lo ou "2" para ir ao próximo". Responda `talvez`: "Não entendi a resposta." e o mesmo usuário de novo. Responda `2`: o mesmo usuário (depois do último vem o primeiro). Não responda `1` ainda: o 5.9 desfaz o ignorar.
 - [ ] 5.9 Operador responde `1` à lista do 5.8c. Esperado, em sequência: "Voltando a atender o usuário onias85@gmail.com", a mensagem abaixo do `/allowCommandToUser` e a lista de novo, agora "O suporte não está ignorando nenhum usuário.". O mesmo vale para quem envia `/permitirComandoAoUsuario onias85@gmail.com` (ou `/allowCommandToUser onias85@gmail.com`) direto. Esperado: "O usuário onias85@gmail.com não é mais ignorado pelo suporte: as próximas solicitações dele, em todos os comandos, voltarão a chegar ao suporte." O registro sai de `jn_command_not_allowed_to_user` e vai para `jn_command_reallowed_to_user`.
 - [ ] 5.10 Envie o mesmo `/allowCommandToUser` de novo. Esperado: "O usuário onias85@gmail.com não está sendo ignorado pelo suporte"
 
@@ -204,7 +209,7 @@ Abra o modal para cada item. Esperado (em todos): aviso amarelo, o modal continu
 
 - [ ] 6.1 Candidato sugere `JAB` (depois do 5.9), justificativa `Java Arquitetura Brasil, framework do Santander.`
   > **Corrigido em 2026-10-11:** na execução de 2026-10-11, este envio deu `Connection reset` no Telegram. A conexão com o Telegram tinha ficado parada no pool desde o 5.9 e foi descartada pelo outro lado sem aviso. Agora uma conexão parada há mais de 20 segundos não é reaproveitada. Para conferir, faça o 6.1 alguns minutos depois do 5.9: o aviso chega ao Telegram normalmente.
-- [ ] 6.2 Operador envia `/pendingTickets`. Esperado: "Você tem N tickets para resolver" e "Ticket 1 de N => /reviewSkillSuggestion onias85@gmail.com JAB — Digite "1" para resolver ou "2" para ir ao próximo" (a ordem é do mais antigo para o mais novo; use `2` até chegar ao de JAB).
+- [ ] 6.2 Operador envia `/pendingTickets`. Esperado: "Você tem N tickets para resolver" e "Ticket 1 de N => ... — Digite "1" para resolver ou "2" para ir ao próximo". Desde 2026-10-23 a ordem é por **prioridade** e, dentro dela, do mais antigo para o mais novo: bug (0), dúvida e login (1), crítica (2), sugestão de habilidade e ajuste de hierarquia (3), sugestão do fale conosco (4), elogio e comentário (5). O de JAB (prioridade 3, o mais novo) vem depois dos tickets de login e dos outros de prioridade 3; use `2` até chegar a ele (em 2026-10-26 era o 40 de 40).
 - [ ] 6.3 Responde `1`. Esperado: "Resolvendo o ticket ..." e logo a sugestão de JAB com as opções, como se você tivesse digitado o comando.
 - [ ] 6.4 Rejeite com justificativa. Esperado: depois do resumo, a lista de tickets reabre sem o de JAB.
 
@@ -227,7 +232,7 @@ Digite cada palavra no campo da habilidade e **saia do campo**. Esperado: aviso 
 - [ ] 7.3 Sugestão `ASP` (só aparece dentro de ASPECTJ).
   Esperado: "O nome desta ferramenta é parte de uma outra palavra "ASPECTJ" presente no texto do seu currículo"
 - [ ] 7.4 Sugestão `PRIMEFACE` (pedaço de PRIMEFACES).
-  Esperado: "Esta ferramenta é um pedaço de outra ferramenta "PRIMEFACES" já adicionada à sua lista"
+  Esperado (visto em 2026-10-26): "Habilidade já cadastrada por meio de sinônimo — 'PRIMEFACE' é sinônimo de 'PRIMEFACES', que já está na lista 'Habilidades pelas quais eu quero que o meu currículo seja ENCONTRADO'." Nesta base, `PRIMEFACE` virou sinônimo de `PRIMEFACES`, e a checagem de sinônimo vem antes da de pedaço. O aviso antigo, "Esta ferramenta é um pedaço de outra ferramenta "PRIMEFACES" já adicionada à sua lista", continua existindo para pedaços que não são sinônimos.
 - [ ] 7.5 Sugestão `JVM` (é conhecimento implícito de várias da lista).
   Esperado: "... já está relacionada em sua lista de ferramentas porém como pré requisito das palavras [...]"
 - [ ] 7.6 Sugestão `PICK TO LIGHT SYSTEM` (a frase não consta no currículo).
@@ -244,8 +249,9 @@ Digite cada palavra no campo da habilidade e **saia do campo**. Esperado: aviso 
 
 **Pré-requisito:** S1 (`PICK BY LIGHT` aprovada) e S2 (`KIPREV` rejeitada) feitos **depois de 2026-10-10**. Decisões anteriores a essa data não foram registradas por habilidade e não valem para os outros candidatos.
 
-- [ ] 8.1 Saia e faça login com **outra conta**, cujo currículo também contenha `KIPREV`. Para sair, use no console `localStorage.removeItem('logins'); sessionStorage.removeItem('login')` e recarregue. Depois preencha a aba Currículo com o mesmo `cv.txt` (item 5 da preparação). O login da conta nova é pedido ao enviar `KIPREV` no 8.3.
-- [ ] 8.2 Abra o modal, digite `KIPREV` e clique fora. Esperado: **"status: Rejeitada"** + **Motivo** com a justificativa que o operador deu no S2. Os campos ficam desabilitados e aparece o botão **Nova sugestão**. A justificativa do primeiro candidato **não** aparece (o campo fica vazio).
+- [ ] 8.1 Saia e faça login com **outra conta**, cujo currículo também contenha `KIPREV`. Para sair, use no console `localStorage.removeItem('logins'); sessionStorage.removeItem('login')` e recarregue. Depois preencha a aba Currículo com o mesmo `cv.txt` (item 5 da preparação).
+- [ ] 8.1b **Sem sessão, a tela não consulta o servidor** ao sair do campo: com a conta nova ainda deslogada, digitar `KIPREV` deixa o **Enviar** habilitado. Preencha uma justificativa e clique em **Enviar**: abre o login. Faça o primeiro acesso da conta nova (item 4 da preparação). Esperado depois do "Salvar senha": o envio é refeito, o servidor responde **410** (`alreadyReviewed`), aparece o aviso **"Sugestão já avaliada — A habilidade 'KIPREV' já foi avaliada pelo suporte. Veja abaixo o resultado e o motivo."** e o modal mostra a decisão (visto em 2026-10-26).
+- [ ] 8.2 Feche o modal, abra de novo, digite `KIPREV` e clique fora. Esperado: **"status: Rejeitada"** + **Motivo** com a justificativa que o operador deu no S2. Os campos ficam desabilitados e aparece o botão **Nova sugestão**. A justificativa do primeiro candidato **não** aparece (o campo fica vazio).
 - [ ] 8.3 Só por fora da tela (Postman): enviar `KIPREV` para esta conta. Esperado: **410** (`alreadyReviewed`). Nada fica pendente em `vis_skill_pending`, e nada chega ao Telegram nem a `jn_support_pending_command` / `/pendingTickets`.
   Se o 410 chegar à tela (habilidade avaliada entre digitar e enviar), aparece o aviso "Sugestão já avaliada — A habilidade 'KIPREV' já foi avaliada pelo suporte. Veja abaixo o resultado e o motivo." e o modal mostra a decisão.
 - [ ] 8.4 Digite `PICK BY LIGHT` (se a tela deixar: depois do reprocessamento ela já é reconhecida no currículo). Esperado: **"status: Aprovada"** + **Motivo**. Se o envio chegar ao servidor, vem o **412** "Habilidade já reconhecida", e o modal também mostra a decisão.
@@ -269,9 +275,10 @@ Este cenário acompanha o S1: cada passo diz em que ponto do S1 ele deve ser fei
 
 > **Executado em 2026-10-15** pela tela (10.1 a 10.3) e pela API (10.4), com `tela.1792041421885.0@teste.com`: tudo como abaixo. O 10.5 não foi feito para não mandar outro aviso ao Telegram real.
 
-- [ ] 10.1 Libere o dia do candidato (item 5A da preparação). Abra o modal. Esperado: abaixo da justificativa, o aviso **"Atenção: você pode enviar apenas uma sugestão de habilidade a cada 24 horas. Confira os dados antes de enviar."** O aviso some quando o modal carrega uma sugestão já feita (pendente ou avaliada).
-- [ ] 10.2 Sugira uma habilidade do currículo que o sistema não conheça, com justificativa válida → **Enviar** → "Sugestão enviada". `jn_ticket_daily_limit` ganha um registro com `quotaGroup: sharedTickets`, e `jn_disposable_record?q=entity:jn_ticket_daily_limit` a sua cópia (e-mail em hash, `format: ddMMyyyy`).
-- [ ] 10.3 **Sem liberar o dia**, sugira outra habilidade válida → **Enviar**. Esperado: aviso vermelho **"Limite de 24 horas atingido — Você já enviou uma sugestão de habilidade nas últimas 24 horas. É permitida apenas uma a cada 24 horas: tente novamente em 24 horas."**; Network `POST ...skills/suggestion` → **429**; nada pendente em `vis_skill_pending`, nenhum e-mail, nada no Telegram; o modal continua aberto.
+- [ ] 10.1 Libere o dia do candidato (item 5A da preparação). Abra o modal. Esperado: abaixo da justificativa, o aviso **"Atenção: depois deste envio, um novo chamado (sugestão de habilidade, ajuste de hierarquia ou fale conosco) só poderá ser aberto quando completar 24 horas. Confira os dados antes de enviar."** *(texto de 2026-10-26: a cota é dividida e as 24 horas contam do envio)* O aviso some quando o modal carrega uma sugestão já feita (pendente ou avaliada).
+- [ ] 10.2 Sugira uma habilidade do currículo que o sistema não conheça (em 2026-10-26: `NPORTALBRA`), com justificativa válida → **Enviar** → "Sugestão enviada". `jn_ticket_daily_limit` ganha um registro com `quotaGroup: sharedTickets`, e `jn_disposable_record?q=entity:jn_ticket_daily_limit` a sua cópia (e-mail em hash, `format: ddMMyyyy`).
+  > **A conferir:** na cópia gravada em 2026-10-26 às 19:01, `trueTimestamp` era o envio + 24 h, mas `timestamp` e `date` eram o envio + **48 h** (`28/10/2026 19:01`). O roteiro e a memória dizem que o bloqueio dura 24 horas. Vale repetir o 10.3 entre 24 e 48 horas depois do envio, sem liberar o dia, para saber qual dos dois campos manda.
+- [ ] 10.3 **Sem liberar o dia**, sugira outra habilidade válida → **Enviar**. Esperado: aviso vermelho **"Limite de 24 horas atingido — Você já abriu um chamado (sugestão de habilidade, ajuste de hierarquia ou fale conosco) nas últimas 24 horas. A sugestão de habilidade poderá ser enviada quando completar 24 horas do envio anterior."**; Network `POST ...skills/suggestion` → **429**; nada pendente em `vis_skill_pending`, nenhum e-mail, nada no Telegram; o modal continua aberto.
 - [ ] 10.4 Ainda sem liberar: sugira `JAVA` pelo Postman. Esperado: **412**, e não 429 (a recusa que não manda nada vem antes do limite).
 - [ ] 10.5 Libere o dia e repita o 10.3. Esperado: "Sugestão enviada".
 
@@ -298,6 +305,22 @@ Este cenário acompanha o S1: cada passo diz em que ponto do S1 ele deve ser fei
 | 4 | Sugestão sem sinônimo: o e-mail de "sugestão recebida" mostra `(sinônimos: )` vazio, como a linha `Sinônimos:` do bot (observação 3 de 2026-10-08). | cosmético |
 | 5 | A confirmação do `ignorar` ainda diz "Esta sugestão será descartada", mas desde 2026-10-10 **todas** as pendências do candidato são descartadas. | cosmético |
 | 6 | Para trocar de conta no navegador não basta apagar `logins` do localStorage: a sessão também fica em `sessionStorage` (`login`). | informativo (ver item 4 da preparação) |
+
+## Observações da execução (2026-10-26)
+
+Executado pelo Chrome com automação: a digitação nos campos foi feita pelo teclado, as conferências pelo DOM, pelo Elasticsearch e pelos arquivos de `C:\logs`. O operador foi feito com `automacao/SupportBotCommand.java`, sem o Telegram; o aviso das sugestões ao Telegram real saiu normalmente pela API do vis.
+
+| # | O que se viu | Gravidade |
+|---|---|---|
+| 1 | Os POST e DELETE de `resume/{email}/skills/suggestion` e `resume/{email}/skills/hierarchy` respondem 200 com `sessionToken`, `ip` e `userAgent` da sessão no corpo. O roteiro 05 registra que, desde 2026-10-15, os endpoints do currículo não devolvem dados da sessão; estes ainda devolvem. | **a decidir** (dado da sessão na resposta) |
+| 2 | A defesa do servidor para habilidade curta responde 422, e não 400. A tela tinha um handler de 400 ("Habilidade inválida") em `TabSkills.tsx` que nunca era acionado. | **Removido em 2026-10-26** (roteiro corrigido no 3.1) |
+| 3 | O 8.2 não funcionava na ordem escrita: sem sessão, a tela não consulta a sugestão e não mostra "Rejeitada". | **roteiro corrigido** (8.1b) |
+| 4 | O `/pendingTickets` passou a ordenar por prioridade. | **roteiro corrigido** (6.2) |
+| 5 | `PRIMEFACE` agora é barrada como sinônimo de `PRIMEFACES`. | **roteiro corrigido** (7.4) |
+| 6 | Na cópia descartável da cota diária, `date`/`timestamp` ficam 48 h à frente (`trueTimestamp`, 24 h). | **a conferir** (10.2) |
+| 7 | Sugestão sem sinônimo: o bot ainda mostra `Sinônimos:` vazio (observação 3 de 2026-10-08). | cosmético, continua |
+| 8 | O título do aviso de JAVA, WEM e JVM continua repetido no corpo (observação 4 de 2026-10-08). | cosmético, continua |
+| 9 | Multi-palavra pelo `/pendingTickets`: `LINUX EMBARCADO` (sinônimo `LINUX EMBEDDED`) chegou inteiro pelo "1", foi aprovada e entrou em `vis_skill` com o sinônimo. | ok |
 
 ## Mudanças de 2026-10-11
 

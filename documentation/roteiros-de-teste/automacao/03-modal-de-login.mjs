@@ -19,7 +19,8 @@ import { fileURLToPath } from 'node:url';
 
 const API = { host: 'localhost', port: Number(process.env.JS_PORT || 8082) };
 const MAX_ATTEMPTS = 3;
-const TOKEN_EMAIL_FILE = 'C:\\logs\\email\\com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html';
+// Cada destinatário tem a sua pasta de e-mails; o arquivo do token é sobrescrito a cada envio a esse destinatário.
+const tokenEmailFile = (email) => path.join('C:\\logs\\email', email, 'com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken.html');
 const SUPPORT_CHAT_FILE = 'C:\\logs\\telegram\\support-751717896.txt';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WORKSPACE = path.resolve(HERE, '..', '..', '..');
@@ -47,7 +48,31 @@ function check(label, ok, detail = '') {
     return ok;
 }
 
-function request(method, uri, body, extraHeaders = {}) {
+// Desde 2026-10-15 as APIs locais gravam pela mensageria assíncrona: a resposta chega antes da escrita (sessão, senha,
+// tentativas). Cada mensagem publicada deixa uma marca em c:/logs/mensageria/running/ ("<publicação em ms>-<uuid>"),
+// que some quando a tarefa termina; como o JnTestTemplate, espera não haver marca publicada depois da requisição.
+const RUNNING_FOLDER = 'c:\\logs\\mensageria\\running';
+
+async function waitForTheAsynchronousWrites(since) {
+    for (let i = 0; i < 300; i++) {
+        let markNames = [];
+        try { markNames = fs.readdirSync(RUNNING_FOLDER); } catch {}
+        const running = markNames.some((markName) => Number(markName.split('-')[0]) >= since);
+        if (!running) {
+            return;
+        }
+        await sleep(100);
+    }
+}
+
+async function request(method, uri, body, extraHeaders = {}) {
+    const started = Date.now();
+    const response = await requestWithoutWaiting(method, uri, body, extraHeaders);
+    await waitForTheAsynchronousWrites(started);
+    return response;
+}
+
+function requestWithoutWaiting(method, uri, body, extraHeaders = {}) {
     const data = body === undefined ? '{}' : JSON.stringify(body);
     const definedExtraHeaders = Object.fromEntries(Object.entries(extraHeaders).filter(([, value]) => value));
     const headers = { 'Content-Type': 'application/json', 'User-Agent': 'roteiro-03-automacao', 'Content-Length': Buffer.byteLength(data), ...definedExtraHeaders };
@@ -94,14 +119,14 @@ const attemptsIs = (n) => (body) => Number(body.attempts) === n;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// O arquivo do e-mail é um só para todos os destinatários e é sobrescrito a cada envio: só serve o que foi gravado
-// depois do pedido e que menciona o e-mail esperado.
+// O arquivo do e-mail do candidato é sobrescrito a cada envio: só serve o que foi gravado depois do pedido.
 async function readTokenSentTo(u, since) {
+    const tokenFile = tokenEmailFile(u.email);
     for (let i = 0; i < 60; i++) {
         try {
-            const stat = fs.statSync(TOKEN_EMAIL_FILE);
+            const stat = fs.statSync(tokenFile);
             if (stat.mtimeMs >= since - 50) {
-                const html = fs.readFileSync(TOKEN_EMAIL_FILE, 'utf8');
+                const html = fs.readFileSync(tokenFile, 'utf8');
                 const match = html.match(/esse token é ([A-Z0-9]{8})/);
                 if (html.includes(u.email) && match) {
                     return match[1];

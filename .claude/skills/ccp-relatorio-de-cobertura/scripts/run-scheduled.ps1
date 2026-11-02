@@ -12,7 +12,7 @@
 param(
 	[string]$Root = 'C:\eclipse-workspaces\ccp',
 	[string]$OutDir = (Join-Path $env:TEMP 'ccp-coverage'),
-	[string]$ElasticHome = 'C:\elasticsearch-7.4.0',
+	[string]$ElasticHome = 'C:\elasticsearch-9.5.5',
 	# roda mesmo sem mudança no código (para testar a execução agendada à mão)
 	[switch]$Force
 )

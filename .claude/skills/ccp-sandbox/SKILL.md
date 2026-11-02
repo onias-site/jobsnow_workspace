@@ -11,7 +11,7 @@ roda em paralelo ao ambiente de desenvolvimento (ES 9200, vis 8081, js 8082, fro
 
 | Peça | Sandbox | Desenvolvimento |
 |---|---|---|
-| Elasticsearch | `http://localhost:9201` (transporte 9301) | 9200 |
+| Elasticsearch | `http://localhost:9201` (transporte 9301), versão 9.5.5 | 9200, versão 9.5.5 (pasta `data` da instalação) |
 | API vis | `http://localhost:18081` | 8081 |
 | API js (login) | `http://localhost:18082` | 8082 |
 | Front end | `http://localhost:3100` | 3000 |
@@ -31,7 +31,7 @@ Rode o script com o PowerShell, em segundo plano (a primeira subida leva alguns 
 | "pare o sandbox" | `stop` | Para tudo, inclusive o ES do sandbox. Os dados e o código copiados ficam guardados. |
 | "o sandbox está no ar?" | `status` | Mostra cada peça, quando o código foi copiado e quando os dados foram copiados. |
 | "atualize o código do sandbox" | `refresh-code` | Para as APIs, o bot e o front e tira um novo snapshot do workspace **como ele estiver agora**. Depois sobe tudo de novo. |
-| "copie os dados de novo" | `refresh-data` | Apaga os índices `jn_*`, `jb_*` e `vis_*` do sandbox e restaura um snapshot novo do ES 9200. Também reinicia as APIs, que têm cache em memória. |
+| "copie os dados de novo" | `refresh-data` | Apaga os índices `js_*`, `jn_*`, `jb_*` e `vis_*` do sandbox e os copia de novo do ES 9200 por reindex remoto. Também reinicia as APIs, que têm cache em memória. |
 
 Depois, leia o log e informe ao usuário a tabela de estado que o script imprime no fim. Se alguma peça não subir, leia
 `C:\jobsnow-sandbox\logs\<peça>.log` (`es`, `vis-api`, `js-api`, `bot`, `front`).
@@ -48,9 +48,11 @@ sessão**, até um `stop` ou até o computador reiniciar. Depois de reiniciar o 
 - **Front**: o código é copiado para `C:\jobsnow-sandbox\front`, com `localhost:8080`/`8081`/`8082` trocados por
   `18080`/`18081`/`18082`. O `node_modules` **não é copiado**: é uma junção para o do workspace. Se uma alteração mexer nas
   dependências do front (`npm install`), o sandbox passa a usar as novas.
-- **Dados**: o ES do sandbox tem pasta de dados própria (`C:\jobsnow-sandbox\es\data`). Só os índices `jn_*`, `jb_*`
-  e `vis_*` são copiados, pelo repositório de snapshot `jobsnow_sandbox` (`C:\jn\snapshots\jobsnow-sandbox`). Recriar
-  índices no 9200 (CcpCreateEntities) não afeta o sandbox. Os índices legados sem prefixo não são copiados.
+- **Dados**: o ES do sandbox é o 9.5.5 de `C:\elasticsearch-9.5.5`, com pasta de dados própria
+  (`C:\jobsnow-sandbox\es9\data`); a pasta `data` da instalação não é usada. Só os índices `js_*`, `jn_*`, `jb_*` e
+  `vis_*` são copiados, por reindex remoto, porque o 9.x não restaura snapshot de índice criado no 7.x. Cada índice é
+  recriado com o mapeamento do 9200 e só com shards, `analysis` e `max_result_window`, sem réplicas. Recriar índices no
+  9200 (CcpCreateEntities) não afeta o sandbox. Os índices legados sem prefixo não são copiados.
 - **Login**: o front 3100 tem o próprio `localStorage`, porque a porta é outra. O login é feito de novo no sandbox.
 - **Telegram**: dois leitores não podem ler o mesmo bot ao mesmo tempo, porque o Telegram recusa o segundo. Por isso o
   sandbox usa outro bot, criado no @BotFather. O token fica em `supportBotToken` no `sandbox-config.json`, fora do
@@ -64,5 +66,5 @@ sessão**, até um `stop` ou até o computador reiniciar. Depois de reiniciar o 
 
 ## Recursos
 
-O ES do sandbox usa 1 GB de heap (o `jvm.options` da instalação compartilhada `C:\elasticsearch-7.4.0`). Cada API e o
+O ES do sandbox usa 1 GB de heap (`config\jvm.options.d\heap.options` da instalação compartilhada `C:\elasticsearch-9.5.5`). Cada API e o
 leitor do bot são uma JVM a mais, e o front é um `next dev` a mais.

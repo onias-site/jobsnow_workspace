@@ -12,7 +12,7 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 |-------|--------|---------|
 | 0 | `ccp_commons_jobsnow` | Core framework: decorators, DI, entity system, query builders |
 | 1 | `ccp_json_gson` | JSON serialization via Gson 2.7 |
-| 1 | `ccp_cache_gcp-memcache` | Cache via GCP Memcache |
+| 1 | `ccp_cache_gcp-memory-store` | Cache via GCP Memorystore for Valkey |
 | 1 | `ccp_cron-tasks_jobsnow` | Scheduled/cron tasks |
 | 1 | `ccp_db-bulk_elasticsearch` | Elasticsearch bulk operations |
 | 1 | `ccp_db-crud_elasticsearch` | Elasticsearch CRUD |
@@ -34,7 +34,7 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 | 3 | `ccp_mocking_jobsnow` | Test mocks and DI wiring |
 | 4 | `jb_instant-messenger-listener_jobsnow_dependency-chooser` | BackOffice bot listener (vis and js on the classpath for the steps run by class name) |
 | 4 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app (own Spring parent) |
-| 4 | `js_rest-api_spring_jobsnow_dependency-chooser` | JobsNow System REST API (login and its Swagger, port 8082) |
+| 4 | `js_rest-api_spring_jobsnow_dependency-chooser` | JobsNow System REST API (login and its Swagger, port 8082) and the Telegram webhook of production, `POST /telegram-webhook/{botName}` (jb on the classpath for the bot; locally the bot keeps reading by polling in `jb_instant-messenger-listener`) |
 | 4 | `vis_rest-api_spring_jobsnow_dependency-chooser` | Visualization REST API (port 8081; js on the classpath for the session validator) |
 | 5 | `ccp_rest-api-tests_jobsnow` | Integration/API test suite (depends on every module above) |
 
@@ -72,7 +72,7 @@ Tests extend template base classes (`JnTemplateDeTestes`, `VisTemplateDeTestes`,
 - The project is internationalizable: class, method, variable and field names, Javadoc, comments, OpenAPI texts and exception messages are written in English. Local variables get names that describe the value (`jsonWithInstantMessageType`, never `put10`). User-facing message templates are seeded per `JnLanguage` (Portuguese and English records side by side). Persisted field names, JSON keys and URL paths are contracts and are not renamed for translation purposes.
 - Field names in JSON are defined as enums and passed to `CcpJsonRepresentation` accessors — avoid bare string keys.
 - Cost centers follow a strict dependency order: **ccp → jn → vis/jb/js**. A `com.ccp` class must never import `com.jn`, `com.vis`, `com.jb` or `com.js`; a `com.jn` class must never import `com.vis`, `com.jb` or `com.js`. `ccp_rest-api-tests_jobsnow` is the only module exempt from the rule. Module prefix and root package always agree (`ccp_*` → `com.ccp`, `jn_*` → `com.jn`, and so on), so a class that would violate the rule belongs in a different module.
-- vis, jb and js do not import one another. A bot command belongs to the cost center of the data it works on: its steps are classes of that cost center, and its configuration (command, steps, names, texts) goes to the bot entities of jn (`JnEntityBotCommand*`) through `JnBotConfigurationSeeds`, returned by `getFirstRecordsToInsert` of one of its entities. The bot engine (jb) finds the commands of a bot by `botName` and runs each step by its class name, as `CcpMensageriaReceiver` runs a topic.
+- vis, jb and js do not import one another. A bot command belongs to the cost center of the data it works on: its steps are classes of that cost center, and its configuration (command, steps, names, texts) goes to the bot entities of jn (`JnEntityBotCommand*`) through `JnBotConfigurationSeeds`, returned by `getFirstRecordsToInsert` of one of its entities. The bot engine (jb) finds the commands of a bot by `botName` and runs each step by its class name, as `CcpMensageriaReceiver` runs a topic. The js API reaches the engine the same way: `JnBusinessHandleBotUpdate` runs the business that jb seeds in `JnEntityBotUpdateHandler`.
 - Java 17 across all modules; JUnit 4 (not 5).
 - `ccp_rest-api-handler-exception_spring` and `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` use `spring-boot-starter-parent` as their own parent and do not inherit from the root POM.
 - `instanceof` pattern matching against a variable already declared as the same type (e.g., `CcpBusiness x instanceof CcpBusiness y`) is rejected by the compiler — replace with a `!= null` check.

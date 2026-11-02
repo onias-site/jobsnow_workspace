@@ -32,7 +32,7 @@ flowchart LR
     APP -->|CcpCrud · CcpUnionAllExecutor<br/>CcpBulkExecutor · CcpQueryExecutor| ES[("Elasticsearch")]
     APP -->|CcpCache| MC[("Memcache")]
     APP -->|CcpMensageriaSender| MQ[["PubSub"]]
-    APP -->|CcpEmailSender| MAIL(["SendGrid · ou c:\logs\email"])
+    APP -->|CcpEmailProvider| MAIL(["SendGrid · ou c:\logs\email"])
     APP -->|CcpInstantMessenger| IM(["Telegram"])
     APP -->|CcpFileBucket| BK(["GCP Storage · ou c:/logs"])
     APP -->|CcpPropertiesDecorator| FS(["application_properties<br/>env · classpath · arquivo"])
@@ -48,7 +48,7 @@ aplicação e por ambiente**, e com ela muda se a seta cruza ou não a fronteira
 | Banco | `CcpCrud` e cia. | Elasticsearch HTTP | **igual** | **igual** |
 | Cache | `CcpCache` | `CcpGcpMemCache` → rede | `CacheMap` → `HashMap` → **sem seta** | `CacheMock` → noop → **sem seta** |
 | Fila | `CcpMensageriaSender` | PubSub → rede | `SyncMensageriaListener` → mesma thread → **sem seta** | idem local → **sem seta** |
-| E-mail | `CcpEmailSender` | SendGrid → rede | `LocalEmailFile` → **HD** | `LocalEmailFile` → **HD** |
+| E-mail | `CcpEmailProvider` | SendGrid → rede | `LocalEmailFile` → **HD** | `LocalEmailFile` → **HD** |
 | Mensageiro | `CcpInstantMessenger` | Telegram HTTP | **igual** | **igual** |
 | Bucket | `CcpFileBucket` | GCP Storage | `c:/logs/<bucket>/` → **HD** | não registrado |
 | Propriedades | `CcpPropertiesDecorator` | env var → memória; senão classpath/arquivo → **HD** | idem | idem |
@@ -613,7 +613,7 @@ permanente, não excepcional.
 | `jb_instant-messenger-listener` | ⛔ **não** | sync (fixo) | arquivo (fixo) | — | ⛔ `CacheMock` noop (fixo) | Telegram (fixo) |
 | `jn_mensageria-consumer_pubsub-push` | **sim** | PubSub / sync | — | — | — | — |
 
-**⛔ O VIS não registra `CcpEmailSender` nem `CcpInstantMessenger`.** Todo fluxo VIS que chegue em
+**⛔ O VIS não registra `CcpEmailProvider` nem `CcpInstantMessenger`.** Todo fluxo VIS que chegue em
 `JnSendMessageToUser` — `requestToCreateNewSkill`, `saveHierarchyFixSuggestion`, e **o caminho de
 erro de §5** — falha em `CcpDependencyInjection.getDependency`. A falha acontece dentro do listener,
 onde vira uma linha `success=false` em `JnEntityAsyncTask` que ninguém lê.
@@ -643,7 +643,7 @@ onde vira uma linha `success=false` em `JnEntityAsyncTask` que ninguém lê.
 
 | Hoje | Vai ser | O que muda no desenho |
 |---|---|---|
-| `LocalEmailFile` → `c:\logs\email\<templateId>.html` | `CcpSendGridEmailSender` | **mesma seta, outro modo de falha**: passa a existir 429/5xx, e aí o `loop` de retry de §4.2 deixa de ser hipotético. ⚠️ o nome do arquivo é o `templateId` — dois envios do mesmo template se sobrescrevem; não é log, é "último envio" |
+| `LocalEmailFile` → `c:\logs\email\<templateId>.html` | `CcpSendGridEmailProvider` | **mesma seta, outro modo de falha**: passa a existir 429/5xx, e aí o `loop` de retry de §4.2 deixa de ser hipotético. ⚠️ o nome do arquivo é o `templateId` — dois envios do mesmo template se sobrescrevem; não é log, é "último envio" |
 | `LocalBucket` → `c:/logs/<bucket>/` | `CcpGcpFileBucket` | idem |
 | `CacheMap` (`HashMap` estático) | `CcpGcpMemCache` | **a raia de Memcache passa a existir**. ⚠️ `CacheMap.put` faz `sleep(1)` — não é saída do processo, mas distorce medição local |
 | `SyncMensageriaListener` | `CcpGcpPubSubMensageriaSender` | **a fronteira assíncrona passa a existir de verdade**. Hoje, em local, todo o listener roda dentro da requisição — teste local mede o pior caso |

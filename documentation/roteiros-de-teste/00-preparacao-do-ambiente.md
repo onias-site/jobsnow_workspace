@@ -95,10 +95,19 @@ Cada sugestão manda um e-mail ao candidato e abre um ticket ao operador. Por is
 
 As recusas que não mandam nada vêm antes do limite e **não gastam** a sugestão do dia: habilidade já conhecida (412), já pendente (409), já sugerida por sinônimo (409), já rejeitada ou já avaliada (410), usuário ignorado (403).
 
-Os roteiros 01 e 02 enviam várias sugestões com o mesmo candidato, e desde 2026-10-23 a sugestão de habilidade e o ajuste de hierarquia gastam a **mesma** cota do dia. **Antes de cada cenário que envia uma sugestão ou um pedido de ajuste**, libere o dia do candidato (apagá-lo no Elasticsearch basta):
+Os roteiros 01 e 02 enviam várias sugestões com o mesmo candidato, e desde 2026-10-23 a sugestão de habilidade e o ajuste de hierarquia gastam a **mesma** cota do dia. **Antes de cada cenário que envia uma sugestão ou um pedido de ajuste**, libere o dia do candidato. Desde 2026-11-01 `jn_ticket_daily_limit` tem cache de 1 hora: apagar só no Elasticsearch não basta, porque as APIs continuariam vendo a cota. O script abaixo primeiro invalida o cache de cada registro, deixando a marca que as APIs locais consultam em `c:\logs\cache\deleted-keys`:
 
 ```powershell
 # libera as cotas do dia (sugestão de habilidade, ajuste de hierarquia, fale conosco e dúvida; todos os candidatos; ambiente local)
+$sha1 = [System.Security.Cryptography.SHA1]::Create()
+$ids = (Invoke-RestMethod 'http://localhost:9200/jn_ticket_daily_limit/_search?size=1000&_source=false').hits.hits._id
+foreach ($id in $ids) {
+  $bytes = [Text.Encoding]::UTF8.GetBytes("records.entity.jn_ticket_daily_limit.id.$id")
+  # o nome da marca é o SHA-1 da chave em hexadecimal, sem zeros à esquerda
+  $name = (($sha1.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') }) -join '').TrimStart('0')
+  $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+  Set-Content -NoNewline -Path "c:\logs\cache\deleted-keys\$name" -Value $now
+}
 Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_disposable_record/_delete_by_query?refresh=true' -Body '{"query":{"term":{"entity":"jn_ticket_daily_limit"}}}'
 Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_ticket_daily_limit/_delete_by_query?refresh=true' -Body '{"query":{"match_all":{}}}'
 ```

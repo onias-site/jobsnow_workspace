@@ -63,7 +63,7 @@ instruções cobertas, perdidas e totais.
      sai em segundos sem rodar nada. Uma rodada que falha não grava, então é tentada de novo no dia seguinte.
      `-Force` roda mesmo sem mudança.
    - **Sobe o que a suíte precisa:**
-     - o Elasticsearch, se estiver parado (`C:\elasticsearch-7.4.0\bin\elasticsearch.bat`, que fica rodando
+     - o Elasticsearch, se estiver parado (`C:\elasticsearch-9.5.5\bin\elasticsearch.bat`, que fica rodando
        depois da rodada);
      - os jars do `~/.m2` iguais ao código (`mvn -o install -DskipTests` no agregador; se falhar, por lock do
        Eclipse por exemplo, cancela);

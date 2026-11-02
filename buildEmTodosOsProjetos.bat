@@ -15,8 +15,8 @@ call mvn clean install
 popd
 
 echo ######################
-echo Buildando o projeto: ccp_cache_gcp-memcache
-pushd "%BASE%ccp_cache_gcp-memcache"
+echo Buildando o projeto: ccp_cache_gcp-memory-store
+pushd "%BASE%ccp_cache_gcp-memory-store"
 call mvn clean install
 popd
 

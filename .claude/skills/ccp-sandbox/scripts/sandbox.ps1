@@ -4,7 +4,8 @@
 #   ES 9201 (transporte 9301) | vis 18081 | js 18082 (login) | front 3100 | bot de suporte próprio (token em sandbox-config.json)
 #
 # Tudo fica em C:\jobsnow-sandbox. O código (classes + jars) e o front são copiados do workspace no momento do snapshot
-# e não mudam depois disso; os dados vêm de um snapshot só dos índices js_*, jn_*, jb_* e vis_* do ES de desenvolvimento.
+# e não mudam depois disso; os dados vêm de um reindex remoto só dos índices js_*, jn_*, jb_* e vis_* do ES de
+# desenvolvimento (7.4), porque o ES do sandbox é o 9.5.5, que não restaura snapshot do 7.x.
 # Os processos são criados pelo WMI, fora da árvore da sessão do Claude, e continuam no ar depois que ela termina.
 #
 # Uso: sandbox.ps1 -Action start | stop | status | refresh-code | refresh-data
@@ -19,13 +20,12 @@ $Root = 'C:\jobsnow-sandbox'
 $Workspace = 'C:\eclipse-workspaces\ccp'
 $Java = 'C:\Program Files\Java\jdk-17\bin\java.exe'
 $Node = 'C:\Program Files\nodejs\node.exe'
-$EsHome = 'C:\elasticsearch-7.4.0'
-$EsJavaHome = 'C:\Program Files\Java\jdk-11.0.20'
+$EsHome = 'C:\elasticsearch-9.5.5'
+$EsJavaHome = 'C:\elasticsearch-9.5.5\jdk'
+$EsDir = Join-Path $Root 'es9'
 $DevEs = 'http://localhost:9200'
+$DevEsRemoteHost = 'localhost:9200'
 $SandboxEs = 'http://localhost:9201'
-$SnapshotRepoName = 'jobsnow_sandbox'
-$SnapshotRepoPath = 'C:\jn\snapshots\jobsnow-sandbox'
-$SnapshotName = 'sandbox'
 $CopiedIndices = 'js_*,jn_*,jb_*,vis_*'
 $FrontPort = 3100
 
@@ -40,7 +40,7 @@ $JarsDir = Join-Path $CodeDir 'jars'
 $FrontDir = Join-Path $Root 'front'
 $LogsDir = Join-Path $Root 'logs'
 $ConfigFile = Join-Path $Root 'sandbox-config.json'
-$DataMarker = Join-Path $Root 'data-copied.txt'
+$DataMarker = Join-Path $Root 'data-copied-es9.txt'
 $CodeMarker = Join-Path $CodeDir 'snapshot.txt'
 
 function Write-Step([string]$text) { Write-Host "==> $text" }
@@ -186,15 +186,14 @@ function New-FrontSnapshot {
 # ---------------------------------------------------------------- scripts de execução
 
 function Write-RunScripts([string]$applicationProperties) {
-	New-Item -ItemType Directory -Force $LogsDir, (Join-Path $Root 'es\data'), (Join-Path $Root 'es\logs') | Out-Null
+	New-Item -ItemType Directory -Force $LogsDir, (Join-Path $EsDir 'data'), (Join-Path $EsDir 'logs'), (Join-Path $EsDir 'tmp') | Out-Null
 	$ascii = New-Object Text.UTF8Encoding($false)
 
 	$es = @(
 		'@echo off',
-		"set `"JAVA_HOME=$EsJavaHome`"",
-		"set `"ES_TMPDIR=$Root\es\tmp`"",
-		"if not exist `"$Root\es\tmp`" mkdir `"$Root\es\tmp`"",
-		"call `"$EsHome\bin\elasticsearch.bat`" -Ecluster.name=jobsnow-sandbox -Enode.name=jobsnow-sandbox -Ehttp.port=9201 -Etransport.port=9301 -Ediscovery.type=single-node -Epath.data=$Root\es\data -Epath.logs=$Root\es\logs > `"$LogsDir\es.log`" 2>&1"
+		"set `"ES_JAVA_HOME=$EsJavaHome`"",
+		"set `"ES_TMPDIR=$EsDir\tmp`"",
+		"call `"$EsHome\bin\elasticsearch.bat`" -Ecluster.name=jobsnow-sandbox -Enode.name=jobsnow-sandbox -Ehttp.port=9201 -Etransport.port=9301 -Ediscovery.type=single-node -Epath.data=$EsDir\data -Epath.logs=$EsDir\logs -Ereindex.remote.whitelist=$DevEsRemoteHost > `"$LogsDir\es.log`" 2>&1"
 	)
 	[IO.File]::WriteAllText((Join-Path $Root 'run-es.cmd'), ($es -join "`r`n"), $ascii)
 
@@ -220,25 +219,44 @@ function Write-RunScripts([string]$applicationProperties) {
 # ---------------------------------------------------------------- dados
 
 function Invoke-Es([string]$method, [string]$url, $body) {
-	$parameters = @{ Method = $method; Uri = $url; ContentType = 'application/json'; TimeoutSec = 600 }
-	if ($null -ne $body) { $parameters.Body = ($body | ConvertTo-Json -Depth 10 -Compress) }
+	$parameters = @{ Method = $method; Uri = $url; ContentType = 'application/json; charset=utf-8'; TimeoutSec = 3600 }
+	if ($null -ne $body) {
+		$bodyText = $body | ConvertTo-Json -Depth 30 -Compress
+		$parameters.Body = [Text.Encoding]::UTF8.GetBytes($bodyText)
+	}
 	return Invoke-RestMethod @parameters
 }
 
-function Copy-Data {
-	Write-Step "Copiando os indices $CopiedIndices do ES 9200 para o 9201 (snapshot e restore)"
-	New-Item -ItemType Directory -Force $SnapshotRepoPath | Out-Null
-	$repository = @{ type = 'fs'; settings = @{ location = $SnapshotRepoPath } }
-	Invoke-Es 'PUT' "$DevEs/_snapshot/$SnapshotRepoName" $repository | Out-Null
-	try { Invoke-Es 'DELETE' "$DevEs/_snapshot/$SnapshotRepoName/$SnapshotName" $null | Out-Null } catch { }
-	$snapshot = @{ indices = $CopiedIndices; include_global_state = $false; ignore_unavailable = $true }
-	Invoke-Es 'PUT' "$DevEs/_snapshot/$SnapshotRepoName/${SnapshotName}?wait_for_completion=true" $snapshot | Out-Null
+function Get-IndexNames([string]$esUrl) {
+	$rows = Invoke-Es 'GET' "$esUrl/_cat/indices/${CopiedIndices}?format=json&h=index" $null
+	return @($rows | ForEach-Object { $_.index } | Sort-Object)
+}
 
-	$readonlyRepository = @{ type = 'fs'; settings = @{ location = $SnapshotRepoPath; readonly = $true } }
-	Invoke-Es 'PUT' "$SandboxEs/_snapshot/$SnapshotRepoName" $readonlyRepository | Out-Null
-	Invoke-Es 'DELETE' "$SandboxEs/${CopiedIndices}?allow_no_indices=true&ignore_unavailable=true" $null | Out-Null
-	$restore = @{ indices = $CopiedIndices; include_global_state = $false }
-	Invoke-Es 'POST' "$SandboxEs/_snapshot/$SnapshotRepoName/$SnapshotName/_restore?wait_for_completion=true" $restore | Out-Null
+# Só o que vale em qualquer versão: o resto das settings do 7.4 (uuid, version, creation_date) o 9.x recusa.
+function Get-SettingsToCreate([string]$index) {
+	$answer = Invoke-Es 'GET' "$DevEs/$index/_settings" $null
+	$settings = $answer.$index.settings.index
+	$toCreate = @{ number_of_shards = $settings.number_of_shards; number_of_replicas = 0 }
+	if ($settings.analysis) { $toCreate.analysis = $settings.analysis }
+	if ($settings.max_result_window) { $toCreate.max_result_window = $settings.max_result_window }
+	return $toCreate
+}
+
+function Copy-Data {
+	Write-Step "Copiando os indices $CopiedIndices do ES 9200 para o 9201 (reindex remoto)"
+	# o 9.x recusa apagar por curinga
+	foreach ($index in (Get-IndexNames $SandboxEs)) { Invoke-Es 'DELETE' "$SandboxEs/$index" $null | Out-Null }
+
+	foreach ($index in (Get-IndexNames $DevEs)) {
+		$settings = Get-SettingsToCreate $index
+		$mappingAnswer = Invoke-Es 'GET' "$DevEs/$index/_mapping" $null
+		$mappings = $mappingAnswer.$index.mappings
+		Invoke-Es 'PUT' "$SandboxEs/$index" @{ settings = $settings; mappings = $mappings } | Out-Null
+		$reindex = @{ source = @{ remote = @{ host = "http://$DevEsRemoteHost" }; index = $index; size = 1000 }; dest = @{ index = $index } }
+		$result = Invoke-Es 'POST' "$SandboxEs/_reindex?wait_for_completion=true&refresh=true" $reindex
+		if ($result.failures.Count -gt 0) { throw "Falha no reindex de ${index}: $($result.failures[0] | ConvertTo-Json -Depth 5 -Compress)" }
+		Write-Step "$index $($result.created)"
+	}
 
 	# o offset de leitura gravado é do bot de desenvolvimento; o bot do sandbox começa do zero
 	$matchAll = @{ query = @{ match_all = @{} } }
@@ -254,7 +272,7 @@ function Start-Es {
 	if (Test-Port 9201) { return }
 	Write-Step 'Subindo o Elasticsearch do sandbox (9201)'
 	Start-Detached (Join-Path $Root 'run-es.cmd') $Root
-	if (-not (Wait-Port 9201 180)) { throw "O ES do sandbox nao abriu a porta 9201; veja $LogsDir\es.log e $Root\es\logs" }
+	if (-not (Wait-Port 9201 180)) { throw "O ES do sandbox nao abriu a porta 9201; veja $LogsDir\es.log e $EsDir\logs" }
 	$deadline = (Get-Date).AddSeconds(120)
 	while ((Get-Date) -lt $deadline) {
 		try {

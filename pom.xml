@@ -22,7 +22,7 @@
 
 		<!-- Layer 1: dependem apenas de ccp_commons_jobsnow -->
 		<module>ccp_json_gson</module>
-		<module>ccp_cache_gcp-memcache</module>
+		<module>ccp_cache_gcp-memory-store</module>
 		<module>ccp_cron-tasks_jobsnow</module>
 		<module>ccp_db-bulk_elasticsearch</module>
 		<module>ccp_db-crud_elasticsearch</module>

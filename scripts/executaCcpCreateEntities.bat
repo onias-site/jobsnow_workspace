@@ -6,13 +6,13 @@ rem Compila o projeto de testes com o Maven (offline), monta o classpath de test
 rem e roda a classe com a pasta de trabalho em ccp_rest-api-tests_jobsnow, que e
 rem de onde ela le os scripts em documentation\<centro de custo>\...
 rem Os demais modulos entram pelos jars do ~/.m2: rode antes "mvn -o install -DskipTests"
-rem nos modulos alterados (ou o buildEmTodosOsProjetos.bat) para usar o codigo atual.
+rem nos modulos alterados (ou "mvn clean install" na raiz) para usar o codigo atual.
 rem Sem argumentos recria jn, js, vis e jb (nessa ordem). Para recriar so alguns, passe-os:
 rem   executaCcpCreateEntities.bat vis
 rem   executaCcpCreateEntities.bat jn vis
 rem (recriar o jn sem o vis apaga os modelos de mensagem que o vis semeia nos indices do jn)
 
-pushd "%~dp0ccp_rest-api-tests_jobsnow"
+pushd "%~dp0..\ccp_rest-api-tests_jobsnow"
 
 set "CP_FILE=target\create-entities-cp.txt"
 set "ARG_FILE=target\create-entities-args.txt"

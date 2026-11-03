@@ -15,6 +15,7 @@
 # ... exceto os diretorios que guardam conteudo global do workspace
 !/.claude/
 !/documentation/
+!/scripts/
 
 # Estado interno do Eclipse: 300+ MB de cache especifico desta maquina
 /.metadata/

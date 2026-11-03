@@ -1,25 +1,24 @@
 ---
 name: ccp-atualizar-tela-nosso-backend
-description: Atualiza a tela "Nosso backend" do front end (conceitos, repositórios GIT e Swagger) depois que o CLAUDE.md, um repositório ou o Swagger mudou. Só roda quando o usuário digita /ccp-atualizar-tela-nosso-backend.
+description: Atualiza a tela "Nosso backend" do front end (conceitos e repositórios GIT) depois que o CLAUDE.md ou um repositório mudou. Só roda quando o usuário digita /ccp-atualizar-tela-nosso-backend.
 disable-model-invocation: true
 ---
 
 # Atualizar a tela Nosso backend
 
 Funde as antigas `ccp-atualizar-tela-repositorios`, `ccp-atualizar-tela-swagger` e o comando `ccp-listar-conceitos`
-(fusão pedida pelo usuário em 2026-11-01).
+(fusão pedida pelo usuário em 2026-11-01). O Swagger saiu da tela em 2026-11-02, a pedido do usuário: esta skill não
+publica mais nada de Swagger.
 
-A tela (`BackendConcepts.tsx`) sai de três arquivos de `jn_frontend_calistrato-react/presentation/pages/nosso-backend/`.
+A tela (`BackendConcepts.tsx`) sai de dois arquivos de `jn_frontend_calistrato-react/presentation/pages/nosso-backend/`.
 Os títulos, as quantidades, as tabelas e os links saem deles, então atualizar a tela é atualizar estes arquivos:
 
 | Porção da tela | Arquivo | Fonte |
 |----------------|---------|-------|
 | Conceitos (Entidades, Leitura e escrita de dados, Forma do código, Centros de custo) | `conceptsCatalog.ts` | `## Architectural Rules` e regra de dependência do `CLAUDE.md` |
 | Repositórios GIT | `repositoriesCatalog.ts` | Repositórios git do workspace e tabela `Module Structure` do `CLAUDE.md` |
-| Swagger do JS e do VIS (interface de testes do Swagger, por `swagger-ui-react`) | `swaggerCatalog.ts` (gerado, com o documento OpenAPI inteiro) | `/api-docs` das APIs locais |
 
-Fazer sempre as três partes. Uma parte que não puder ser feita (API fora do ar) não impede as outras: fica registrada no
-relatório final.
+Fazer sempre as duas partes.
 
 ## 1. Conceitos
 
@@ -67,26 +66,7 @@ relatório final.
 3. Manter a ordem alfabética dentro de cada seção e o estilo das linhas do arquivo.
 4. Rodar o script de novo: não pode sobrar `ADICIONAR` nem `RETIRAR`, e os dois números de `TOTAL` têm de ser iguais.
 
-## 3. Swagger
-
-1. As APIs js (8082) e vis (8081) precisam estar no ar **com o código atual**. O `/api-docs` mostra o que a API carregou
-   ao subir: se a mudança no Swagger veio depois disso, reinicie a API antes (e `mvn -o install -DskipTests` nos módulos
-   alterados), senão o catálogo sai com o Swagger antigo sem nenhum aviso. Não use `ccp-subir-apis-e-recriar-entidades`
-   só para isso: ela recria índices. Sem como saber se a API está atualizada, dizer isso no relatório final.
-
-2. Rodar o script, que regrava o catálogo:
-
-   ```bash
-   python "C:/eclipse-workspaces/ccp/.claude/skills/ccp-atualizar-tela-nosso-backend/scripts/gerar-swagger.py"
-   ```
-
-   A saída tem uma linha por dado, separada por TAB:
-   - `ADICIONADO`, `RETIRADO`, `ALTERADO`: seção, método e endereço do que mudou desde o catálogo anterior;
-   - `SEM_RESUMO`: endpoint sem `summary` no Swagger;
-   - `TOTAL`: seção e quantidade de endpoints;
-   - `API_FORA_DO_AR`: a API não respondeu e nada foi gravado: registrar no relatório final.
-
-## 4. Conferir e relatar
+## 3. Conferir e relatar
 
 1. Se algum arquivo mudou, conferir os tipos, filtrando pelos arquivos da tela (o projeto tem erros antigos em outros
    lugares):
@@ -95,16 +75,13 @@ relatório final.
    cd "C:/eclipse-workspaces/ccp/jn_frontend_calistrato-react" && npx tsc --noEmit | grep nosso-backend
    ```
 
-2. Responder com uma tabela do que mudou: **Porção da tela** | **Item** | **Mudança**, e os totais de conceitos,
-   repositórios e endpoints. Citar os `SEM_RESUMO`, que se corrigem no controller da API, não aqui. Se nada mudou, responder
-   em uma linha.
+2. Responder com uma tabela do que mudou: **Porção da tela** | **Item** | **Mudança**, e os totais de conceitos e
+   repositórios. Se nada mudou, responder em uma linha.
 
 ## Restrições
 
-- Alterar só os três catálogos, `SECTIONS` do script e, no caso de `SEM_PROPOSITO`, a tabela do `CLAUDE.md`.
-- Nunca editar `swaggerCatalog.ts` à mão: a próxima execução apaga a edição. Texto errado se corrige na interface
-  OpenAPI da API (`*OpenApi*.java`), e os textos ficam em inglês, como no Swagger. API nova: incluir em `APIS`, no
-  `gerar-swagger.py`.
+- Alterar só os dois catálogos, `SECTIONS` do script e, no caso de `SEM_PROPOSITO`, a tabela do `CLAUDE.md`.
+- Não recolocar Swagger na tela.
 - Regra ou sigla nova se propõe em conversa e se registra no `CLAUDE.md`; a tela só repete o que está lá.
 - Não criar nem apagar repositório: a skill só espelha o que já existe no git.
 - Não commitar nem fazer push.

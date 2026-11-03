@@ -61,6 +61,6 @@ Use a scratchpad da sessão como `<scratch>` para classpaths e logs.
 ## Observações
 
 - O código usado é o dos jars do `~/.m2`. Se o usuário alterou algum módulo, rode
-  `mvn -o -q install -DskipTests` nesse módulo (ou o `buildEmTodosOsProjetos.bat`) **antes** do passo 1.
+  `mvn -o -q install -DskipTests` nesse módulo (ou `mvn clean install` na raiz) **antes** do passo 1.
 - Depois de recriar os índices do jn, o login do front some. Veja a memória
   `reference_login_after_es_reset` (limpar `logins` do localStorage).

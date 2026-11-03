@@ -11,7 +11,7 @@ rem   executaConviteDeCurriculos.bat simular 20                   20 e-mails em 
 rem   executaConviteDeCurriculos.bat enviar https://dominio       envia a todos pelo SendGrid
 rem   executaConviteDeCurriculos.bat enviar https://dominio 100   envia no maximo 100 (para respeitar o plano)
 
-pushd "%~dp0ccp_rest-api-tests_jobsnow"
+pushd "%~dp0..\ccp_rest-api-tests_jobsnow"
 
 set "CP_FILE=target\create-entities-cp.txt"
 set "ARG_FILE=target\create-entities-args.txt"

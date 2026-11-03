@@ -1,0 +1,17 @@
+com.vis.entities.VisEntityResume	4	120
+com.vis.entities.VisEntityPosition	2	120
+com.vis.entities.VisEntitySkillPending	2	120
+com.vis.entities.VisEntitySkillFixHierarchyPending	2	120
+com.js.entities.JsEntityLoginToken	4	120
+com.js.entities.JsEntityLoginTokenRequestResend	2	120
+com.js.entities.JsEntityLoginTokenRequestUnlock	2	120
+com.jn.entities.JnEntityJobsnowError	2	120
+com.jn.entities.JnEntityJobsnowWarning	2	120
+com.js.business.login.JsBusinessExecuteLogin	4	120
+com.js.business.login.JsBusinessExecuteLogout	4	120
+com.js.business.login.JsBusinessSavePassword	4	120
+com.jn.entities.decorators.engine.JnBusinessDeleteVersionableRecords	1	600
+com.vis.business.recruiter.VisBusinessInactivateSuppressedRecruiter	2	120
+com.vis.business.recruiter.VisBusinessSaveRecruiterFromLoginAnswers	2	120
+com.vis.business.skill.VisBusinessDiscardPendingRequestsOfIgnoredUser	1	600
+com.js.business.contact.us.JsBusinessDiscardContactUsOfIgnoredUser	1	600

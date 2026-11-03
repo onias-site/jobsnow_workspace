@@ -27,7 +27,9 @@
 | Conhecimento implícito | Habilidades listadas nele | Uso |
 |---|---|---|
 | `ORMJAVA (2)` | HIBERNATE, JPA | H1, H2, H3, H6 (⊕) |
-| `SQLDATABASE (11)` | BIGQUERY, DB2, HIBERNATE, JDBC, JPA, LINQ, MYSQL, ORACLE, ORM, PL/SQL, SQL SERVER | H4, H5 (🗑), H7 (⊕) |
+| `SQLDATABASE (10)` | BIGQUERY, DB2, HIBERNATE, JDBC, JPA, MYSQL, ORACLE, ORM, PL/SQL, SQL SERVER | H4, H5 (🗑), H7 (⊕) |
+
+> **Desde 2026-11-02** (revisão do `synonyms.json`, seção 17), o LINQ tem CSHARP como pai e saiu de SQLDATABASE, que passou de 11 para 10 habilidades. Por isso o H4 usa BIGQUERY. Contagem simulada com o `cv.txt`, ainda não conferida na tela.
 | `NOSQLDATABASE (2)` | DATASTORE, ELASTICSEARCH | H8 |
 | `JAVA SERVER (13)` | EJB, JBOSS, JSF, JSP, PRIMEFACES, SERVLETS, SPRINGBOOT, STRUTS, TOMCAT, VELOCITY, VRAPTOR, WEBLOGIC, WEBSPHERE | H11 (termo com espaço) |
 
@@ -131,15 +133,15 @@ O usuário será avisado por e-mail.
 
 ## H4 — Desassociar (🗑), aprovar tudo de uma vez
 
-- [ ] 4.1 Clique no **🗑** de `SQLDATABASE`. Esperado: modal "Sugira remover habilidades que você acredita que não dependem do conhecimento em SQLDATABASE"; a lista traz **só** as 11 habilidades listadas em SQLDATABASE.
-- [ ] 4.2 Selecione **LINQ**. Justificativa: `LINQ é do mundo .NET e não depende de banco SQL.` → **Enviar**.
-- [ ] 4.3 E-mail: "Olá, você solicitou **desassociação** entre as habilidades LINQ e o conhecimento implícito (pai) SQLDATABASE ...", com a sua justificativa. Telegram: `/fixSkillHierarchy remove <email> SQLDATABASE`.
-- [ ] 4.4 Operador envia o comando. Esperado: cabeçalho "Solicitação de **desassociação** ..." e só o item LINQ.
-- [ ] 4.5 Responde `aprovar LINQ realmente é de outra plataforma`. Esperado: "Aprovados: LINQ", "Reprovados: -".
-- [ ] 4.6 `vis_skill?q=skill:LINQ`: `parent` **sem** SQLDATABASE (se a consulta logo depois ainda mostrar, recarregue em 1 s — refresh do Elasticsearch). E-mail de avaliação: "desassociação com o conhecimento implícito (pai) SQLDATABASE", só "Itens aprovados" (sem o bloco de reprovados).
-- [ ] 4.7 Reprocesse o currículo. Esperado: **SQLDATABASE (10)**, sem LINQ.
-  > **Visto na execução:** confirmado na tela (`SQLDATABASE (11)` → `(10)`).
-- [ ] 4.8 Na tela: 🗑 de SQLDATABASE mostra o pedido avaliado (LINQ); ⊕ de SQLDATABASE abre vazio, com **Enviar**. Um não interfere no outro.
+- [ ] 4.1 Clique no **🗑** de `SQLDATABASE`. Esperado: modal "Sugira remover habilidades que você acredita que não dependem do conhecimento em SQLDATABASE"; a lista traz **só** as 10 habilidades listadas em SQLDATABASE.
+- [ ] 4.2 Selecione **BIGQUERY**. Justificativa: `BigQuery é um data warehouse analítico do GCP, não um banco SQL transacional.` → **Enviar**.
+- [ ] 4.3 E-mail: "Olá, você solicitou **desassociação** entre as habilidades BIGQUERY e o conhecimento implícito (pai) SQLDATABASE ...", com a sua justificativa. Telegram: `/fixSkillHierarchy remove <email> SQLDATABASE`.
+- [ ] 4.4 Operador envia o comando. Esperado: cabeçalho "Solicitação de **desassociação** ..." e só o item BIGQUERY.
+- [ ] 4.5 Responde `aprovar BigQuery fica só no GCP`. Esperado: "Aprovados: BIGQUERY", "Reprovados: -".
+- [ ] 4.6 `vis_skill?q=skill:BIGQUERY`: `parent` **sem** SQLDATABASE e ainda com GCP (se a consulta logo depois ainda mostrar, recarregue em 1 s — refresh do Elasticsearch). E-mail de avaliação: "desassociação com o conhecimento implícito (pai) SQLDATABASE", só "Itens aprovados" (sem o bloco de reprovados).
+- [ ] 4.7 Reprocesse o currículo. Esperado: **SQLDATABASE (9)**, sem BIGQUERY.
+  > **Visto na execução (com LINQ, antes de 2026-11-02):** confirmado na tela (`SQLDATABASE (11)` → `(10)`).
+- [ ] 4.8 Na tela: 🗑 de SQLDATABASE mostra o pedido avaliado (BIGQUERY); ⊕ de SQLDATABASE abre vazio, com **Enviar**. Um não interfere no outro.
 
 ---
 

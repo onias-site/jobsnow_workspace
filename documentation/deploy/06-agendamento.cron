@@ -1,0 +1,4 @@
+# Item H do deploy: copiado para /etc/cron.d/jobsnow-diario. A VM esta no fuso America/Sao_Paulo.
+# So instale depois da carga inicial das supressoes do SendGrid (fase 8 de plano-de-migracao-para-producao.md):
+# enviar antes pode atingir enderecos suprimidos.
+0 22 * * 1-5 jobsnow /opt/jobsnow/rodar-processo-diario.sh >> /opt/jobsnow/logs/processo-diario.log 2>&1

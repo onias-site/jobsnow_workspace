@@ -2,6 +2,19 @@
 
 Plano escrito em 2026-11-01. Os números foram lidos do Elasticsearch local (7.4, `localhost:9200`) nessa data. **Nenhum passo foi executado ou ensaiado ainda.**
 
+**Atualização de 2026-11-02:** o `synonyms.json` foi revisado e passou de 1.349 para 1.482 skills (justificativas em `ccp_rest-api-tests_jobsnow/documentation/jn/skills/synonyms_revisao_2026-11-02.md`). As contagens de `vis_skill` e dos grupos de iniciais abaixo já são as do arquivo novo. As de `vis_telegram_position`, `vis_statis_skill*` e dos outros grupos do `jn_grouper` mudam com a recarga das vagas com o arquivo novo e precisam ser lidas de novo antes da fase 8.
+
+**Atualização da noite de 2026-11-02:** a produção já tinha sido migrada às 05:10 com o arquivo antigo. Depois disso vieram as decisões da seção 19 da revisão: 1.480 skills (XRAY nova; APPCC, XRAIL, SPECTRUM e a skill ADF saíram), o "/" corrigido no motor e CVS, SBT, VERTICA e REPORT ignorados. Com isso, a recarga das vagas foi refeita no ES local (9.5.5, não mais o 7.4). A refação na produção é o `documentation/deploy/21-refazer-dados-das-vagas.py`, sem repetir a fase 4. Os números novos, já no `10-copiar-dados.py`, substituem os das tabelas abaixo:
+
+| Índice | Esperado |
+|---|---:|
+| `vis_telegram_position` | 208.338 (21 com LINUX EMBARCADO, editadas pelo 11) |
+| `vis_statis_skill_line_chart` | 329.054 (sem os 12 de LINUX EMBARCADO) |
+| `vis_statis_skill_pie_chart` | 8.729 (12 grupos editados pelo 11) |
+| `jn_grouper` copiado pelo 10 | 380.021 (329.054 de `line_chart`, 37.848 de `vis_statis_skill`, 8.729 de `pie_chart` e 4.390 de domínios), mais os grupos de iniciais das skills, gravados pelo 21 |
+| `vis_skill` | 1.480 |
+| `vis_recruiter` e decisões de hierarquia | Sem mudança (44.623, 9, 6 e 7) |
+
 **Objetivo:** subir a produção vazia, gravar as sementes e copiar só os dados reais, gerados por carga, sem levar dados de teste.
 
 **Destino previsto:** Elastic Cloud Hosted, região de São Paulo, na versão 9.x. A suíte já foi rodada no 9.5.5.
@@ -10,7 +23,7 @@ Plano escrito em 2026-11-01. Os números foram lidos do Elasticsearch local (7.4
 
 | Tema | Decisão |
 |---|---|
-| `vis_skill` | Levar só as 1.349 skills de `synonyms.json`. `LINUX EMBARCADO` e `PICK BY LIGHT` não vão, nem qualquer estatística ligada a elas. |
+| `vis_skill` | Levar só as 1.482 skills de `synonyms.json`. `LINUX EMBARCADO` e `PICK BY LIGHT` não vão, nem qualquer estatística ligada a elas. |
 | `vis_recruiter` | Levar tudo, menos os 10 e-mails de `recrutadora.com.br`. |
 | Decisões de hierarquia | Levar as 22 linhas reais, depois da conferência da fase 3, porque elas não foram aplicadas em `vis_skill`. |
 | `jn_versionable` e `jn_disposable_record` | Não migrar. Em produção, as duas nascem só com o que o setup e os novos usos gravarem. |
@@ -18,15 +31,15 @@ Plano escrito em 2026-11-01. Os números foram lidos do Elasticsearch local (7.4
 
 ## O que será migrado
 
-A produção terminará com **861.124 registros** em 9 índices.
+A produção terminará com **861.246 registros** em 9 índices.
 
 | # | Índice | Registros | Filtro |
 |---|---|---:|---|
 | 1 | `vis_telegram_position` | 204.855 | Nenhum; 21 registros são editados na fase 6 |
 | 2 | `vis_statis_skill_line_chart` | 278.179 | Excluir `skill = LINUX EMBARCADO` (12) |
 | 3 | `vis_statis_skill_pie_chart` | 8.592 | Nenhum; o `total` não muda |
-| 4 | `jn_grouper` | 323.504 | Os valores de `parentName` da tabela abaixo |
-| 5 | `vis_skill` | 1.349 | Excluir `LINUX EMBARCADO` e `PICK BY LIGHT` |
+| 4 | `jn_grouper` | 323.493 | Os valores de `parentName` da tabela abaixo |
+| 5 | `vis_skill` | 1.482 | Excluir `LINUX EMBARCADO` e `PICK BY LIGHT` |
 | 6 | `vis_recruiter` | 44.623 | Excluir `domain = recrutadora.com.br` |
 | 7 | `vis_skill_fix_hierarchy_fulfiled` | 9 | `email` entre os 2 hashes da fase 3 |
 | 8 | `vis_skill_fix_hierarchy_item_approved` | 6 | Os 6 itens da fase 3 |
@@ -40,7 +53,7 @@ Valores de `parentName` em `jn_grouper`:
 | `vis_statis_skill` | 31.960 | Cópia, sem os 9 grupos com `parentJson.skill = LINUX EMBARCADO` |
 | `vis_statis_skill_pie_chart` | 8.592 | Cópia; 12 grupos são editados na fase 6 |
 | `vis_virtual_recruiter_domain_initials_grouper` | 4.390 | Cópia; 1 grupo é editado na fase 6 |
-| `vis_virtual_skill_initials_grouper` | 383 | **Não copiar:** a semente grava os grupos das 1.349 skills |
+| `vis_virtual_skill_initials_grouper` | 372 | **Não copiar:** a semente grava os grupos das 1.482 skills |
 
 `parentJson` não é indexado, então os filtros por `parentJson.skill` precisam ser feitos no script, durante a leitura.
 
@@ -172,8 +185,8 @@ Confira as contagens:
 | `vis_telegram_position` | 204.855 |
 | `vis_statis_skill_line_chart` | 278.179 |
 | `vis_statis_skill_pie_chart` | 8.592 |
-| `jn_grouper` | 323.504 |
-| `vis_skill` | 1.349 |
+| `jn_grouper` | 323.493 |
+| `vis_skill` | 1.482 |
 | `vis_recruiter` | 44.623 |
 | `vis_skill_fix_hierarchy_fulfiled` | 9 |
 | `vis_skill_fix_hierarchy_item_approved` | 6 |

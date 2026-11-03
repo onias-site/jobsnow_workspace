@@ -13,7 +13,6 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 | 0 | `ccp_commons_jobsnow` | Core framework: decorators, DI, entity system, query builders |
 | 1 | `ccp_json_gson` | JSON serialization via Gson 2.7 |
 | 1 | `ccp_cache_gcp-memory-store` | Cache via GCP Memorystore for Valkey |
-| 1 | `ccp_cron-tasks_jobsnow` | Scheduled/cron tasks |
 | 1 | `ccp_db-bulk_elasticsearch` | Elasticsearch bulk operations |
 | 1 | `ccp_db-crud_elasticsearch` | Elasticsearch CRUD |
 | 1 | `ccp_db-utils_elasticsearch` | Elasticsearch utilities |
@@ -22,16 +21,17 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 | 1 | `ccp_http_apache-mime` | HTTP client via Apache MIME |
 | 1 | `ccp_instant-messenger_telegram` | Telegram messaging |
 | 1 | `ccp_main-authentication_gcp-oauth` | GCP OAuth authentication |
-| 1 | `ccp_mensageria-consumer_gcp-pubsub-pull_dependency-chooser` | PubSub pull consumer |
 | 1 | `ccp_mensageria-sender_gcp-pubsub` | PubSub message sender |
 | 1 | `ccp_password_mindrot` | Password hashing via BCrypt |
-| 1 | `jn_business_jobsnow` | Core jobsnow business logic |
+| 1 | `jn_business_jobsnow` | Core jobsnow business logic, including the bot command `solveStackTrace` (the ticket of priority 0 opened by each unhandled error of `jn_jobsnow_error`) |
 | 1 | `ccp_rest-api-handler-exception_spring` | Spring Boot exception handler (own Spring parent) |
 | 2 | `ccp_db-query_elasticsearch` | Elasticsearch query builder |
 | 2 | `vis_business_jobsnow` | Visualization business logic |
 | 2 | `jb_business_jobsnow` | BackOffice business logic and the bot engine (`/pendingTickets` sorted by `priority`, then date; a step may skip its ticket with `skipTheTicket`) |
 | 2 | `js_business_jobsnow` | JobsNow System: login service, login entities (`js_login_*`), session validator, bot command `solveLoginTokenTicket`; the contact us (`js_contact_us`, twin `js_contact_us_solved`, `POST /contact-us/{email}` without session) and its bot commands `answerContactUs` and `ignoredContactUs` |
 | 3 | `ccp_mocking_jobsnow` | Test mocks and DI wiring |
+| 4 | `ccp_cron-tasks_jobsnow` | Standalone `main` of the scheduled process (the business modules at runtime, run by class name; what it sends to the messaging runs in the same thread, by `SyncMensageriaListener`) |
+| 4 | `ccp_mensageria-consumer_gcp-pubsub-pull_dependency-chooser` | PubSub pull consumers of production, kept up by PM2 (the business modules at runtime, each message names its receiver; what they send to the messaging runs in the same thread, by `SyncMensageriaListener`) |
 | 4 | `jb_instant-messenger-listener_jobsnow_dependency-chooser` | BackOffice bot listener (vis and js on the classpath for the steps run by class name) |
 | 4 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app (own Spring parent) |
 | 4 | `js_rest-api_spring_jobsnow_dependency-chooser` | JobsNow System REST API (login and its Swagger, port 8082) and the Telegram webhook of production, `POST /telegram-webhook/{botName}` (jb on the classpath for the bot; locally the bot keeps reading by polling in `jb_instant-messenger-listener`) |

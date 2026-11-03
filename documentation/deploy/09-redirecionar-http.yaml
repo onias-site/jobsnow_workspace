@@ -1,0 +1,6 @@
+# Item I do deploy: quem chega por http vai para https, mantendo caminho e parametros.
+name: jobsnow-http-redirect
+defaultUrlRedirect:
+  httpsRedirect: true
+  redirectResponseCode: MOVED_PERMANENTLY_DEFAULT
+  stripQuery: false

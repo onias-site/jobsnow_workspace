@@ -1,0 +1,17 @@
+# Itens J, K e L do deploy: gera a imagem de um servico. As APIs ignoram os dois --build-arg, que so o front usa.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_IMAGE}
+      - --build-arg
+      - NEXT_PUBLIC_VIS_API_URL=${_VIS_URL}
+      - --build-arg
+      - NEXT_PUBLIC_LOGIN_API_URL=${_LOGIN_URL}
+      - .
+images:
+  - ${_IMAGE}
+timeout: 1800s
+options:
+  logging: CLOUD_LOGGING_ONLY

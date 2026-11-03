@@ -6,7 +6,7 @@ rem APAGA vis_telegram_position, os graficos, os grupos de estatistica e as copi
 rem com o executaCargaTelegram.bat, que recalcula as estatisticas e o ranking de vis_skill no final.
 rem Os arquivos nunca sao excluidos aqui. Nada e apagado de vis_recruiter nem de vis_skill.
 rem Precisa do Elasticsearch local no ar. Os modulos entram pelos jars do ~/.m2: depois de mudar codigo, rode antes
-rem "mvn -o install -DskipTests" nos modulos alterados (ou o buildEmTodosOsProjetos.bat).
+rem "mvn -o install -DskipTests" nos modulos alterados (ou "mvn clean install" na raiz).
 rem Se a recarga parar no meio, rode de novo: os dados sao apagados e relidos desde o comeco.
 rem Uso:
 rem   executaRecargaTelegram.bat                 le C:\z com 8 threads
@@ -34,7 +34,7 @@ if errorlevel 1 (
 )
 
 echo Compilando ccp_rest-api-tests_jobsnow...
-pushd "%~dp0ccp_rest-api-tests_jobsnow"
+pushd "%~dp0..\ccp_rest-api-tests_jobsnow"
 call mvn -o -q test-compile
 set "COMPILED=%ERRORLEVEL%"
 popd

@@ -1,0 +1,51 @@
+#!/bin/bash
+# Instala (ou reconfigura) o Ops Agent na jobsnow-vm: logs do Elasticsearch e dos consumidores do PM2 no Cloud Logging,
+# alem das metricas da VM (memoria, disco, processos) no Cloud Monitoring. Pode rodar de novo.
+# Roda na VM, como usuario com sudo. Daqui:
+#   gcloud compute scp 23-ops-agent-na-vm.sh jobsnow-vm:/tmp/ --zone southamerica-east1-a --project jobsnow-prd --tunnel-through-iap
+#   gcloud compute ssh jobsnow-vm --zone southamerica-east1-a --project jobsnow-prd --tunnel-through-iap --command "bash /tmp/23-ops-agent-na-vm.sh"
+# Permissoes da conta da VM (jobsnow-vm@): roles/logging.logWriter para os logs e roles/monitoring.metricWriter para as
+# metricas (concessao feita pelo administrador).
+set -euo pipefail
+
+if ! systemctl list-unit-files | grep -q '^google-cloud-ops-agent.service'; then
+	cd /tmp
+	curl -sSfO https://dl.google.com/cloudagents/add-google-cloud-ops-agent-repo.sh
+	sudo bash add-google-cloud-ops-agent-repo.sh --also-install
+fi
+
+# O gc.log do Elasticsearch fica de fora: e grande e so interessa numa investigacao de memoria, feita na propria VM.
+sudo tee /etc/google-cloud-ops-agent/config.yaml > /dev/null <<'EOF'
+logging:
+  receivers:
+    elasticsearch:
+      type: files
+      include_paths:
+      - /var/log/elasticsearch/jobsnow-prd.log
+      - /var/log/elasticsearch/jobsnow-prd_deprecation.json
+      - /var/log/elasticsearch/jobsnow-prd_index_search_slowlog.json
+      - /var/log/elasticsearch/jobsnow-prd_index_indexing_slowlog.json
+    consumidores:
+      type: files
+      include_paths:
+      - /opt/jobsnow/logs/*.log
+  processors:
+    pilhas_java:
+      type: parse_multiline
+      match_any:
+      - type: language_exceptions
+        language: java
+  service:
+    pipelines:
+      elasticsearch:
+        receivers: [elasticsearch]
+        processors: [pilhas_java]
+      consumidores:
+        receivers: [consumidores]
+        processors: [pilhas_java]
+EOF
+
+sudo systemctl restart google-cloud-ops-agent
+sleep 5
+systemctl is-active google-cloud-ops-agent google-cloud-ops-agent-fluent-bit google-cloud-ops-agent-opentelemetry-collector
+free -m | head -2

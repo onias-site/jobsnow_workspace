@@ -43,10 +43,10 @@ def keeps_item(items):
 
 # in the order of the plan: the indices 1 to 6, then 7 to 9; each one with its filter and the count expected in the end
 PLAN = [
-    ("vis_telegram_position", lambda source: True, 208338),
-    ("vis_statis_skill_line_chart", lambda source: source.get("skill") != EXCLUDED_SKILL, 329054),
-    ("vis_statis_skill_pie_chart", lambda source: True, 8729),
-    ("jn_grouper", keeps_grouper, 380021),
+    ("vis_telegram_position", lambda source: True, 208891),
+    ("vis_statis_skill_line_chart", lambda source: source.get("skill") != EXCLUDED_SKILL, 335814),
+    ("vis_statis_skill_pie_chart", lambda source: True, 8737),
+    ("jn_grouper", keeps_grouper, 387594),
     ("vis_skill", lambda source: source.get("skill") not in EXCLUDED_SKILLS, 1480),
     ("vis_recruiter", lambda source: source.get("domain") != EXCLUDED_DOMAIN, 44623),
     ("vis_skill_fix_hierarchy_fulfiled", lambda source: source.get("email") in REAL_HIERARCHY_EMAILS, 9),

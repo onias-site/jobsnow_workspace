@@ -14,6 +14,8 @@
 >
 > **Base suja:** as decisões do operador valem para todos os candidatos (S8). Depois de uma execução, `PICK BY LIGHT` e `LINUX EMBARCADO` estão aprovadas e `KIPREV`, `CERENSA` e `JAB` rejeitadas. Para repetir o roteiro, recrie os índices do vis (item 3 da preparação) ou use outras palavras do `cv.txt`.
 
+> **Executado de novo em 2026-11-03**, no Chrome, depois do reset da base local, com `roteiro01.20261103@teste.com` e `roteiro01b.20261103@teste.com` e o operador pelo `automacao/SupportBotCommand.java`. Resultado em [resultados/2026-11-03-campanha/01-sugerir-habilidade.md](resultados/2026-11-03-campanha/01-sugerir-habilidade.md). **Valores atuais:** a leitura do `cv.txt` dá **109 habilidades e 38 conhecimentos implícitos** (não 105/36); a sugestão de habilidade tem **prioridade 4** (todas as prioridades subiram 1 com o `/solveStackTrace`, que tem a 0); `PICK BY LIGHT` e `LINUX EMBARCADO` já existem na base preservada, e foram trocadas por `STATE MACHINE` e `SIGOM`. Antes de cada envio, libere a cota com `automacao/libera-cota.ps1`. Defeito **D2** (a cota diária bloqueava por 48 h, e não por 24 h) corrigido no mesmo dia.
+
 ## Como a funcionalidade funciona (resumo)
 
 1. O candidato sugere uma habilidade que **consta no texto do currículo** e não foi listada, com sinônimos (várias frases) e uma justificativa. Os sinônimos e a justificativa só ficam habilitados depois que a habilidade passa pelas validações, feitas **ao sair do campo** da habilidade.

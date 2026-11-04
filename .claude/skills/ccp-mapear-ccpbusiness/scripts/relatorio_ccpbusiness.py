@@ -1,7 +1,8 @@
 """Relatorio das implementacoes de um tipo Java (padrao CcpBusiness), diretas ou indiretas.
 
 Uma linha por classe concreta ou abstrata e uma por item de enum (o enum em si nao vira linha: cada item e uma
-implementacao). Interfaces intermediarias entram no grafo mas nao no relatorio. Lambdas e classes anonimas nao tem nome
+implementacao). Item de enum sem corpo (so o nome, ou o nome com argumentos do construtor) fica de fora. Ao final,
+media e mediana de bytes e linhas. Interfaces intermediarias entram no grafo mas nao no relatorio. Lambdas e classes anonimas nao tem nome
 e ficam de fora.
 
 Tamanho: classe de topo = o arquivo inteiro; classe aninhada e item de enum = o trecho da propria declaracao.
@@ -12,6 +13,7 @@ import argparse
 import collections
 import os
 import re
+import statistics
 import sys
 
 ROOT = r"C:\eclipse-workspaces\ccp"
@@ -145,6 +147,19 @@ def size_of(text, start, end):
     return len(piece.encode("utf-8")), piece.count("\n") + 1
 
 
+def has_body(chunk):
+    """Item de enum com corpo: uma chave aberta fora dos parenteses dos argumentos do construtor."""
+    depth = 0
+    for ch in chunk:
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        elif ch == "{" and depth == 0:
+            return True
+    return False
+
+
 def enum_items(decl):
     masked, text = decl["masked"], decl["text"]
     i, end = decl["brace"] + 1, decl["end"]
@@ -168,6 +183,8 @@ def enum_items(decl):
         chunk = masked[s:e]
         found = re.search(r"([A-Za-z_]\w*)", re.sub(r"@\w+(\([^)]*\))?", lambda m: " " * len(m.group(0)), chunk))
         if not found:
+            continue
+        if not has_body(chunk):
             continue
         first = s + len(chunk) - len(chunk.lstrip())
         last = s + len(chunk.rstrip()) - 1
@@ -252,6 +269,11 @@ for project, count in by_project.most_common():
         out.append(f"| {i} | {r['nome']} | {SHORT_KIND.get(r['tipo'], r['tipo'])} | {b} | {l} |")
 out.append("")
 out.append(f"**Total geral:** {len(rows)} implementações · {br(sum(r['bytes'] for r in rows))} bytes · {br(sum(r['linhas'] for r in rows))} linhas.")
+stats = [f"**Bytes:** média {br_dec(avg_bytes)} · mediana {br_dec(statistics.median(r['bytes'] for r in rows))}",
+         f"**Linhas:** média {br_dec(avg_lines)} · mediana {br_dec(statistics.median(r['linhas'] for r in rows))}"]
+out.append("")
+out.append(stats[0] + "  ")
+out.append(stats[1])
 report = "\n".join(out) + "\n"
 
 if args.saida:
@@ -259,6 +281,7 @@ if args.saida:
     open(args.saida, "w", encoding="utf-8").write(report)
     print("relatorio gravado em", args.saida)
     print("\n".join(out[:9]))
+    print("\n".join(stats))
 else:
     sys.stdout.reconfigure(encoding="utf-8")
     print(report)

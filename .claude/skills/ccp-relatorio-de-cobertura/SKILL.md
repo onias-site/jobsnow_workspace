@@ -1,6 +1,6 @@
 ---
 name: ccp-relatorio-de-cobertura
-description: Relatório de porcentagem de cobertura de código do workspace — roda a suíte de ccp_rest-api-tests_jobsnow com o agente JaCoCo (o mesmo motor do EclEmma) e gera uma página HTML expansível no formato da view Coverage do Eclipse (workspace > projeto > src/main/java > pacote > arquivo, com Coverage, Covered/Missed/Total Instructions) mais um TSV por arquivo. Guarda o histórico de todas as rodadas (por projeto e total) com gráficos de linha da evolução, e roda sozinha todo dia às 12:00 pelo Agendador de Tarefas do Windows. Use quando pedirem "cobertura de código", "coverage", "porcentagem de cobertura", "quanto do código os testes cobrem", "relatório do EclEmma/JaCoCo", "quais classes não têm teste", ou para comparar a cobertura antes e depois de uma mudança.
+description: Relatório de porcentagem de cobertura de código do workspace — roda a suíte de ccp_rest-api-tests_jobsnow com o agente JaCoCo (o mesmo motor do EclEmma) e gera uma página HTML expansível no formato da view Coverage do Eclipse (workspace > projeto > src/main/java > pacote > arquivo, com Coverage, Covered/Missed/Total Instructions) mais um TSV por arquivo. Guarda o histórico de todas as rodadas (por projeto e total) com gráficos de linha da evolução, e roda sozinha todo dia às 10:00 pelo Agendador de Tarefas do Windows. Use quando pedirem "cobertura de código", "coverage", "porcentagem de cobertura", "quanto do código os testes cobrem", "relatório do EclEmma/JaCoCo", "quais classes não têm teste", ou para comparar a cobertura antes e depois de uma mudança.
 disable-model-invocation: true
 ---
 
@@ -54,7 +54,8 @@ instruções cobertas, perdidas e totais.
      e os números originais tiveram de ser recuperados do console daquela rodada. Agora a rodada fica
      como foi gravada, o comparativo usa os números gravados e o HTML avisa no topo que a árvore detalhada
      foi reanalisada.
-6. **Execução automática todo dia às 12:00, só quando o código mudou** (pedidos do usuário em 2026-10-10):
+6. **Execução automática todo dia às 10:00, só quando o código mudou** (pedidos do usuário em 2026-10-10; o
+   horário era 12:00 e passou a 10:00 em 2026-11-03, também a pedido do usuário):
    tarefa `\jobsnow\Relatorio de cobertura` do Agendador de Tarefas do Windows, que roda `scripts/run-scheduled.ps1`.
    - **Só roda se o código mudou.** `code-fingerprint.ps1` tira uma impressão digital de cada módulo Maven:
      commit atual mais hash das alterações locais, inclusive arquivos novos. A raiz e o front end ficam de fora.
@@ -74,7 +75,7 @@ instruções cobertas, perdidas e totais.
        O leitor do bot não é usado.
    - Deixa um log por execução em `%TEMP%\ccp-coverage\scheduled-logs`.
    - A tarefa só roda com o usuário logado (as APIs, o Maven e o ES são da sessão dele). Se o computador
-     estiver desligado ao meio-dia, ela roda assim que possível (`StartWhenAvailable`). O limite é de 3 h, e
+     estiver desligado às 10:00, ela roda assim que possível (`StartWhenAvailable`). O limite é de 3 h, e
      uma execução nunca se sobrepõe a outra.
    - **Ela não publica o Artifact nem escreve a análise**: isso continua sendo feito pelo Claude ao rodar a
      skill. Quando o usuário pedir o relatório depois de uma execução agendada, rodar com `-SkipRun` (que não

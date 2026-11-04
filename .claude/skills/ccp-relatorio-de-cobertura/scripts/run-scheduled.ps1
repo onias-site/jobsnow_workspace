@@ -1,5 +1,5 @@
 ﻿# Entrada da execução agendada (tarefa "\jobsnow\Relatorio de cobertura" do Agendador de Tarefas do Windows, todo dia
-# às 12:00, pedida pelo usuário em 2026-10-10). Só roda a suíte quando o código mudou desde a última rodada completa
+# às 10:00, pedida pelo usuário em 2026-10-10; era 12:00 até 2026-11-03). Só roda a suíte quando o código mudou desde a última rodada completa
 # (impressão digital de commit + alterações locais de cada módulo Maven, ver code-fingerprint.ps1). Quando roda, deixa
 # no ar tudo o que a suíte precisa:
 #   1. Elasticsearch local (localhost:9200): sobe o $ElasticHome\bin\elasticsearch.bat se estiver parado;

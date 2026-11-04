@@ -34,6 +34,6 @@ Ao terminar, informe por serviço: a revisão publicada, ou o erro exato. Se fal
 
 - Nunca exiba valores de segredos nem imprima o conteúdo de `C:\segredos\producao.json`.
 - Os testes não rodam neste comando: o código vai para produção como está no disco, inclusive o que não foi commitado.
-- Não rode junto com a suíte de testes nem perto das 12:00, quando a cobertura trava `target`.
+- Não rode junto com a suíte de testes nem perto das 10:00, quando a cobertura trava `target`.
 - Não rode em `todos` sem o usuário pedir: publicar a vis e a js antes dos dados contraria o plano de migração enquanto ele não terminar.
 - Não faz commit nem push.

@@ -6,6 +6,8 @@
 
 > **Executado de novo em 2026-10-26**, à mão no Chrome (a amostra da automação depende da carga `profissionais2`, que o reset do vis apagou: a base tinha só 2 currículos). Tela em `/meus-dados/sobre-mim`. C1 pela tela com um currículo de TI (`roteiro03.20261026@teste.com`); um operacional (tipo 4) foi salvo pela API com a sessão de `roteiro01b.20261026@teste.com` para o C6 e o 4.2. Tudo conferiu; os avisos ao operador do C6 vão para o Telegram real (a API do vis não usa o arquivo local) e não foram vistos. Notas em [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
 
+> **Executado de novo em 2026-11-03**: C1 a C3, C5 e C7 pela tela (`roteiro01b.20261103@teste.com`), C4 e C6 pela API com as contas `roteiro04*`. Resultado em [resultados/2026-11-03-campanha/04-tela-do-curriculo.md](resultados/2026-11-03-campanha/04-tela-do-curriculo.md). No 5.2b, "Transportadoraaricanduva" não existe mais na base: use outra empresa do autocomplete ("Trabalhandocomacomgas"). Os avisos do C6 ao operador **agora saem também no arquivo local** `C:\logs\telegram\support-751717896.txt`.
+
 ## Como a tela funciona (resumo)
 
 1. Abas, nesta ordem: **Currículo**, **Idiomas**, **N Habilidades** (só no tipo 1, Tecnologia da Informação, depois de ler o texto colado), **Opções** e **Salários**. O botão de cada aba avança para a próxima e fica desabilitado enquanto houver pendência; o da última é **Salvar dados**. Clicar no título de uma aba distante anda **uma aba por vez** na direção dela (de Currículo, um clique em Salários leva a Idiomas); para chegar, clique de novo.

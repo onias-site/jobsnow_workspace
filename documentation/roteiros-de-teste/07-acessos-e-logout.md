@@ -4,6 +4,8 @@
 
 > **Criado e executado em 2026-10-26**, no Chrome, com `roteiro03.20261026@teste.com`. Tudo conferiu; notas em [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
 
+> **Executado de novo em 2026-11-03** com `roteiro01b.20261103@teste.com`. Sem defeitos. No A3, o modal foi direto à senha. Resultado em [resultados/2026-11-03-campanha/07-acessos-e-logout.md](resultados/2026-11-03-campanha/07-acessos-e-logout.md).
+
 ## Como a tela funciona (resumo)
 
 1. **Meus dados → Acessos** (`/meus-dados/acessos`; também no menu do usuário) lista os logins do usuário logado, do mais recente ao mais antigo: IP, navegador (User-Agent), data do login e data do logout.

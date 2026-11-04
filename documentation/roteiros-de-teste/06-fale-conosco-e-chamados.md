@@ -4,6 +4,8 @@
 
 > **Criado e executado em 2026-10-26**, no Chrome (modal e tela de chamados), pela API (`curl`) e pelo bot do suporte (`SupportBotCommand.java`). Contas: `roteiro03.20261026@teste.com` (logada), `roteiro06.20261026@teste.com` (só API) e `roteiro06b.20261026@teste.com` (sem login, e-mail digitado). Tudo conferiu; notas em [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
 
+> **Executado de novo em 2026-11-03**. Resultado em [resultados/2026-11-03-campanha/06-fale-conosco-e-chamados.md](resultados/2026-11-03-campanha/06-fale-conosco-e-chamados.md). **Prioridades atuais** (subiram 1 com o `/solveStackTrace`): `reportBug` 1, `clarifyDoubts` 2, `makeCriticism` 3, `makeSuggestion` 5, `makeCompliment` e `makeComment` 6. **3.3:** clique em **Fale Conosco com o modal de login ainda aberto**, porque fechar o modal limpa o e-mail digitado.
+
 ## Como funciona (resumo)
 
 1. O botão **Fale Conosco** fica no canto inferior direito de todas as páginas do layout padrão. Abre um painel com o e-mail, o tipo, o título e a mensagem; o **X**, o **Cancelar** e a tecla **Esc** limpam e fecham.

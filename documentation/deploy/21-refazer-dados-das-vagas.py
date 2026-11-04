@@ -4,7 +4,8 @@ sem repetir a fase 4: as sementes e os demais indices da producao ficam como est
 Apaga no destino os documentos de vis_telegram_position, vis_statis_skill_line_chart, vis_statis_skill_pie_chart e
 vis_skill, e os grupos do jn_grouper de vis_statis_skill*, vis_virtual_recruiter_domain_initials_grouper e
 vis_virtual_skill_initials_grouper; copia de novo pelo 10-copiar-dados.py; grava os grupos de iniciais das skills sem os
-ids das skills excluidas (os mesmos que a semente gravaria); limpa pelo 11-limpar-dados.py e varre pelo 12.
+ids das skills excluidas (os mesmos que a semente gravaria); limpa pelo 11-limpar-dados.py e varre pelo 12; regrava o
+dicionario de skills pelo 24 e, no tunel de producao, invalida o CDN das estatisticas.
 
 Uso: python 21-refazer-dados-das-vagas.py <url da origem> <url do destino>
 A credencial do destino vem da variavel ES_DESTINO_AUTH. Nao altera a origem.
@@ -103,6 +104,19 @@ def run(script, *arguments):
         raise SystemExit("%s saiu com %d" % (script, code))
 
 
+def invalidate_cdn(destination):
+    # o CDN das estatisticas (09-criar-balanceador.ps1) guarda os meses passados por 1 ano: so a producao (o tunel) o invalida
+    if not destination.endswith(":9210"):
+        print("CDN: destino fora do tunel de producao, sem invalidacao", flush=True)
+        return
+    gcloud = os.path.join(os.environ["LOCALAPPDATA"], "Google", "Cloud SDK", "google-cloud-sdk", "bin", "gcloud.cmd")
+    command = [gcloud, "compute", "url-maps", "invalidate-cdn-cache", "jobsnow-lb", "--global", "--host", "api.onias.site",
+               "--path", "/statistics/skills/*", "--async", "--project", "jobsnow-prd"]
+    if subprocess.call(command) != 0:
+        raise SystemExit("falhou a invalidacao do CDN das estatisticas")
+    print("CDN das estatisticas: invalidacao pedida (alguns minutos para chegar a todos os servidores)", flush=True)
+
+
 def main():
     origin, destination = sys.argv[1].rstrip("/"), sys.argv[2].rstrip("/")
     auth = os.environ.get("ES_DESTINO_AUTH")
@@ -118,6 +132,8 @@ def main():
     run("12-varrer-skills-excluidas.py", destination)
     for index in REPLACED_INDICES + ["jn_grouper"]:
         print("%s no destino: %d" % (index, count(destination, auth, index)), flush=True)
+    run("24-dicionario-de-skills.py", destination)
+    invalidate_cdn(destination)
 
 
 main()

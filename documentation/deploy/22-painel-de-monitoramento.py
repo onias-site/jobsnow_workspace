@@ -1,6 +1,6 @@
 # Painel do Cloud Monitoring "JobsNow - APIs, cache e banco": latencia, requisicoes, instancias e tempo cobrado das
 # APIs do Cloud Run, uso e acertos do cache (Memorystore for Valkey), acumulo e idade das mensagens das filas (Pub/Sub)
-# e CPU da VM do Elasticsearch.
+# e CPU, memoria e disco da VM do Elasticsearch (memoria e disco pelo Ops Agent, ver 23-ops-agent-na-vm.sh).
 # Gera o JSON do painel e o cria (ou substitui, pelo mesmo nome) com o gcloud. Pode rodar de novo.
 # Uso: python 22-painel-de-monitoramento.py
 import json
@@ -87,6 +87,10 @@ widgets = [
            (series("compute.googleapis.com/instance/cpu/utilization", VM, "ALIGN_MEAN", "REDUCE_MEAN", ["metric.label.instance_name"]), "")), 6),
     (chart("Rede da VM (bytes recebidos)", "bytes/s",
            (series("compute.googleapis.com/instance/network/received_bytes_count", VM, "ALIGN_RATE", "REDUCE_SUM", ["metric.label.instance_name"]), "")), 6),
+    (chart("Memória usada da VM (Ops Agent; perto de 100% = trocar a máquina)", "%",
+           (series("agent.googleapis.com/memory/percent_used", VM, "ALIGN_MEAN", "REDUCE_MEAN", [], ' metric.label.state="used"'), "")), 6),
+    (chart("Disco usado da VM (Ops Agent; o Elasticsearch para de alocar a partir de 85%)", "%",
+           (series("agent.googleapis.com/disk/percent_used", VM, "ALIGN_MEAN", "REDUCE_MAX", ["metric.label.device"], ' metric.label.state="used" metric.label.device="/dev/sda1"'), "")), 6),
 ]
 
 tiles = []

@@ -1,6 +1,6 @@
 ---
 name: ccp-mapear-ccpbusiness
-description: Lista o fecho transitivo de subtipos de um tipo Java do workspace — filhos diretos e indiretos, em qualquer profundidade, com nível, tipo de declaração, módulo e arquivo. Use quando pedirem "quem implementa X", "quantos filhos de X existem", "quem estende X direta ou indiretamente", "todas as implementações de CcpBusiness / CcpService / CcpEntityConfigurator", ou ao avaliar o impacto de mexer numa interface base. Também gera o relatório das implementações com projeto, bytes e linhas de cada uma e a marcação do que passa da média (o antigo comando /ccp-relatorio-ccpbusiness).
+description: Lista o fecho transitivo de subtipos de um tipo Java do workspace — filhos diretos e indiretos, em qualquer profundidade — numa grade com bordas de colunas # | Tipo | Bytes | Linhas, ordenada por bytes. Use quando pedirem "quem implementa X", "quantos filhos de X existem", "quem estende X direta ou indiretamente", "todas as implementações de CcpBusiness / CcpService / CcpEntityConfigurator", ou ao avaliar o impacto de mexer numa interface base. Também gera o relatório das implementações com projeto, bytes e linhas de cada uma e a marcação do que passa da média (o antigo comando /ccp-relatorio-ccpbusiness).
 disable-model-invocation: true
 ---
 
@@ -36,18 +36,38 @@ Nenhum obrigatório.
 
 ## Passos
 
-1. Executar o script que acompanha a skill:
+1. Gerar a grade, que é a listagem padrão desta skill (definida pelo usuário em 2026-11-03):
+
+   ```bash
+   python -X utf8 "C:/eclipse-workspaces/ccp/.claude/skills/ccp-mapear-ccpbusiness/scripts/grade_ccpbusiness.py" --tipo <tipo> --saida "<scratchpad>/grade_<tipo>.txt"
+   ```
+
+   Colunas **#** | **Tipo** | **Bytes** | **Linhas**, **ordenada por bytes, do maior para o menor**. Uma linha por
+   classe ou interface do fecho e, para **todo enum** do fecho, uma linha **por item** (`JsServiceLogin.ExecuteLogin`,
+   `JsServiceLogin.SavePassword`...): cada item de enum é uma implementação própria, então o enum em si não vira linha
+   (pedido do usuário em 2026-11-03). Tamanho: tipo de topo = o arquivo inteiro; tipo aninhado (os `JnNotify*` de
+   `JnMessages.java`, os `Vis*` de `VisMessages.java`) = o trecho da própria declaração; item de enum = o trecho do
+   item, do nome até a vírgula ou o ponto e vírgula, com o corpo. **Item de enum sem corpo** (só o nome, ou o nome com
+   argumentos do construtor, como `ElasticSearchHttpStatus.OK` e `JsSupportLoginTokenTypes.resendToken`) **fica fora**:
+   o comportamento dele está no corpo comum do enum, não nele. Mesma base do `map-subtypes.ps1`: projeto de testes
+   fora (`--incluir-testes` para incluir). A linha de resumo do script decompõe o total em tipos sem enum + itens com
+   corpo de N enums; os tipos sem enum somados aos enums têm de bater com o total do `map-subtypes.ps1` (2026-11-03:
+   182 + 19 = 201; 182 + 57 itens = 239 linhas na grade, média 3.001,45 bytes e mediana 1.927).
+
+2. Ler o arquivo e responder com a linha de resumo (total, bytes, linhas), a grade **copiada
+   do arquivo sem redigitar** dentro de um bloco de código: desenhada com `┌ ┬ ┐ │ ├ ┼ ┤ └ ┴ ┘ ─`, sem linha
+   separadora entre os itens. Não montar a grade à mão: redigitar 201 linhas troca itens de lugar.
+   Não acrescentar as colunas Nível, Kind, Módulo, Arquivo nem a declaração: o usuário as retirou. **Ao final**,
+   depois da grade, a **média e a mediana** de bytes (e de linhas), que o script grava nas últimas linhas do arquivo.
+
+3. Só se o usuário pedir a quebra por nível, declaração ou módulo, executar o script de contagem:
 
    ```powershell
    & "<raiz>\.claude\skills\ccp-mapear-ccpbusiness\scripts\map-subtypes.ps1" -Type CcpBusiness
    ```
 
-2. Apresentar ao usuário, nesta ordem:
-   - **total**, e logo em seguida a quebra **por nível** (direto × indireto) — é a informação
-     que justifica a skill existir;
-   - **por tipo de declaração** (`class` / `interface` / `enum`);
-   - **por módulo**;
-   - a lista nominal, se o usuário pedir os nomes.
+   e apresentar o **total**, a quebra **por nível** (direto × indireto), **por tipo de declaração**
+   (`class` / `interface` / `enum`) e **por módulo**.
 
 3. Ao dar o total, **separar interface de implementação**. As interfaces intermediárias são
    abstrações, não implementações: em `CcpBusiness` são 70 subtipos, mas só 63 implementam
@@ -79,7 +99,8 @@ Fundido nesta skill em 2026-10-23 (era o comando `/ccp-relatorio-ccpbusiness`). 
      e linhas do projeto), colunas **#** | **Nome** | **Tipo** | **Bytes** | **Linhas**, ordenadas por bytes, com
      `(acima)` ao lado do valor acima da média geral, e o total geral no fim. Tabela única de 6 colunas com
      `(acima da média)` por extenso ficava larga demais e ilegível no terminal (reprovada pelo usuário em
-     2026-10-22), assim como a versão desenhada à mão com caracteres de caixa;
+     2026-10-22), assim como a versão desenhada à mão com caracteres de caixa (isso vale só para este modo
+     relatório; a listagem padrão usa a grade com bordas gerada pelo `grade_ccpbusiness.py`);
    - o caminho completo do arquivo gravado.
 
 Como o relatório conta (diferente do `map-subtypes.ps1`):
@@ -88,7 +109,9 @@ Como o relatório conta (diferente do `map-subtypes.ps1`):
 - **Só implementações viram linha:** interfaces intermediárias (`CcpService`, `JnService`...) entram no grafo mas não
   no relatório.
 - **Item de enum:** um enum do fecho vira uma linha **por item** (`JsServiceLogin.ExistsLoginEmail`), e o enum em si
-  não aparece. O tamanho do item é o trecho dele, do nome até a vírgula ou o ponto e vírgula, com o corpo, se houver.
+  não aparece. O tamanho do item é o trecho dele, do nome até a vírgula ou o ponto e vírgula, com o corpo. Item sem
+  corpo fica de fora, como na grade.
+- **Média e mediana** de bytes e de linhas fecham o relatório, depois do total geral; repetir as duas na resposta.
 - **Tamanho de classe:** classe de topo = o arquivo inteiro (bytes no disco e linhas); classe aninhada = o trecho da
   própria declaração. O tipo mostra `classe`, `classe aninhada`, `classe abstrata` ou `item de enum`.
 - **Média:** de todas as linhas da tabela; "acima da média" é estritamente maior.

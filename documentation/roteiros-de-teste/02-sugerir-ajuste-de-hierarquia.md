@@ -8,6 +8,8 @@
 
 > **Executado de novo em 2026-10-26**, inteiro (H1 a H12, inclusive o H9), no navegador com a conta `roteiro02.20261026@teste.com` e o bot de suporte rodado pelo `automacao/SupportBotCommand.java` (item 6.2 da preparação). O segundo candidato do H9 (`roteiro01b.20261026@teste.com`) foi feito por `curl` com a sessão dele (cabeçalhos `sessionToken` e `email`). Tudo conferiu, com as diferenças de texto já corrigidas nos passos abaixo e as notas em [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
 
+> **Executado de novo em 2026-11-03** com `roteiro01b.20261103@teste.com`. Resultado em [resultados/2026-11-03-campanha/02-sugerir-ajuste-de-hierarquia.md](resultados/2026-11-03-campanha/02-sugerir-ajuste-de-hierarquia.md). A lista do ⊕ trouxe 108 opções (110 habilidades do currículo menos as 2 de ORMJAVA); o ajuste de hierarquia tem **prioridade 4**. **Na versão de produção, o operador rejeita tudo:** uma aprovação muda a taxonomia real.
+
 ## Como a funcionalidade funciona (resumo)
 
 1. Na coluna **Conhecimentos implícitos**, cada título (ex.: `ORMJAVA (2)`) é um conhecimento que o sistema deduziu do currículo, com as habilidades que dependem dele.

@@ -10,6 +10,8 @@
 
 > **Executado de novo em 2026-10-26**, com o login já no centro de custo **js** (API na 8082, índices `js_login_*`): a automação passou com **113 de 113** verificações (depois de passar a esperar as escritas assíncronas, ver [Automação](#automação-da-api-com-candidatos-intercalados)), e no navegador, com a conta `roteiro03.20261026@teste.com`, L1 a L8 conferiram passo a passo (L5 com duas abas). L9 e L10 ficaram por conta da automação, que intercala três candidatos e troca o User-Agent. As diferenças de texto e de caminho já estão corrigidas abaixo; o que é novo está em [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
 
+> **Executado de novo em 2026-11-03**, depois do reset da base local: `automacao/03-modal-de-login.mjs` com 113/113.
+
 ## Como o modal funciona (resumo)
 
 - O modal abre de dois jeitos: sozinho, quando uma ação precisa de login e a API responde 401 (depois do login, a ação que pediu o login é **refeita sozinha**); ou pelo menu do usuário (ícone no canto superior direito), que, sem login, mostra **"Entrar no sistema"** (desde 2026-10-17; até então não existia botão de entrar).

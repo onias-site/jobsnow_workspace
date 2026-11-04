@@ -99,18 +99,27 @@ Os roteiros 01 e 02 enviam várias sugestões com o mesmo candidato, e desde 202
 
 ```powershell
 # libera as cotas do dia (sugestão de habilidade, ajuste de hierarquia, fale conosco e dúvida; todos os candidatos; ambiente local)
+Add-Type -AssemblyName System.Numerics
 $sha1 = [System.Security.Cryptography.SHA1]::Create()
-$ids = (Invoke-RestMethod 'http://localhost:9200/jn_ticket_daily_limit/_search?size=1000&_source=false').hits.hits._id
-foreach ($id in $ids) {
-  $bytes = [Text.Encoding]::UTF8.GetBytes("records.entity.jn_ticket_daily_limit.id.$id")
-  # o nome da marca é o SHA-1 da chave em hexadecimal, sem zeros à esquerda
-  $name = (($sha1.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') }) -join '').TrimStart('0')
-  $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
-  Set-Content -NoNewline -Path "c:\logs\cache\deleted-keys\$name" -Value $now
+function Mark([string]$key) {
+  # o nome da marca é o SHA-1 da chave como o Java escreve: new BigInteger(sha1).toString(16), COM sinal
+  # (hash com o primeiro bit ligado vira '-' seguido do complemento). Até 2026-11-03 este script calculava sem sinal
+  # e errava a marca de metade das chaves: a cota continuava em cache e a tela seguia dando 429.
+  $digest = $sha1.ComputeHash([Text.Encoding]::UTF8.GetBytes($key)); [array]::Reverse($digest)
+  $big = [System.Numerics.BigInteger]::new([byte[]]($digest + [byte]0))
+  if ($digest[$digest.Length - 1] -ge 128) { $big = $big - [System.Numerics.BigInteger]::Pow(2, 160); $name = '-' + ([System.Numerics.BigInteger]::Negate($big)).ToString('x').TrimStart('0') }
+  else { $name = $big.ToString('x').TrimStart('0') }
+  Set-Content -NoNewline -Path "c:\logs\cache\deleted-keys\$name" -Value ([DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds())
 }
+$ids = @((Invoke-RestMethod 'http://localhost:9200/jn_ticket_daily_limit/_search?size=1000&_source=false').hits.hits._id)
+foreach ($id in $ids) { if ($id) { Mark "records.entity.jn_ticket_daily_limit.id.$id" } }
+$copies = @((Invoke-RestMethod -Method Post -ContentType 'application/json' 'http://localhost:9200/jn_disposable_record/_search?size=1000&_source=false' -Body '{"query":{"term":{"entity":"jn_ticket_daily_limit"}}}').hits.hits._id)
+foreach ($id in $copies) { if ($id) { Mark "records.entity.jn_disposable_record.id.$id" } }
 Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_disposable_record/_delete_by_query?refresh=true' -Body '{"query":{"term":{"entity":"jn_ticket_daily_limit"}}}'
 Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_ticket_daily_limit/_delete_by_query?refresh=true' -Body '{"query":{"match_all":{}}}'
 ```
+
+O mesmo script está em `automacao/libera-cota.ps1`.
 
 ---
 

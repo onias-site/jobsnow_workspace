@@ -33,6 +33,10 @@ foreach ($service in 'front', 'vis', 'js') {
 	}
 }
 
+# CDN so no front: o HTML sai com "private, no-store" (nunca vai para o cache) e /_next/static com "public, immutable".
+# As APIs ficam sem CDN, porque as respostas delas mudam por usuario e por sessao; so as rotas publicas mais abaixo tem.
+Run 'CDN do front' @('compute', 'backend-services', 'update', 'jobsnow-front-backend', '--global', '--enable-cdn', '--cache-mode=CACHE_ALL_STATIC', $projectArg, '--quiet')
+
 Ensure 'mapa de URLs' @('compute', 'url-maps', 'describe', 'jobsnow-lb') @('compute', 'url-maps', 'create', 'jobsnow-lb', '--default-service=jobsnow-front-backend')
 
 $hostRules = & $gcloud compute url-maps describe jobsnow-lb $projectArg '--format=value(hostRules[].hosts)' 2>$null
@@ -41,6 +45,43 @@ if ("$hostRules" -notlike "*api.$Domain*") {
 }
 if ("$hostRules" -notlike "*login.$Domain*") {
 	Run 'rota da js' @('compute', 'url-maps', 'add-path-matcher', 'jobsnow-lb', '--path-matcher-name=js', '--default-service=jobsnow-js-backend', "--new-hosts=login.$Domain", $projectArg, '--quiet')
+}
+
+# CDN nas rotas publicas e impessoais (documentation/deploy/plano-cdn-estatisticas.md): um back-end proprio para cada uma,
+# no mesmo Cloud Run, com CDN que obedece ao Cache-Control da API (so as respostas 200 o levam). O back-end comum da vis e o
+# da js seguem sem CDN. A chave inclui a query string (?skill= nas estatisticas, ?language= na politica de privacidade).
+# Invalidacao: 21-refazer-dados-das-vagas.py (estatisticas) e 20-politica-de-privacidade.py (politica).
+$cdnRoutes = @(
+	@{ Service = 'vis'; Backend = 'jobsnow-vis-stats-backend'; Path = '/statistics/skills/*' },
+	@{ Service = 'js'; Backend = 'jobsnow-js-privacy-backend'; Path = '/privacy-policy' }
+)
+foreach ($route in $cdnRoutes) {
+	$backend = $route.Backend
+	$neg = "jobsnow-$($route.Service)-neg"
+	Ensure $backend @('compute', 'backend-services', 'describe', $backend, '--global') @('compute', 'backend-services', 'create', $backend, '--global', '--load-balancing-scheme=EXTERNAL_MANAGED')
+	$attached = & $gcloud compute backend-services describe $backend --global $projectArg '--format=value(backends[].group)' 2>$null
+	if ("$attached" -notlike "*$neg*") {
+		Run "ligar $neg em $backend" @('compute', 'backend-services', 'add-backend', $backend, '--global', "--network-endpoint-group=$neg", "--network-endpoint-group-region=$Region", $projectArg, '--quiet')
+	}
+	Run "CDN de $backend" @('compute', 'backend-services', 'update', $backend, '--global', '--enable-cdn', '--cache-mode=USE_ORIGIN_HEADERS', '--cache-key-include-protocol', '--cache-key-include-host', '--cache-key-include-query-string', $projectArg, '--quiet')
+}
+
+# a regra de caminho de cada rota no path matcher do servico (export, edicao e import do mapa inteiro, numa troca so)
+$urlMapFile = Join-Path $env:TEMP 'jobsnow-lb.yaml'
+& $gcloud compute url-maps export jobsnow-lb --global "--destination=$urlMapFile" $projectArg --quiet 2>$null
+if ($LASTEXITCODE -ne 0) { throw 'falhou: exportar o mapa de URLs' }
+$urlMap = Get-Content $urlMapFile -Raw
+$changed = $false
+foreach ($route in $cdnRoutes) {
+	if ($urlMap -like "*$($route.Backend)*") { Write-Host "ja existe: regra de $($route.Path)"; continue }
+	$service = "https://www.googleapis.com/compute/v1/projects/$Project/global/backendServices/$($route.Backend)"
+	$pathRule = "  name: $($route.Service)`n  pathRules:`n  - paths:`n    - $($route.Path)`n    service: $service"
+	$urlMap = $urlMap -replace "(?m)^  name: $($route.Service)\r?$", $pathRule
+	$changed = $true
+}
+if ($changed) {
+	Set-Content -Path $urlMapFile -Value $urlMap -Encoding ascii -NoNewline
+	Run 'regras de caminho com CDN' @('compute', 'url-maps', 'import', 'jobsnow-lb', '--global', "--source=$urlMapFile", $projectArg, '--quiet')
 }
 
 $domains = "$Domain,www.$Domain,api.$Domain,login.$Domain"

@@ -4,6 +4,8 @@
 
 > **Criado e executado em 2026-10-26**, no Chrome, com o currículo de TI de `roteiro03.20261026@teste.com` e três recrutadores: `recrutador08.20261026@empresa08.com.br` (profissional), `recrutador08.20261026@gmail.com` (freelancer) e a própria `roteiro03.20261026@teste.com` (para as telas que exigem login). Tudo conferiu; notas em [Observações da execução (2026-10-26)](#observações-da-execução-2026-10-26).
 
+> **Executado de novo em 2026-11-03**, junto com a dinâmica candidato/recrutador ([09-dinamica-candidato-recrutador.md](09-dinamica-candidato-recrutador.md)). Resultado em [resultados/2026-11-03-campanha/08-recrutador-e-quem-me-viu.md](resultados/2026-11-03-campanha/08-recrutador-e-quem-me-viu.md). **Desde 2026-11-01, o campo Mês/ano de Quem me viu e de Currículos visualizados abre no mês anterior:** escolha o mês corrente para ver as visualizações do 3.1 e do 4.1. Com o LinkedIn compartilhado (C6 do roteiro 04), a visualização conta para todos os e-mails do endereço, por projeto.
+
 ## Como funciona (resumo)
 
 1. O processo `VisBusinessSendResumesToRecruiters` (agendado de segunda a sexta, ainda fora desta máquina) manda a cada recrutador de `vis_recruiter` uma tabela com os currículos inseridos ou alterados nos últimos 7 dias (os 40 primeiros no e-mail; a lista inteira fica em `vis_recruiter_resumes`, lida pela tela **Currículos da semana**). Cada linha tem o link **Ver currículo**, e o rodapé, o de descadastro. Os links são assinados: `token = sha1(<finalidade>|<valores>|<segredo>)`.

@@ -1,0 +1,89 @@
+indice	entidade	regra	campos_do_ambiente	varrer_classes
+jn_email_template_message	JnEntityEmailTemplateMessage	igual		sim
+jn_instant_messenger_template_message	JnEntityInstantMessengerTemplateMessage	igual		sim
+jn_system_message	JnEntitySystemMessage	igual		sim
+jn_bot_command	JnEntityBotCommand	igual		sim
+jn_bot_command_name	JnEntityBotCommandName	igual		sim
+jn_bot_command_explanation	JnEntityBotCommandExplanation	igual		sim
+jn_bot_command_step	JnEntityBotCommandStep	igual		sim
+jn_bot_command_step_start_message	JnEntityBotCommandStepStartMessage	igual		sim
+jn_bot_command_step_end_message	JnEntityBotCommandStepEndMessage	igual		sim
+jn_bot_command_step_explanation	JnEntityBotCommandStepExplanation	igual		sim
+jn_bot_update_handler	JnEntityBotUpdateHandler	igual		sim
+jb_bot	JbEntityBot	igual		sim
+jb_bot_explanation	JbEntityBotExplanation	igual		sim
+jn_session_validator	JnEntitySessionValidator	igual		sim
+jn_write_event_subscribers	JnEntityWriteEventSubscribers	igual		sim
+vis_skill_dictionary	VisEntitySkillDictionary	igual		nao
+jn_email_parameters_to_send	JnEntityEmailParametersToSend	adaptar	sender,moreParameters	sim
+jn_instant_messenger_parameters_to_send	JnEntityInstantMessengerParametersToSend	adaptar	chatId,moreParameters	sim
+jb_bot_allowed_user	JbEntityBotAllowedUser	adaptar	allowedUser	nao
+vis_skill	VisEntitySkill	merge		nao
+vis_recruiter	VisEntityRecruiter	merge		nao
+vis_inactive_recruiter	VisEntityRecruiter (gemea)	merge		nao
+vis_telegram_position	VisEntityTelegramPosition	carga		nao
+vis_statis_skill_line_chart	VisEntityStatisSkillLineChart	carga		nao
+vis_statis_skill_pie_chart	VisEntityStatisSkillPieChart	carga		nao
+jb_bot_command_step_session	JbEntityBotCommandStepSession	nao-levar		sim
+jb_pending_tickets	JbEntityPendingTickets	nao-levar		sim
+jn_support_pending_command	JnEntitySupportPendingCommand	nao-levar		sim
+jn_support_cancelled_command	JnEntitySupportCancelledCommand	nao-levar		sim
+jn_record_to_reprocess	JnEntityRecordToReprocess	nao-levar		sim
+jb_bot_chat_language	JbEntityBotChatLanguage	nao-levar		nao
+jb_bot_update_id	JbEntityBotUpdateId	nao-levar		nao
+jn_command_not_allowed_to_user	JnEntityCommandNotAllowedToUser	nao-levar		nao
+jn_command_reallowed_to_user	JnEntityCommandNotAllowedToUser (gemea)	nao-levar		nao
+jn_disposable_record	JnEntityDisposableRecord	nao-levar		nao
+jn_email_message_sent	JnEntityEmailMessageSent	nao-levar		nao
+jn_email_suppressed	JnEntityEmailSuppressed	nao-levar		nao
+jn_email_temporarily_blocked	JnEntityEmailTemporarilyBlocked	nao-levar		nao
+jn_grouper	JnEntityGrouper	nao-levar		nao
+jn_inactive_grouper	JnEntityGrouper (gemea)	nao-levar		nao
+jn_http_api_error_client	JnEntityHttpApiErrorClient	nao-levar		nao
+jn_http_api_error_server	JnEntityHttpApiErrorServer	nao-levar		nao
+jn_http_api_retry_send_request	JnEntityHttpApiRetrySendRequest	nao-levar		nao
+jn_instant_messenger_bot_locked	JnEntityInstantMessengerBotLocked	nao-levar		nao
+jn_instant_messenger_message_sent	JnEntityInstantMessengerMessageSent	nao-levar		nao
+jn_jobsnow_error	JnEntityJobsnowError	nao-levar		nao
+jn_jobsnow_warning	JnEntityJobsnowWarning	nao-levar		nao
+jn_login_email	JnEntityLoginEmail	nao-levar		nao
+jn_message_did_not_sent	JnEntityMessageDidNotSent	nao-levar		nao
+jn_ticket_daily_limit	JnEntityTicketDailyLimit	nao-levar		nao
+jn_versionable	JnEntityVersionable	nao-levar		nao
+js_contact_us	JsEntityContactUs	nao-levar		nao
+js_contact_us_solved	JsEntityContactUs (gemea)	nao-levar		nao
+js_login_answers	JsEntityLoginAnswers	nao-levar		nao
+js_login_password	JsEntityLoginPassword	nao-levar		nao
+js_login_password_locked	JsEntityLoginPassword (gemea)	nao-levar		nao
+js_login_password_attempts	JsEntityLoginPasswordAttempts	nao-levar		nao
+js_login_session_conflict	JsEntityLoginSessionConflict	nao-levar		nao
+js_login_session_token_attempts	JsEntityLoginSessionTokenAttempts	nao-levar		nao
+js_login_session_validation	JsEntityLoginSessionValidation	nao-levar		nao
+js_login_session_terminated	JsEntityLoginSessionValidation (gemea)	nao-levar		nao
+js_login_token	JsEntityLoginToken	nao-levar		nao
+js_login_token_locked	JsEntityLoginToken (gemea)	nao-levar		nao
+js_login_token_attempts	JsEntityLoginTokenAttempts	nao-levar		nao
+js_login_token_request_resend	JsEntityLoginTokenRequestResend	nao-levar		nao
+js_login_token_fulfilled_resend	JsEntityLoginTokenRequestResend (gemea)	nao-levar		nao
+js_login_token_request_unlock	JsEntityLoginTokenRequestUnlock	nao-levar		nao
+js_login_token_fulfilled_unlock	JsEntityLoginTokenRequestUnlock (gemea)	nao-levar		nao
+vis_position	VisEntityPosition	nao-levar		nao
+vis_inactive_position	VisEntityPosition (gemea)	nao-levar		nao
+vis_recruiter_first_email	VisEntityRecruiterFirstEmail	nao-levar		nao
+vis_recruiter_queue_cursor	VisEntityRecruiterQueueCursor	nao-levar		nao
+vis_recruiter_resumes	VisEntityRecruiterResumes	nao-levar		nao
+vis_recruiter_sign_up_return	VisEntityRecruiterSignUpReturn	nao-levar		nao
+vis_resume	VisEntityResume	nao-levar		nao
+vis_inactive_resume	VisEntityResume (gemea)	nao-levar		nao
+vis_resume_linkedin	VisEntityResumeLinkedin	nao-levar		nao
+vis_skill_approved	VisEntitySkillApproved	nao-levar		nao
+vis_skill_fix_hierarchy_fulfiled	VisEntitySkillFixHierarchyFulfiled	nao-levar		nao
+vis_skill_fix_hierarchy_item_approved	VisEntitySkillFixHierarchyItemApproved	nao-levar		nao
+vis_skill_fix_hierarchy_item_pending	VisEntitySkillFixHierarchyItemPending	nao-levar		nao
+vis_skill_fix_hierarchy_item_rejected	VisEntitySkillFixHierarchyItemPending (gemea)	nao-levar		nao
+vis_skill_fix_hierarchy_pending	VisEntitySkillFixHierarchyPending	nao-levar		nao
+vis_skill_pending	VisEntitySkillPending	nao-levar		nao
+vis_skill_rejected	VisEntitySkillRejected	nao-levar		nao
+vis_skill_reviewed	VisEntitySkillReviewed	nao-levar		nao
+vis_skill_synonym	VisEntitySkillSynonym	nao-levar		nao
+vis_viewed_resume	VisEntityViewedResume	nao-levar		nao

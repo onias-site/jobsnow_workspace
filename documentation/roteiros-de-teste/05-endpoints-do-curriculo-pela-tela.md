@@ -6,6 +6,8 @@
 
 > **Executado de novo em 2026-10-26** no Chrome, junto com o roteiro 04, com `roteiro03.20261026@teste.com` (duas abas) e, para o tipo 4 e o LinkedIn emprestado, `roteiro01b.20261026@teste.com` pela API. Todos os passos conferiram, inclusive as correções R05-1 (aviso e formulário limpo depois do 404) e R05-2 (sem `hash` no `GET`). Para provocar o 401 com o currículo na tela (2.6, 3.5, 4.5), a sessão foi encerrada no servidor (`DELETE /login/{email}/{sessionToken}` na 8082) deixando a da aba como estava: trocar o `sessionToken` por um inventado faz o login seguinte cair em "Desbloqueie seu login" (409), porque a sessão verdadeira continua sendo a corrente. Resultado na seção [Execução de 2026-10-26](#execução-de-2026-10-26). A sugestão de habilidade e a sugestão de ajuste de hierarquia (outros controllers) ficam fora: estão nos roteiros 01 e 02. As chamadas de apoio da tela (`skills/fromText`, `companies/search/autocomplete`) aparecem só porque a tela precisa delas para montar o currículo.
 
+> **Executado de novo em 2026-11-03** com `roteiro01b` e `roteiro05a.20261103@teste.com` (sessão aberta pela API js com o User-Agent do Chrome, em `localhost`, porque a sessão vale para o IP e o User-Agent de quem a abriu). Sem defeitos. Resultado em [resultados/2026-11-03-campanha/05-endpoints-do-curriculo-pela-tela.md](resultados/2026-11-03-campanha/05-endpoints-do-curriculo-pela-tela.md).
+
 ## Os quatro endpoints
 
 | # | Endpoint | Serviço | O que a tela faz para chamá-lo | Respostas esperadas |

@@ -1,4 +1,4 @@
-# Rodape dos e-mails (endereco fisico e link da politica de privacidade, exigidos pelo SendGrid): acrescenta o rodape de
+# Rodape dos e-mails (link da politica de privacidade): acrescenta o rodape de
 # JnEmailFooter, antes do ultimo </body>, nos templates ja gravados do token de login, do e-mail de curriculos aos
 # recrutadores e do convite aos candidatos legados. Template que ja tem o link da politica fica como esta: rodar de novo
 # nao duplica. O texto abaixo e copia do de JnEmailFooter.java; mudou la, muda aqui.
@@ -14,10 +14,10 @@ auth = os.environ.get("ES_DESTINO_AUTH", "")
 opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 index = "jn_email_template_message"
 privacy_link = "https://onias.site/privacidade"
-address = "JobsNow · Avenida Alda, 858, cj. 193, Torre 1, Centro, Diadema, SP, 09910-170, "
+# Desde 2026-11-03 o rodape nao leva o endereco fisico (o script 25 o retirou dos templates ja gravados).
 footers = {
-    "portuguese": "<hr/><p style='font-size: 12px; color: #777777;'>" + address + "Brasil · <a href='" + privacy_link + "' target='_blank'>Política de privacidade</a></p>",
-    "english": "<hr/><p style='font-size: 12px; color: #777777;'>" + address + "Brazil · <a href='" + privacy_link + "' target='_blank'>Privacy policy</a></p>",
+    "portuguese": "<hr/><p style='font-size: 12px; color: #777777;'>JobsNow · <a href='" + privacy_link + "' target='_blank'>Política de privacidade</a></p>",
+    "english": "<hr/><p style='font-size: 12px; color: #777777;'>JobsNow · <a href='" + privacy_link + "' target='_blank'>Privacy policy</a></p>",
 }
 templates = (
     "com.jn.business.messages.JnMessages$JnNotifyUserAboutLoginToken",

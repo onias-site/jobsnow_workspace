@@ -4,14 +4,14 @@ Plano escrito em 2026-11-01. Os números foram lidos do Elasticsearch local (7.4
 
 **Atualização de 2026-11-02:** o `synonyms.json` foi revisado e passou de 1.349 para 1.482 skills (justificativas em `ccp_rest-api-tests_jobsnow/documentation/jn/skills/synonyms_revisao_2026-11-02.md`). As contagens de `vis_skill` e dos grupos de iniciais abaixo já são as do arquivo novo. As de `vis_telegram_position`, `vis_statis_skill*` e dos outros grupos do `jn_grouper` mudam com a recarga das vagas com o arquivo novo e precisam ser lidas de novo antes da fase 8.
 
-**Atualização da noite de 2026-11-02:** a produção já tinha sido migrada às 05:10 com o arquivo antigo. Depois disso vieram as decisões da seção 19 da revisão: 1.480 skills (XRAY nova; APPCC, XRAIL, SPECTRUM e a skill ADF saíram), o "/" corrigido no motor e CVS, SBT, VERTICA e REPORT ignorados. Com isso, a recarga das vagas foi refeita no ES local (9.5.5, não mais o 7.4). A refação na produção é o `documentation/deploy/21-refazer-dados-das-vagas.py`, sem repetir a fase 4. Os números novos, já no `10-copiar-dados.py`, substituem os das tabelas abaixo:
+**Atualização da noite de 2026-11-02:** a produção já tinha sido migrada às 05:10 com o arquivo antigo. Depois disso vieram as decisões da seção 19 da revisão: 1.480 skills (XRAY nova; APPCC, XRAIL, SPECTRUM e a skill ADF saíram), o "/" corrigido no motor e CVS, SBT, VERTICA e REPORT ignorados. Com isso, a recarga das vagas foi refeita no ES local (9.5.5, não mais o 7.4). A refação na produção é o `documentation/deploy/21-refazer-dados-das-vagas.py`, sem repetir a fase 4; rodada pelo usuário na mesma noite. Na madrugada de 2026-11-03 o motor passou a achar as palavras curtas com delimitador (SAP FI, VB.NET, MS SQL), a recarga local foi refeita (61 min) e o 21 precisa rodar de novo. Os números novos, já no `10-copiar-dados.py`, substituem os das tabelas abaixo:
 
 | Índice | Esperado |
 |---|---:|
-| `vis_telegram_position` | 208.338 (21 com LINUX EMBARCADO, editadas pelo 11) |
-| `vis_statis_skill_line_chart` | 329.054 (sem os 12 de LINUX EMBARCADO) |
-| `vis_statis_skill_pie_chart` | 8.729 (12 grupos editados pelo 11) |
-| `jn_grouper` copiado pelo 10 | 380.021 (329.054 de `line_chart`, 37.848 de `vis_statis_skill`, 8.729 de `pie_chart` e 4.390 de domínios), mais os grupos de iniciais das skills, gravados pelo 21 |
+| `vis_telegram_position` | 208.891 (21 com LINUX EMBARCADO, editadas pelo 11) |
+| `vis_statis_skill_line_chart` | 335.814 (sem os 12 de LINUX EMBARCADO) |
+| `vis_statis_skill_pie_chart` | 8.737 (12 grupos editados pelo 11) |
+| `jn_grouper` copiado pelo 10 | 387.594 (335.814 de `line_chart`, 38.653 de `vis_statis_skill`, 8.737 de `pie_chart` e 4.390 de domínios), mais os grupos de iniciais das skills, gravados pelo 21 |
 | `vis_skill` | 1.480 |
 | `vis_recruiter` e decisões de hierarquia | Sem mudança (44.623, 9, 6 e 7) |
 

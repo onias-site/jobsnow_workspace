@@ -4,6 +4,9 @@
 # pizzas, e uma tabela por fila com a configuracao (prazo de ack, fila de mensagens mortas, retencao).
 # Metricas pela API do Cloud Monitoring, com o token do gcloud do usuario. O Pub/Sub manda as metricas com cerca
 # de 1 a 3 minutos de atraso.
+# Desde 2026-11-05 a tabela das filas e o quadro "Queries por fila" mostram as chamadas ao Elasticsearch de cada
+# mensagem: as que o consumidor grava na linha da mensagem (log mensagens, CcpMessageReceiver) e, com o
+# 33-slowlog-de-todas-as-queries.py ligado, o tempo de cada shard por dentro do Elasticsearch (medicao_elasticsearch.py).
 # Uso: python 29-filas-do-pubsub.py [porta]   (abre http://127.0.0.1:8767; atalho na area de trabalho)
 import json
 import os
@@ -19,7 +22,11 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import medicao_elasticsearch  # noqa: E402
+
 PROJECT = "jobsnow-prd"
+MESSAGES_LOG_NAME = "projects/%s/logs/mensagens" % PROJECT
 GCLOUD = os.path.join(os.environ["LOCALAPPDATA"], "Google", "Cloud SDK", "google-cloud-sdk", "bin", "gcloud.cmd")
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8767
 POINTS = 240
@@ -84,6 +91,42 @@ def call(url):
             del response_cache[key]
         response_cache[url] = (time.time(), content)
     return content
+
+
+def forget_token():
+    with token_lock:
+        token_cache["expires"] = 0.0
+
+
+def cache_of(payload):
+    # os comandos ao cache da mensagem; nada nas linhas anteriores a medicao do cache
+    if "cacheCallsCount" not in payload:
+        return None
+    by_entity = [{"entity": name, "hits": int(counters.get("hits", 0)), "misses": int(counters.get("misses", 0))}
+                 for name, counters in (payload.get("cacheByEntity") or {}).items()]
+    return {"hits": int(payload.get("cacheHits", 0)), "misses": int(payload.get("cacheMisses", 0)), "writes": int(payload.get("cacheWrites", 0)),
+            "clientMs": float(payload.get("cacheClientMs", 0)), "byEntity": by_entity}
+
+
+def db_calls(subscription, start, end, maximum):
+    # as mensagens que tocaram o Elasticsearch ou o cache (Memorystore), cada uma com as suas chamadas, o tempo por dentro
+    # do ES e os comandos ao cache (estes desde a medicao do cache, 2026-11-05 a noite)
+    filters = ['logName="%s"' % MESSAGES_LOG_NAME, 'timestamp>="%s"' % start, 'timestamp<"%s"' % end,
+               "(jsonPayload.dbCallsCount>0 OR jsonPayload.cacheCallsCount>0)"]
+    if subscription:
+        filters.append('jsonPayload.topic="%s"' % subscription.replace('"', '\\"'))
+    entries, truncated = medicao_elasticsearch.list_entries(access_token, forget_token, PROJECT, filters, maximum)
+    payloads = [entry.get("jsonPayload", {}) for entry in entries]
+    traces = [payload.get("traceId", "") for payload in payloads]
+    slowlog = medicao_elasticsearch.read_slowlog(access_token, forget_token, PROJECT, start, end, traces)
+    messages = []
+    for entry, payload in zip(entries, payloads):
+        messages.append({
+            "timestamp": entry.get("timestamp", ""), "topic": payload.get("topic", ""), "result": payload.get("result", ""),
+            "durationMs": float(payload.get("durationMs", 0) or 0), "db": medicao_elasticsearch.enrich(payload, slowlog),
+            "cache": cache_of(payload),
+        })
+    return {"messages": messages, "truncated": truncated, "slowlogLines": slowlog["lines"], "slowlogTruncated": slowlog["truncated"]}
 
 
 def subscriptions():
@@ -310,6 +353,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, "text/html; charset=utf-8", PAGE.replace("__PROJECT__", PROJECT))
             if parsed.path == "/api/subscriptions":
                 return self.send_json(200, subscriptions())
+            if parsed.path == "/api/db":
+                return self.send_json(200, db_calls(query.get("subscription", ""), query["start"], query["end"], int(query.get("max", "20000"))))
             if parsed.path == "/api/metrics":
                 return self.send_json(200, metrics(query.get("subscription", ""), query.get("topic", ""), query["start"], query["end"]))
             return self.send_json(404, {"error": "not found"})
@@ -354,7 +399,8 @@ button{background:var(--accent);color:#fff;border:0;cursor:pointer}button.ghost{
 .slice{cursor:pointer}div.slice:hover{text-decoration:underline}
 h2{font-size:15px;margin:0 0 10px}
 table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{color:var(--muted);position:sticky;top:0;background:var(--card);cursor:pointer}td.num,th.num{text-align:right;white-space:nowrap}
+th{color:var(--muted);position:sticky;top:0;background:var(--card);cursor:pointer}td.num,th.num{text-align:right;white-space:nowrap}td.url{word-break:break-all}
+td.src{word-break:break-all;max-width:420px;color:var(--muted);font-family:ui-monospace,Consolas,monospace;font-size:11px}
 tr.pick{cursor:pointer}tr.pick:hover td{background:var(--bg)}
 .scroll{max-height:620px;overflow:auto}.muted{color:var(--muted)}.err{color:#d92d20;white-space:pre-wrap}.bad{color:#dc2626;font-weight:700}.ok{color:#16a34a;font-weight:700}
 </style></head><body>
@@ -376,7 +422,7 @@ const pad=n=>String(n).padStart(2,'0');
 const toLocal=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const short=n=>n.includes('.')?n.slice(n.lastIndexOf('.')+1):n;
-let rangeMinutes=1440,subs=[],tableSort=['backlogNow',-1],lastData=null;
+let rangeMinutes=1440,subs=[],tableSort=['backlogNow',-1],lastData=null,lastDb=null,dbError='';
 function setRange(minutes){rangeMinutes=minutes;const end=new Date();$('end').value=toLocal(end);$('start').value=toLocal(new Date(end-minutes*60000));}
 [['1 h',60],['6 h',360],['24 h',1440],['7 dias',10080],['30 dias',43200],['6 semanas',60480]].forEach(([t,m])=>{const b=document.createElement('button');b.type='button';b.className='ghost';b.textContent=t;b.onclick=()=>{setRange(m);run();};$('presets').appendChild(b);});
 const params=new URLSearchParams(location.search);
@@ -394,6 +440,8 @@ function fmtAge(s){if(s==null||isNaN(s))return'–';if(s<60)return Math.round(s)
 const fmtBytes=v=>{if(v==null||isNaN(v))return'–';const u=['B','KB','MB','GB'];let i=0;while(Math.abs(v)>=1024&&i<3){v/=1024;i++;}return v.toFixed(v<10&&i?1:0)+' '+u[i];};
 const last=pts=>pts&&pts.length?pts[pts.length-1][1]:NaN;
 const sum=obj=>Object.values(obj||{}).reduce((a,b)=>a+b,0);
+function pct(sorted,p){if(!sorted.length)return NaN;const i=(sorted.length-1)*p/100,lo=Math.floor(i),hi=Math.ceil(i);return sorted[lo]+(sorted[hi]-sorted[lo])*(i-lo);}
+const dashMs=v=>v==null||isNaN(v)?'–':fmtMs(v);
 const PALETTE=['#2563eb','#7c3aed','#db2777','#0d9488','#ca8a04','#ea580c','#16a34a','#0891b2','#be123c','#4f46e5','#64748b','#94a3b8'];
 
 const charts={};
@@ -441,8 +489,10 @@ async function run(quiet){
   history.replaceState(null,'','?'+new URLSearchParams({...(sub?{sub:sub.name}:{}),...(rangeMinutes?{minutes:rangeMinutes}:{})}));
   if(!quiet)$('out').innerHTML='<div class="card muted">Lendo as métricas do Cloud Monitoring…</div>';
   try{
+    const dbPromise=fetch('/api/db?'+new URLSearchParams({subscription:sub?sub.name:'',start,end})).then(async x=>{const v=await x.json();if(!x.ok)throw new Error(v.error);return v;});
     const r=await fetch('/api/metrics?'+new URLSearchParams({subscription:sub?sub.name:'',topic:sub?sub.topic:'',start,end}));const d=await r.json();if(!r.ok)throw new Error(d.error);
-    lastData=d;render(d,sub);
+    lastData=d;if(!quiet){lastDb=null;dbError='';}render(d,sub);
+    dbPromise.then(v=>{lastDb=v;dbError='';}).catch(e=>{dbError=e.message;}).finally(()=>{if(lastData===d){table(d);$('db').innerHTML=cacheCard()+dbCard();}});
   }catch(e){$('out').innerHTML=`<div class="card err">${esc(e.message)}</div>`;}
 }
 
@@ -478,22 +528,84 @@ function render(d,sub){
     `${lineChart('streams','Consumidores conectados (streaming pull)',streams,fmtInt)}</div>`+
     `<div class="grid3">${pie('Publicadas por fila',bySubItems(s.publishedByTopic,subOfTopic),fmtInt,true)}${pie('Confirmadas por fila',bySubItems(s.ackedBySubscription),fmtInt,true)}${pie('Pendentes agora, por fila',bySubItems(backlogNowBySub),fmtInt,true)}`+
     `${pie('Respostas ao publicar',codeItems(s.publishCodes))}${pie('Respostas do streaming pull',codeItems(s.pullCodes))}${pie('Prazos de ack estendidos por fila',bySubItems(s.modAckBySubscription),fmtInt,true)}</div>`+
-    `<div class="card"><h2>Filas <span class="muted" style="font-weight:normal">(clique numa linha, numa fatia ou na legenda para ver só a fila)</span></h2><div class="scroll" id="tbl"></div></div>`;
+    `<div class="card"><h2>Filas <span class="muted" style="font-weight:normal">(clique numa linha, numa fatia ou na legenda para ver só a fila)</span></h2><div class="scroll" id="tbl"></div></div>`+
+    `<div id="db">${cacheCard()}${dbCard()}</div>`;
   wireCharts();table(d);
   document.querySelectorAll('.slice[data-sub]').forEach(el=>el.onclick=()=>{$('sub').value=el.dataset.sub;run();});
 }
-const COLS=[['name','Fila'],['published','Publicadas',1],['delivered','Entregues',1],['acked','Confirmadas',1],['backlogNow','Pendentes agora',1],['backlogMax','Pendentes máx',1],['oldestMax','Mais antiga máx',1],['ackP95','Ack p95',1],['streams','Conectados',1],['modAck','Prazos estendidos',1],['ackDeadline','Prazo de ack',1],['deadLetter','Mensagens mortas'],['retention','Retenção']];
+const COLS=[['name','Fila'],['published','Publicadas',1],['delivered','Entregues',1],['acked','Confirmadas',1],['backlogNow','Pendentes agora',1],['backlogMax','Pendentes máx',1],['oldestMax','Mais antiga máx',1],['ackP95','Ack p95',1],['streams','Conectados',1],['modAck','Prazos estendidos',1],
+  ['cacheReads','Cache leituras',1],['cacheHitRate','Cache hits',1],['cacheWrites','Cache escritas',1],['cacheMs','Cache cliente',1],['noDb','Sem ir ao ES',1],
+  ['dbMsgs','Msgs com ES',1],['dbPerMsg','ES por msg',1],['dbP50','ES cliente p50',1],['dbP95','ES cliente p95',1],['dbShard','ES shards (soma)',1],['dbShare','% no ES',1],
+  ['ackDeadline','Prazo de ack',1],['deadLetter','Mensagens mortas'],['retention','Retenção']];
+function dbByTopic(){
+  const byTopic={};
+  (lastDb?lastDb.messages:[]).filter(m=>m.db.count).forEach(m=>{const t=byTopic[m.topic]=byTopic[m.topic]||{msgs:0,calls:0,client:[],shard:0,shardN:0,duration:0};
+    t.msgs++;t.calls+=m.db.count;t.client.push(m.db.clientMs);t.duration+=m.durationMs;if(m.db.shardMs!=null){t.shard+=m.db.shardMs;t.shardN++;}});
+  Object.values(byTopic).forEach(t=>{const sorted=t.client.sort((a,b)=>a-b);t.p50=pct(sorted,50);t.p95=pct(sorted,95);t.share=t.duration?Math.min(100,sorted.reduce((a,b)=>a+b,0)/t.duration*100):null;});
+  return byTopic;
+}
+function cacheByTopic(){
+  // por fila: mensagens medidas, leituras, hits, misses, escritas, tempo no cliente e as que nao precisaram do ES
+  const byTopic={};
+  (lastDb?lastDb.messages:[]).filter(m=>m.cache).forEach(m=>{const c=m.cache;
+    const t=byTopic[m.topic]=byTopic[m.topic]||{msgs:0,reads:0,hits:0,misses:0,writes:0,ms:0,noDb:0,entities:{}};
+    t.msgs++;t.reads+=c.hits+c.misses;t.hits+=c.hits;t.misses+=c.misses;t.writes+=c.writes;t.ms+=c.clientMs;if(!m.db.count)t.noDb++;
+    c.byEntity.forEach(e=>{const x=t.entities[e.entity]=t.entities[e.entity]||{hits:0,misses:0};x.hits+=e.hits;x.misses+=e.misses;});});
+  return byTopic;
+}
+function cacheCard(){
+  if(dbError||!lastDb)return '';
+  const byTopic=cacheByTopic(),topics=Object.entries(byTopic).sort((a,b)=>b[1].reads-a[1].reads);
+  const note='<div class="muted" style="margin-bottom:8px"><b>Leituras</b> = consultas ao cache (Memorystore for Valkey) antes de ir ao Elasticsearch; <b>hit</b> = a chave estava lá e o ES não foi chamado; <b>escritas</b> = gravação depois de um miss e apagamento de chaves depois de uma gravação ou antes de uma busca; <b>Sem ir ao ES</b> = mensagens atendidas só pelo cache. Mensagens anteriores à medição do cache (05/11/2026, noite) não entram.</div>';
+  if(!topics.length)return `<div class="card"><h2>Cache por fila</h2>${note}<div class="muted">Nenhuma mensagem com a medição do cache no período.</div></div>`;
+  const rate=(h,r)=>r?(h/r*100).toFixed(h/r<0.1?1:0)+'%':'–';
+  const name=e=>e===''?'(chaves de serviço, sem entidade)':e;
+  const entityRows=topics.flatMap(([topic,t])=>Object.entries(t.entities).map(([e,x])=>({topic,entity:e,...x}))).sort((a,b)=>(b.hits+b.misses)-(a.hits+a.misses));
+  return `<div class="card"><h2>Cache por fila <span class="muted" style="font-weight:normal">(em ordem de leituras)</span></h2>${note}<div class="scroll"><table><thead><tr><th>Fila</th><th class="num">Mensagens</th><th class="num">Leituras</th><th class="num">Hits</th><th class="num">Misses</th><th class="num">Hits %</th><th class="num">Escritas</th><th class="num">Cache cliente</th><th class="num">Por mensagem</th><th class="num">Sem ir ao ES</th></tr></thead><tbody>`+
+    topics.map(([topic,t])=>`<tr><td title="${esc(topic)}">${esc(short(topic))}</td><td class="num">${fmtInt(t.msgs)}</td><td class="num">${fmtInt(t.reads)}</td><td class="num">${fmtInt(t.hits)}</td><td class="num">${fmtInt(t.misses)}</td><td class="num">${rate(t.hits,t.reads)}</td>`+
+      `<td class="num">${fmtInt(t.writes)}</td><td class="num">${fmtMs(t.ms)}</td><td class="num">${(t.reads/t.msgs).toFixed(1)}</td><td class="num">${fmtInt(t.noDb)} (${rate(t.noDb,t.msgs)})</td></tr>`).join('')+
+    `</tbody></table></div>`+
+    (entityRows.length?`<h2 style="margin-top:14px">Leituras do cache por entidade</h2><div class="scroll"><table><thead><tr><th>Fila</th><th>Entidade</th><th class="num">Leituras</th><th class="num">Hits</th><th class="num">Misses</th><th class="num">Hits %</th></tr></thead><tbody>`+
+      entityRows.map(r=>`<tr><td title="${esc(r.topic)}">${esc(short(r.topic))}</td><td>${esc(name(r.entity))}</td><td class="num">${fmtInt(r.hits+r.misses)}</td><td class="num">${fmtInt(r.hits)}</td><td class="num">${fmtInt(r.misses)}</td><td class="num">${rate(r.hits,r.hits+r.misses)}</td></tr>`).join('')+
+      `</tbody></table></div>`:'')+`</div>`;
+}
+function dbCard(){
+  if(dbError)return `<div class="card err">Chamadas ao Elasticsearch: ${esc(dbError)}</div>`;
+  if(!lastDb)return '<div class="card muted">Lendo as chamadas ao Elasticsearch das mensagens (log mensagens e slowlog)…</div>';
+  const dbMessages=lastDb.messages.filter(m=>m.db.count);
+  const groups={};const manyTopics=new Set(dbMessages.map(m=>m.topic)).size>1;
+  dbMessages.forEach(m=>{const seen=new Set();m.db.calls.forEach(c=>{const k=m.topic+'|'+c.signature;
+    const g=groups[k]=groups[k]||{topic:m.topic,signature:c.signature,calls:0,msgs:0,client:[],took:0,tookN:0,query:0,fetch:0,write:0,shard:0,shardN:0,source:''};
+    g.calls++;if(!seen.has(k)){seen.add(k);g.msgs++;}g.client.push(c.clientMs);if(c.tookMs!=null){g.took+=c.tookMs;g.tookN++;}
+    if(c.shardMs!=null){g.shard+=c.shardMs;g.shardN++;g.query+=c.queryMs||0;g.fetch+=c.fetchMs||0;g.write+=c.writeMs||0;}if(!g.source&&c.source)g.source=c.source;});});
+  const list=Object.values(groups).map(g=>{const sorted=g.client.sort((a,b)=>a-b);return {...g,clientSum:sorted.reduce((a,b)=>a+b,0),p50:pct(sorted,50),p95:pct(sorted,95)};}).sort((a,b)=>b.clientSum-a.clientSum);
+  const slow=lastDb.slowlogLines?`${lastDb.slowlogLines} linhas do slowlog${lastDb.slowlogTruncated?' (cortado no máximo)':''}`:'nenhuma linha do slowlog no período: as colunas de shards ficam vazias enquanto o <code>33-slowlog-de-todas-as-queries.py</code> estiver desligado';
+  const note=`<div class="muted" style="margin-bottom:8px">${dbMessages.length} mensagens com chamadas ao ES${lastDb.truncated?' (cortado no máximo: as mais recentes)':''} · ${slow}. <b>Cliente</b> = ida e volta vista pelo consumidor · <b>took</b> = tempo que o ES informa (só busca e bulk) · <b>shards</b> = soma do tempo de cada shard no slowlog, o esforço do ES. Mensagens anteriores a 05/11/2026 não têm a medição.</div>`;
+  if(!list.length)return `<div class="card"><h2>Queries por fila</h2>${note}</div>`;
+  return `<div class="card"><h2>Queries por fila <span class="muted" style="font-weight:normal">(em ordem do tempo total no cliente)</span></h2>${note}<div class="scroll"><table><thead><tr>${manyTopics?'<th>Fila</th>':''}<th>Chamada ao ES</th><th class="num">Chamadas</th><th class="num">Mensagens</th><th class="num">Por mensagem</th><th class="num">Cliente p50</th><th class="num">Cliente p95</th><th class="num">Cliente total</th><th class="num">Took médio</th><th class="num">Shards total</th><th class="num">Query</th><th class="num">Fetch</th><th class="num">Escrita</th><th>Exemplo de query</th></tr></thead><tbody>`+
+    list.map(g=>`<tr>${manyTopics?`<td title="${esc(g.topic)}">${esc(short(g.topic))}</td>`:''}<td class="url">${esc(g.signature)}</td><td class="num">${g.calls}</td><td class="num">${g.msgs}</td><td class="num">${(g.calls/g.msgs).toFixed(1)}</td><td class="num">${fmtMs(g.p50)}</td><td class="num">${fmtMs(g.p95)}</td><td class="num">${fmtMs(g.clientSum)}</td>`+
+      `<td class="num">${g.tookN?fmtMs(g.took/g.tookN):'–'}</td><td class="num">${g.shardN?fmtMs(g.shard):'–'}</td><td class="num">${g.shardN?fmtMs(g.query):'–'}</td><td class="num">${g.shardN?fmtMs(g.fetch):'–'}</td><td class="num">${g.shardN&&g.write?fmtMs(g.write):'–'}</td><td class="src" title="${esc(g.source)}">${esc(g.source.slice(0,140))}</td></tr>`).join('')+
+    `</tbody></table></div></div>`;
+}
 function table(d){
-  const g=d.grouped,s=d.totals;
+  const g=d.grouped,s=d.totals;const db=dbByTopic();const dbOf=x=>db[x.name]||db[x.topic]||null;
+  const cache=cacheByTopic();const cacheOf=x=>cache[x.name]||cache[x.topic]||null;
   const rows=subs.filter(x=>!$('sub').value||x.name===$('sub').value).map(x=>({name:x.name,published:(s.publishedByTopic||{})[x.topic]||0,delivered:(s.deliveredBySubscription||{})[x.name]||0,acked:(s.ackedBySubscription||{})[x.name]||0,
     backlogNow:last((g.backlogBySubscription||{})[x.name])||0,backlogMax:(s.backlogMaxBySubscription||{})[x.name]||0,oldestMax:(s.oldestMaxBySubscription||{})[x.name]||0,
     ackP95:(s.ackP95BySubscription||{})[x.name],streams:last((g.streamsBySubscription||{})[x.name])||0,modAck:(s.modAckBySubscription||{})[x.name]||0,
-    ackDeadline:x.ackDeadline,deadLetter:x.deadLetter?short(x.deadLetter)+' ('+x.maxAttempts+'x)':'',retention:x.retention,delivery:x.delivery}));
+    ackDeadline:x.ackDeadline,deadLetter:x.deadLetter?short(x.deadLetter)+' ('+x.maxAttempts+'x)':'',retention:x.retention,delivery:x.delivery,
+    cacheReads:cacheOf(x)?cacheOf(x).reads:null,cacheHitRate:cacheOf(x)&&cacheOf(x).reads?cacheOf(x).hits/cacheOf(x).reads*100:null,
+    cacheWrites:cacheOf(x)?cacheOf(x).writes:null,cacheMs:cacheOf(x)?cacheOf(x).ms:null,noDb:cacheOf(x)?cacheOf(x).noDb:null,
+    dbMsgs:dbOf(x)?dbOf(x).msgs:null,dbPerMsg:dbOf(x)?dbOf(x).calls/dbOf(x).msgs:null,dbP50:dbOf(x)?dbOf(x).p50:null,dbP95:dbOf(x)?dbOf(x).p95:null,
+    dbShard:dbOf(x)&&dbOf(x).shardN?dbOf(x).shard:null,dbShare:dbOf(x)?dbOf(x).share:null}));
   const [key,dir]=tableSort;rows.sort((a,b)=>((a[key]??-1)>(b[key]??-1)?1:(a[key]??-1)<(b[key]??-1)?-1:0)*dir);
   $('tbl').innerHTML=`<table><thead><tr>${COLS.map(([k,t,n])=>`<th data-k="${k}" class="${n?'num':''}">${t}${k===key?(dir>0?' ▲':' ▼'):''}</th>`).join('')}</tr></thead><tbody>`+
     rows.map(r=>`<tr class="pick" data-sub="${esc(r.name)}" title="${esc(r.name)}"><td>${esc(short(r.name))}</td><td class="num">${fmtInt(r.published)}</td><td class="num">${fmtInt(r.delivered)}</td><td class="num">${fmtInt(r.acked)}</td>`+
       `<td class="num ${r.backlogNow>0?'bad':''}">${fmtInt(r.backlogNow)}</td><td class="num">${fmtInt(r.backlogMax)}</td><td class="num ${r.oldestMax>600?'bad':''}">${r.oldestMax?fmtAge(r.oldestMax):'–'}</td><td class="num">${r.ackP95==null?'–':fmtMs(r.ackP95)}</td>`+
-      `<td class="num ${r.delivery==='pull'&&!r.streams?'bad':'ok'}">${r.delivery==='push'?'push':fmtInt(r.streams)}</td><td class="num">${fmtInt(r.modAck)}</td><td class="num">${r.ackDeadline} s</td><td>${esc(r.deadLetter||'–')}</td><td>${esc(fmtAge(parseInt(r.retention)))}</td></tr>`).join('')+`</tbody></table>`;
+      `<td class="num ${r.delivery==='pull'&&!r.streams?'bad':'ok'}">${r.delivery==='push'?'push':fmtInt(r.streams)}</td><td class="num">${fmtInt(r.modAck)}</td>`+
+      `<td class="num">${r.cacheReads==null?(lastDb?'–':'…'):fmtInt(r.cacheReads)}</td><td class="num">${r.cacheHitRate==null?'–':r.cacheHitRate.toFixed(r.cacheHitRate<10?1:0)+'%'}</td><td class="num">${r.cacheWrites==null?'–':fmtInt(r.cacheWrites)}</td><td class="num">${dashMs(r.cacheMs)}</td><td class="num">${r.noDb==null?'–':fmtInt(r.noDb)}</td>`+
+      `<td class="num">${r.dbMsgs==null?(lastDb?'0':'…'):fmtInt(r.dbMsgs)}</td><td class="num">${r.dbPerMsg==null?'–':r.dbPerMsg.toFixed(1)}</td><td class="num">${dashMs(r.dbP50)}</td><td class="num">${dashMs(r.dbP95)}</td><td class="num">${dashMs(r.dbShard)}</td><td class="num">${r.dbShare==null?'–':r.dbShare.toFixed(r.dbShare<10?1:0)+'%'}</td>`+
+      `<td class="num">${r.ackDeadline} s</td><td>${esc(r.deadLetter||'–')}</td><td>${esc(fmtAge(parseInt(r.retention)))}</td></tr>`).join('')+`</tbody></table>`;
   document.querySelectorAll('#tbl th').forEach(th=>th.onclick=()=>{const k=th.dataset.k;tableSort=[k,k===tableSort[0]?-tableSort[1]:-1];table(lastData);});
   document.querySelectorAll('#tbl tr.pick').forEach(tr=>tr.onclick=()=>{$('sub').value=tr.dataset.sub;run();});
 }

@@ -26,3 +26,4 @@
 # Saidas de build, caso apareçam dentro dos diretorios globais
 target/
 node_modules/
+__pycache__/

@@ -9,6 +9,10 @@
 # Desde 2026-11-04 tambem o log mensagens: uma linha JSON por mensagem processada pelos consumidores
 # (/opt/jobsnow/logs/mensagens.jsonl, gravada por CcpPubSubWriteMessageLog), enviada como campos (jsonPayload) e lida
 # pelo painel 31-mensagens-das-filas.py. O logrotate guarda 4 semanas dela na VM.
+# Desde 2026-11-05 os slowlogs do Elasticsearch saem do log elasticsearch para o log elasticsearch_slowlog, com cada
+# linha JSON enviada como campos (jsonPayload."trace.id", jsonPayload."elasticsearch.slowlog.id", took etc.), lidos
+# pelos paineis 27 e 29 para medir cada query por dentro do Elasticsearch. O slowlog so registra todas as queries
+# enquanto o 33-slowlog-de-todas-as-queries.py estiver ligado.
 set -euo pipefail
 
 if ! systemctl list-unit-files | grep -q '^google-cloud-ops-agent.service'; then
@@ -26,6 +30,9 @@ logging:
       include_paths:
       - /var/log/elasticsearch/jobsnow-prd.log
       - /var/log/elasticsearch/jobsnow-prd_deprecation.json
+    elasticsearch_slowlog:
+      type: files
+      include_paths:
       - /var/log/elasticsearch/jobsnow-prd_index_search_slowlog.json
       - /var/log/elasticsearch/jobsnow-prd_index_indexing_slowlog.json
     consumidores:
@@ -49,6 +56,9 @@ logging:
       elasticsearch:
         receivers: [elasticsearch]
         processors: [pilhas_java]
+      elasticsearch_slowlog:
+        receivers: [elasticsearch_slowlog]
+        processors: [linha_json]
       consumidores:
         receivers: [consumidores]
         processors: [pilhas_java]

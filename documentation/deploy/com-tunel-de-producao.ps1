@@ -1,7 +1,7 @@
 # Roda um script Python do deploy contra o ES de producao: abre o tunel IAP ate a VM (porta local 9210), le o
 # Authorization de C:\segredos\producao.json para ES_DESTINO_AUTH (so neste processo) e fecha o tunel no fim.
-# Uso: powershell -ExecutionPolicy Bypass -File com-tunel-de-producao.ps1 -Script <caminho do .py>
-param([Parameter(Mandatory = $true)][string]$Script, [int]$Port = 9210)
+# Uso: powershell -ExecutionPolicy Bypass -File com-tunel-de-producao.ps1 -Script <caminho do .py> [-Argumentos a,b]
+param([Parameter(Mandatory = $true)][string]$Script, [int]$Port = 9210, [string[]]$Argumentos = @())
 $ErrorActionPreference = 'Stop'
 $gcloud = Join-Path $env:LOCALAPPDATA 'Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd'
 $arguments = "compute ssh jobsnow-vm --project=jobsnow-prd --zone=southamerica-east1-a --tunnel-through-iap --quiet -- -L ${Port}:localhost:9200 -N"
@@ -21,7 +21,7 @@ try {
 	$env:ES_DESTINO_AUTH = $auth
 	$env:PYTHONIOENCODING = 'utf-8'
 	$ErrorActionPreference = 'Continue'
-	& python -I $Script 2>&1 | ForEach-Object { "$_" }
+	& python -I $Script @Argumentos 2>&1 | ForEach-Object { "$_" }
 	"script saiu com $LASTEXITCODE"
 } finally {
 	Remove-Item Env:ES_DESTINO_AUTH -ErrorAction SilentlyContinue

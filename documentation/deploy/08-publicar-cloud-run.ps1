@@ -3,6 +3,7 @@
 # Sem -Servicos publica os tres. -SoSegredo guarda as propriedades e publica revisoes novas com a imagem atual.
 # -ManterSegredo publica o codigo sem criar outra versao das propriedades. Quem ja existe mantem o acesso (publico ou privado)
 # e a instancia minima, salvo -MinimoJs; servico novo nasce privado e com minimo zero.
+# -JarDaJs / -JarDaVis publicam um jar gerado fora do target (build isolado, sem trabalho local em andamento).
 param(
 	[string]$Project = 'jobsnow-prd',
 	[string]$Region = 'southamerica-east1',
@@ -16,7 +17,9 @@ param(
 	[string[]]$Servicos = @('vis', 'js', 'front'),
 	[int]$MinimoJs = -1,
 	[switch]$SoSegredo,
-	[switch]$ManterSegredo
+	[switch]$ManterSegredo,
+	[string]$JarDaJs = '',
+	[string]$JarDaVis = ''
 )
 
 $gcloud = Join-Path $env:LOCALAPPDATA 'Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd'
@@ -47,7 +50,11 @@ function Prepare-ApiContext([string]$service, [string]$artifact) {
 	$context = Join-Path $env:TEMP "jobsnow-contexto-$service"
 	if (Test-Path $context) { Remove-Item $context -Recurse -Force -Confirm:$false }
 	New-Item -ItemType Directory $context | Out-Null
-	Copy-Item (Join-Path $workspace $artifact) (Join-Path $context 'app.jar')
+	$jar = Join-Path $workspace $artifact
+	if ($service -eq 'js' -and $JarDaJs) { $jar = $JarDaJs }
+	if ($service -eq 'vis' -and $JarDaVis) { $jar = $JarDaVis }
+	Write-Host "== jar de ${service}: $jar"
+	Copy-Item $jar (Join-Path $context 'app.jar')
 	Copy-Item (Join-Path $PSScriptRoot 'api.Dockerfile') (Join-Path $context 'Dockerfile')
 	return $context
 }

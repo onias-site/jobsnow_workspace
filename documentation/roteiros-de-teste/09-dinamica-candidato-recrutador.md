@@ -48,6 +48,16 @@ Vários recrutadores de tipos diferentes recebem o e-mail de currículos e abrem
 - [ ] 3.3 Mês anterior: "Nenhum recrutador viu o seu currículo neste mês."
 - [ ] 3.4 Descadastre um dos freelancers (R5 do roteiro 08). Rode o envio de novo num outro dia. Esperado: ele não recebe.
 
+## D4 — Empresa indesejada
+
+Regra (`VisBusinessSendResumesToRecruiters.isForbiddenCompany`): o currículo que cita uma empresa em **Empresas onde não quero que meu currículo seja exibido** (`notAllowedCompany`) não vai para recrutador **profissional** cujo domínio contenha o nome da empresa. O nome entra sem acento, espaço nem símbolo e precisa ser uma parte do domínio, separada por ponto ou hífen. Com 4 letras ou mais, basta estar dentro do domínio escrito sem pontos e hífens: `Itaú` barra `itau.com.br` e `itau-unibanco.com.br`. Recrutador freelancer (gmail etc.) **não** é barrado. A tela **Currículos da semana** mostra a mesma lista do e-mail, já filtrada.
+
+- [ ] 4.1 Num dos candidatos de teste, preencha em **Meu currículo** a empresa indesejada `Empresa09` (e salve). Rode o envio (D1.1) de novo.
+- [ ] 4.2 Esperado: o e-mail de `recrutador1` e o de `recrutador2` (`@empresa09.com.br`) **não** trazem esse candidato; o de `recrutador.<d>@consultoria09.com.br` e o dos freelancers trazem.
+- [ ] 4.3 **Currículos da semana** (`GET /recruiter/{email}/resumes-of-the-week`) de `recrutador1`: o candidato não aparece; de um freelancer: aparece.
+- [ ] 4.4 Variações: `empresa 09` com espaço e `EMPRESA-09` também barram (normalização); um nome de 3 letras que só aparece no meio do domínio não barra.
+- [ ] 4.5 Tire a empresa indesejada, rode o envio de novo: o candidato volta ao e-mail de `recrutador1`.
+
 ## Limpeza (local)
 
 Nada a apagar: o próximo reset da base local descarta tudo. As contas dos recrutadores criadas com `goal: recruiting` entram em `vis_recruiter` com a fonte `login`.

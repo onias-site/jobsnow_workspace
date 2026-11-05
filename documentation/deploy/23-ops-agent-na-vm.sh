@@ -6,6 +6,9 @@
 #   gcloud compute ssh jobsnow-vm --zone southamerica-east1-a --project jobsnow-prd --tunnel-through-iap --command "bash /tmp/23-ops-agent-na-vm.sh"
 # Permissoes da conta da VM (jobsnow-vm@): roles/logging.logWriter para os logs e roles/monitoring.metricWriter para as
 # metricas (concessao feita pelo administrador).
+# Desde 2026-11-04 tambem o log mensagens: uma linha JSON por mensagem processada pelos consumidores
+# (/opt/jobsnow/logs/mensagens.jsonl, gravada por CcpPubSubWriteMessageLog), enviada como campos (jsonPayload) e lida
+# pelo painel 31-mensagens-das-filas.py. O logrotate guarda 4 semanas dela na VM.
 set -euo pipefail
 
 if ! systemctl list-unit-files | grep -q '^google-cloud-ops-agent.service'; then
@@ -29,12 +32,18 @@ logging:
       type: files
       include_paths:
       - /opt/jobsnow/logs/*.log
+    mensagens:
+      type: files
+      include_paths:
+      - /opt/jobsnow/logs/mensagens.jsonl
   processors:
     pilhas_java:
       type: parse_multiline
       match_any:
       - type: language_exceptions
         language: java
+    linha_json:
+      type: parse_json
   service:
     pipelines:
       elasticsearch:
@@ -43,6 +52,20 @@ logging:
       consumidores:
         receivers: [consumidores]
         processors: [pilhas_java]
+      mensagens:
+        receivers: [mensagens]
+        processors: [linha_json]
+EOF
+
+sudo tee /etc/logrotate.d/jobsnow-mensagens > /dev/null <<'EOF'
+/opt/jobsnow/logs/mensagens.jsonl {
+	weekly
+	rotate 4
+	compress
+	missingok
+	notifempty
+	copytruncate
+}
 EOF
 
 sudo systemctl restart google-cloud-ops-agent

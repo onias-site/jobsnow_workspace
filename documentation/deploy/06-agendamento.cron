@@ -1,3 +1,5 @@
+# SUBSTITUIDO em 2026-11-04 pelo Cloud Run Job jobsnow-processo-diario (32-processo-diario-no-cloud-run.ps1), com o mesmo
+# horario no Cloud Scheduler: NAO instale este crontab, ou o processo rodaria duas vezes.
 # Item H do deploy: copiado para /etc/cron.d/jobsnow-diario. A VM esta no fuso America/Sao_Paulo.
 # So instale depois da carga inicial das supressoes do SendGrid (fase 8 de plano-de-migracao-para-producao.md):
 # enviar antes pode atingir enderecos suprimidos.

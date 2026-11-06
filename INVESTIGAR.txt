@@ -1,3 +1,0 @@
-Kylin
-Apache Arrow
- Apache ORC

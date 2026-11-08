@@ -7,6 +7,8 @@
 #   Monitoria > Dados > Elasticsearch: APIs, Entidades
 #   Monitoria > Email: SendGrid
 #   Cadastros: system_message, instant_message, email, bot (telas ainda vazias)
+#   Backend: Relatorio de cobertura de testes (o HTML gerado pela skill ccp-relatorio-de-cobertura em %TEMP%\ccp-coverage,
+#            servido em /cobertura porque o navegador nao deixa uma pagina http abrir file:// num iframe)
 #
 # Uso: python 37-portal-dos-paineis.py [porta]   (abre http://127.0.0.1:8773; atalho na area de trabalho)
 
@@ -35,6 +37,9 @@ PANELS = {
     "35": "35-gravacoes-das-entidades-das-telas.py",
     "36": "36-indicadores-do-sendgrid.py",
 }
+
+TEMP_DIR = os.environ.get("TEMP") or os.path.join(os.environ.get("LOCALAPPDATA", ""), "Temp")
+COVERAGE_REPORT = os.path.join(TEMP_DIR, "ccp-coverage", "coverage-report.html")
 
 modules = {}
 load_errors = {}
@@ -66,6 +71,8 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         if parsed.path == "/":
             return self.send(200, "text/html; charset=utf-8", PAGE)
+        if parsed.path == "/cobertura":
+            return self.serve_coverage_report()
         parts = parsed.path.split("/", 3)
         if len(parts) < 3 or parts[1] != "p" or parts[2] not in PANELS:
             return self.send(404, "application/json; charset=utf-8", json.dumps({"error": "not found"}))
@@ -82,6 +89,16 @@ class Handler(BaseHTTPRequestHandler):
         if rest == "/":
             return self.serve_panel_page(number)
         return self.delegate(number)
+
+    def serve_coverage_report(self):
+        # lido a cada requisicao: a rodada agendada das 10h regrava o arquivo
+        try:
+            with open(COVERAGE_REPORT, "rb") as report:
+                return self.send(200, "text/html; charset=utf-8", report.read())
+        except OSError:
+            return self.send(404, "text/html; charset=utf-8",
+                             "<p style='font:14px system-ui;padding:24px'>Relatorio de cobertura ainda nao gerado: <code>%s</code></p>"
+                             % COVERAGE_REPORT)
 
     def delegate(self, number):
         # o handler do painel atende esta mesma conexao (HTTP/1.0: uma requisicao por conexao)
@@ -175,7 +192,9 @@ const MENU=[
   {id:'system_message',name:'system_message',tables:['jn_system_message']},
   {id:'instant_message',name:'instant_message',tables:['jn_instant_messenger_template_message','jn_instant_messenger_parameters_to_send']},
   {id:'email',name:'email',tables:['jn_email_template_message','jn_email_parameters_to_send']},
-  {id:'bot',name:'bot',tables:['jb_bot','jb_bot_allowed_user','jb_bot_explanation','jn_bot_update_handler','jn_bot_command','jn_bot_command_name','jn_bot_command_explanation','jn_bot_command_step','jn_bot_command_step_end_message','jn_command_not_allowed_to_user']}]}];
+  {id:'bot',name:'bot',tables:['jb_bot','jb_bot_allowed_user','jb_bot_explanation','jn_bot_update_handler','jn_bot_command','jn_bot_command_name','jn_bot_command_explanation','jn_bot_command_step','jn_bot_command_step_end_message','jn_command_not_allowed_to_user']}]},
+ {name:'Backend',children:[
+  {id:'cobertura',name:'Relatório de cobertura de testes',url:'/cobertura'}]}];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const leaves={};const frames={};
@@ -191,8 +210,10 @@ function show(){const id=location.hash.slice(1);const leaf=leaves[id]||leaves['c
   $('crumb').innerHTML=leaf.path.map((n,i)=>i===leaf.path.length-1?`<b>${esc(n)}</b>`:esc(n)).join(' › ');
   document.title=leaf.name+' · Painéis do JobsNow';
   Object.values(frames).forEach(f=>f.classList.remove('on'));$('empty').classList.remove('on');
-  if(leaf.panel){let f=frames[leaf.panel];
-    if(!f){f=document.createElement('iframe');f.title=leaf.name;f.src='/p/'+leaf.panel+'/';frames[leaf.panel]=f;$('content').appendChild(f);}
+  const src=leaf.panel?'/p/'+leaf.panel+'/':leaf.url;
+  if(src){let f=frames[src];
+    if(!f){f=document.createElement('iframe');f.title=leaf.name;f.src=src;frames[src]=f;$('content').appendChild(f);}
+    else if(leaf.url){f.src=src;}
     f.classList.add('on');}
   else{$('empty').querySelector('h2').textContent=leaf.name;
     $('empty').querySelector('p').innerHTML='Tela ainda vazia. Tabelas deste cadastro: '+leaf.tables.map(t=>`<code>${esc(t)}</code>`).join(', ')+'.';

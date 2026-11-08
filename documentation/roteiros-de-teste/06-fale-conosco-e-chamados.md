@@ -6,6 +6,10 @@
 
 > **Executado de novo em 2026-11-03**. Resultado em [resultados/2026-11-03-campanha/06-fale-conosco-e-chamados.md](resultados/2026-11-03-campanha/06-fale-conosco-e-chamados.md). **Prioridades atuais** (subiram 1 com o `/solveStackTrace`): `reportBug` 1, `clarifyDoubts` 2, `makeCriticism` 3, `makeSuggestion` 5, `makeCompliment` e `makeComment` 6. **3.3:** clique em **Fale Conosco com o modal de login ainda aberto**, porque fechar o modal limpa o e-mail digitado.
 
+> **Atualizado em 2026-11-07:** a crítica ganhou cota diária própria (`quotaGroup: makeCriticism`, como a dúvida) e deixou a compartilhada; todo envio passa por um diálogo **"Confirmar envio"**; e a tela guarda a cota de cada grupo no `localStorage` (`ticketDailyQuotas`, por e-mail), sem chamar o backend enquanto ela valer. Cenário F2 refeito. **Antes do F2**, libere o dia (item 5A da preparação) e rode `localStorage.removeItem('ticketDailyQuotas')` no Console da tela.
+>
+> **Atualizado em 2026-11-07 (2):** na tela de chamados, célula com mais de 120 caracteres ou 3 linhas mostra o começo do texto com "…" e o link **ver tudo**, que abre um modal com o texto inteiro. Cenários 4.3 a 4.6.
+
 ## Como funciona (resumo)
 
 1. O botão **Fale Conosco** fica no canto inferior direito de todas as páginas do layout padrão. Abre um painel com o e-mail, o tipo, o título e a mensagem; o **X**, o **Cancelar** e a tecla **Esc** limpam e fecham.
@@ -17,12 +21,16 @@
    |---|---|---|---|
    | `reportBug` | Reportar um bug | 0 | nenhuma |
    | `clarifyDoubts` | Esclarecer dúvidas | 1 | própria (1 por dia) |
-   | `makeCriticism` | Fazer uma crítica | 2 | compartilhada |
+   | `makeCriticism` | Fazer uma crítica | 2 | própria (1 por dia, desde 2026-11-07) |
    | `makeSuggestion` | Fazer uma sugestão | 4 | compartilhada |
    | `makeCompliment` | Fazer um elogio | 5 | compartilhada |
    | `makeComment` | Fazer um comentário | 5 | compartilhada |
 
-   A cota compartilhada (`jn_ticket_daily_limit`, `quotaGroup: sharedTickets`) vale 1 por dia somando fale conosco, sugestão de habilidade e ajuste de hierarquia.
+   A cota compartilhada (`jn_ticket_daily_limit`, `quotaGroup: sharedTickets`) vale 1 por dia somando fale conosco (exceto bug, dúvida e crítica), sugestão de habilidade e ajuste de hierarquia. A crítica tem a sua (`quotaGroup: makeCriticism`), como a dúvida (`clarifyDoubts`).
+
+   **No navegador (desde 2026-11-07):** quando o backend aceita um chamado com cota, a tela grava em `localStorage.ticketDailyQuotas` o e-mail, o grupo e a hora; por 24 horas, um novo chamado do mesmo grupo é recusado no próprio painel ("Você já enviou ... Poderá enviar de novo a partir de dd/mm/aa hh:mm.") sem chamar o backend. O 429 continua existindo para a cota gasta em outro navegador, e não grava a marca. O bug não grava nada.
+
+   **Confirmação (desde 2026-11-07):** depois das validações e da cota, **Enviar** abre o diálogo **"Confirmar envio"** (**Sim, enviar** / **Não**). Bug: só "Tem certeza de que deseja enviar este bug ao suporte?". Dúvida e crítica: avisam que só é possível enviar uma única por dia. Elogio, sugestão e comentário: avisam do chamado único por dia da cota compartilhada e listam os outros que ficarão bloqueados (por exemplo, no elogio: sugestão pelo fale conosco, comentário pelo fale conosco, sugestão de habilidade e ajuste de hierarquia de habilidades).
 5. Um ticket aberto por e-mail e tipo (PK email + type em `js_contact_us`): um novo do mesmo tipo substitui o aberto, e o comando no inbox do suporte não se repete.
 6. Ao salvar: e-mail "Recebemos a sua mensagem do fale conosco" ao usuário (`C:\logs\email\<email>\com.js.messages.JsNotifySupportAndUserAboutContactUs.html`) e `/answerContactUs <type> <email>` no inbox do suporte (`jn_support_pending_command`, com a prioridade).
 7. O operador responde com `/answerContactUs <type> <email>`:
@@ -44,16 +52,21 @@
 
 ## F2 — Envio logado e cotas
 
-- [ ] 2.1 Envie a crítica com uma mensagem válida. Esperado: toast "Mensagem enviada! — Enviamos para {email} um e-mail com os detalhes; o ticket está em análise.", painel fechado e limpo; registro em `js_contact_us` (e-mail em SHA-1); e-mail "Recebemos a sua mensagem do fale conosco"; `/answerContactUs makeCriticism {email}` no inbox com prioridade 2.
-- [ ] 2.2 Tente uma sugestão no mesmo dia. Esperado: "Você já abriu um ticket nas últimas 24 horas (fale conosco, sugestão de habilidade ou ajuste de hierarquia). Um novo poderá ser aberto quando completar 24 horas do envio anterior; bugs podem ser reportados a qualquer momento." (429).
-- [ ] 2.3 **Esc** fecha o painel; ao reabrir, os campos estão vazios.
-- [ ] 2.4 Envie uma dúvida: passa (cota própria). Uma segunda dúvida → "Você já enviou uma dúvida nas últimas 24 horas. Aguarde a resposta ou envie outra quando completar 24 horas do envio anterior." (429).
-- [ ] 2.5 Envie dois bugs seguidos. Esperado: os dois passam; em `js_contact_us` fica só o segundo (mesmo e-mail e tipo) e o inbox tem um único `/answerContactUs reportBug {email}`.
+- [ ] 2.1 Escolha "Fazer uma crítica", título e mensagem válidos → **Enviar**. Esperado: diálogo **"Confirmar envio"**: "Tem certeza de que deseja enviar esta crítica? Atenção: só é possível enviar uma única crítica por dia; depois deste envio, outra só poderá ser enviada daqui a 24 horas."
+- [ ] 2.2 **Não** → o diálogo fecha, o painel continua preenchido e nada vai ao Network. Com o diálogo aberto, **Esc** fecha só o diálogo, sem limpar o painel.
+- [ ] 2.3 **Enviar** → **Sim, enviar**. Esperado: toast "Mensagem enviada! — Enviamos para {email} um e-mail com os detalhes; o ticket está em análise.", painel fechado e limpo; registro em `js_contact_us` (e-mail em SHA-1); `jn_ticket_daily_limit` com `quotaGroup: makeCriticism`; `localStorage.getItem('ticketDailyQuotas')` com o e-mail e `makeCriticism`; e-mail "Recebemos a sua mensagem do fale conosco"; `/answerContactUs makeCriticism {email}` no inbox com prioridade 3.
+- [ ] 2.4 Uma segunda crítica. Esperado: "Você já enviou uma crítica pelo fale conosco nas últimas 24 horas. Poderá enviar de novo a partir de dd/mm/aa hh:mm." no painel, sem diálogo e **nada no Network**.
+- [ ] 2.5 A crítica não gasta a cota compartilhada: envie um elogio. Esperado: o diálogo lista "sugestão pelo fale conosco, comentário pelo fale conosco, sugestão de habilidade e ajuste de hierarquia de habilidades"; **Sim, enviar** → passa (200), e `jn_ticket_daily_limit` ganha `quotaGroup: sharedTickets`.
+- [ ] 2.6 Uma sugestão pelo fale conosco. Esperado: "Você já enviou um chamado de sugestão de habilidade, ajuste de hierarquia ou fale conosco (exceto bug, dúvida e crítica) nas últimas 24 horas. Poderá enviar de novo a partir de ...", sem chamar o backend. O mesmo aviso aparece, em toast, na sugestão de habilidade e no ajuste de hierarquia (roteiros 01 e 02).
+- [ ] 2.7 O 429 do backend: rode `localStorage.removeItem('ticketDailyQuotas')` no Console da tela e envie de novo a sugestão → **Sim, enviar**. Esperado: "Você já abriu um ticket nas últimas 24 horas (fale conosco, sugestão de habilidade ou ajuste de hierarquia). Um novo poderá ser aberto quando completar 24 horas do envio anterior; bugs podem ser reportados a qualquer momento." (429). Uma crítica nessas condições daria "Você já enviou uma crítica nas últimas 24 horas. Uma nova poderá ser enviada quando completar 24 horas do envio anterior." A marca não é gravada no 429.
+- [ ] 2.8 **Esc** (sem diálogo) fecha o painel; ao reabrir, os campos estão vazios.
+- [ ] 2.9 Envie uma dúvida: o diálogo avisa da "uma única dúvida por dia"; passa (cota própria). Uma segunda dúvida → "Você já enviou uma dúvida pelo fale conosco nas últimas 24 horas. Poderá enviar de novo a partir de ...", sem chamar o backend.
+- [ ] 2.10 Envie dois bugs seguidos. Esperado: o diálogo só pergunta "Tem certeza de que deseja enviar este bug ao suporte?", sem falar de cota; os dois passam; em `js_contact_us` fica só o segundo (mesmo e-mail e tipo) e o inbox tem um único `/answerContactUs reportBug {email}`; `ticketDailyQuotas` não ganha nada de bug.
 
 ## F3 — Envio sem login
 
 - [ ] 3.1 Em outra aba, `sessionStorage.removeItem('login')` e abra `/meus-dados/chamados`. Abra **Fale Conosco**. Esperado: campo "Seu e-mail".
-- [ ] 3.2 E-mail `naoeumemail` → o navegador barra o envio (campo `type=email`). Com um e-mail válido, um elogio → toast "Mensagem enviada!" com o e-mail digitado; inbox com prioridade 5.
+- [ ] 3.2 E-mail `naoeumemail` → o navegador barra o envio (campo `type=email`). Com um e-mail válido, um elogio → diálogo de confirmação → **Sim, enviar** → toast "Mensagem enviada!" com o e-mail digitado; inbox com prioridade 6. A marca do `localStorage` fica com o e-mail digitado.
 - [ ] 3.3 Escolha um tipo na tela de chamados → "Entre com o seu e-mail para ver os seus chamados." e o modal de login. Digite um e-mail no modal e abra **Fale Conosco**: "Responderemos para" o e-mail digitado.
 - [ ] 3.4 Provoque um erro na aba (console: `setTimeout(() => { function quebraNoRoteiro06(){ throw new Error('erro proposital do roteiro 06'); } quebraNoRoteiro06(); })`) e reporte um bug. Esperado: o ticket mostrado ao operador traz o "Stack trace: Error: erro proposital do roteiro 06 ...".
 
@@ -61,6 +74,10 @@
 
 - [ ] 4.1 Logado, em **Chamados**, escolha cada tipo enviado. Esperado: "1 chamado", colunas Data, Situação, Título, Mensagem e Resposta do suporte, situação "Em análise" e resposta "—".
 - [ ] 4.2 Um tipo sem envio → "Nenhum chamado deste tipo."
+- [ ] 4.3 **Texto comprido na grade** (desde 2026-11-07): envie um chamado com mensagem de mais de 120 caracteres (ou de 4 linhas ou mais, mesmo curtas) e outro com mensagem curta, de tipos diferentes; recarregue a tela e escolha o tipo do comprido. Esperado: a coluna **Mensagem** mostra o começo do texto (até 120 caracteres e 3 linhas, cortado no último espaço) terminando em "…" e o link **ver tudo**; o tipo da mensagem curta mostra o texto inteiro, sem link.
+- [ ] 4.4 Clique em **ver tudo**. Esperado: modal com o título da coluna ("Mensagem") e o texto inteiro, com as quebras de linha; fecha pelo X, pelo Esc e clicando fora (a grade continua igual).
+- [ ] 4.5 Depois do 5.4 com uma resposta de mais de 120 caracteres, a coluna **Resposta do suporte** do chamado respondido mostra o mesmo corte e o link **ver tudo**, e o modal tem o título "Resposta do suporte". O mesmo vale para a **Justificativa** e a **Resposta do suporte** dos tipos de hierarquia e de sugestão de habilidade (roteiros 01 e 02).
+- [ ] 4.6 Celular (largura de 390 px): o link fica junto do texto cortado e o modal ocupa a largura da tela, sem rolagem horizontal da página.
 
 ## F5 — Operador do suporte
 

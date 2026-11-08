@@ -75,6 +75,7 @@ vis_recruiter_resumes	VisEntityRecruiterResumes	nao-levar		nao
 vis_recruiter_sign_up_return	VisEntityRecruiterSignUpReturn	nao-levar		nao
 vis_resume	VisEntityResume	nao-levar		nao
 vis_inactive_resume	VisEntityResume (gemea)	nao-levar		nao
+vis_resume_daily_action	VisEntityResumeDailyAction	nao-levar		nao
 vis_resume_linkedin	VisEntityResumeLinkedin	nao-levar		nao
 vis_skill_approved	VisEntitySkillApproved	nao-levar		nao
 vis_skill_fix_hierarchy_fulfiled	VisEntitySkillFixHierarchyFulfiled	nao-levar		nao

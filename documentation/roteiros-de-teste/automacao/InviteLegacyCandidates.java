@@ -23,6 +23,11 @@ import com.ccp.implementations.json.gson.CcpGsonJsonHandler;
 import com.ccp.implementations.password.mindrot.CcpMindrotPasswordHandler;
 import com.ccp.local.testings.implementations.CcpLocalInstances;
 import com.ccp.local.testings.implementations.cache.CcpLocalCacheInstances;
+import com.ccp.decorators.CcpStringDecorator;
+import com.ccp.especifications.db.query.CcpQueryExecutor;
+import com.ccp.especifications.db.query.CcpQueryOptions;
+import com.ccp.hash.CcpHashAlgorithm;
+import com.vis.business.recruiter.resumes.VisBusinessBuildLegacyCandidateTable;
 import com.vis.business.recruiter.resumes.VisBusinessInviteLegacyCandidates;
 import com.vis.business.recruiter.resumes.VisRecruiterResumesFields;
 import com.vis.entities.VisEntityRecruiterResumes;
@@ -37,6 +42,8 @@ import com.vis.entities.VisEntityRecruiterResumes;
  * <li>{@code enviar <endereço do front> [quantidade]}: envia pelo SendGrid. O endereço precisa ser https. Cada e-mail aceito
  * grava o SHA-1 do destinatário em {@code c:\logs\convite-curriculos\convidados.txt}, e por isso rodar de novo continua de
  * onde parou, sem repetir ninguém.</li>
+ * <li>{@code previa <endereço do front> <e-mail do legado>}: envia pelo SendGrid só a esse candidato (os outros contam
+ * como já convidados) e não grava nada em {@code convidados.txt}. Roteiro 11.</li>
  * </ul>
  */
 public class InviteLegacyCandidates {
@@ -48,14 +55,19 @@ public class InviteLegacyCandidates {
 	private static final int SIMULATED_EMAILS = 3;
 
 	public static void main(String[] args) throws IOException {
-		boolean send = args.length > 0 && "enviar".equals(args[0]);
+		boolean preview = args.length > 0 && "previa".equals(args[0]);
+		boolean send = args.length > 0 && ("enviar".equals(args[0]) || preview);
 		boolean simulate = args.length > 0 && "simular".equals(args[0]);
 		if(false == send && false == simulate) {
-			System.out.println("Uso: simular [quantidade] | enviar <endereco https do front> [quantidade]");
+			System.out.println("Uso: simular [quantidade] | enviar <endereco https do front> [quantidade] | previa <endereco https do front> <e-mail do legado>");
 			System.exit(1);
 		}
 		if(send && (args.length < 2 || false == args[1].startsWith("https://"))) {
 			System.out.println("Para enviar, informe o endereco https do front: o link do formulario sai dele.");
+			System.exit(1);
+		}
+		if(preview && args.length < 3) {
+			System.out.println("Para a previa, informe o e-mail de um candidato do indice legado.");
 			System.exit(1);
 		}
 
@@ -80,6 +92,14 @@ public class InviteLegacyCandidates {
 		}
 
 		String frontendUrl = send ? args[1] : SIMULATION_ADDRESS;
+		if(preview) {
+			// a previa vai so ao candidato pedido: todos os outros contam como ja convidados, e ninguem e registrado
+			Set<String> everyoneElse = getEveryLegacyHashBut(args[2]);
+			CcpJsonRepresentation input = CcpOtherConstants.EMPTY_JSON.put(VisRecruiterResumesFields.frontendUrl, frontendUrl);
+			CcpJsonRepresentation counters = new VisBusinessInviteLegacyCandidates(everyoneElse, hash -> {}, 1).execute(input);
+			System.out.println("OK " + counters);
+			System.exit(0);
+		}
 		int quantityPosition = send ? 2 : 1;
 		boolean quantityGiven = args.length > quantityPosition;
 		int defaultQuantity = send ? Integer.MAX_VALUE : SIMULATED_EMAILS;
@@ -96,6 +116,24 @@ public class InviteLegacyCandidates {
 		CcpJsonRepresentation counters = new VisBusinessInviteLegacyCandidates(alreadyInvited, onInvited, limit).execute(input);
 		System.out.println("OK " + counters);
 		System.exit(0);
+	}
+
+	/** O hash, como o convite o calcula, do e-mail de cada candidato do indice legado, menos o do candidato da previa. */
+	private static Set<String> getEveryLegacyHashBut(String previewEmail) {
+		String previewAddress = previewEmail.trim().toLowerCase();
+		Set<String> hashes = new HashSet<>();
+		CcpQueryExecutor queryExecutor = CcpDependencyInjection.getDependency(CcpQueryExecutor.class);
+		String[] legacyIndex = {"profissionais2"};
+		String idField = VisBusinessBuildLegacyCandidateTable.Legacy.id.getValue();
+		queryExecutor.consumeQueryResult(CcpQueryOptions.INSTANCE.matchAll(), legacyIndex, "5m", 200, candidate -> {
+			String address = candidate.getAsString(VisBusinessBuildLegacyCandidateTable.Legacy.id).trim().toLowerCase();
+			if(address.equals(previewAddress)) {
+				return;
+			}
+			String hash = new CcpStringDecorator(address).email().hash().asString(CcpHashAlgorithm.SHA1);
+			hashes.add(hash);
+		}, idField);
+		return hashes;
 	}
 
 	private static void recordInvited(String emailHash) {

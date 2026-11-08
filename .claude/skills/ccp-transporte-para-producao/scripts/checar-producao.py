@@ -1,7 +1,8 @@
 # Checagem do transporte para producao (skill ccp-transporte-para-producao). So le: nao grava nada em nenhum ES.
 # 1. Indices: os do codigo (configuradores de entidade e suas gemeas) contra os do destino e os da origem.
 # 2. Campos: o mapeamento de cada indice na origem contra o do destino (dynamic strict: campo novo sem mapeamento
-#    em producao faz a escrita falhar la).
+#    em producao faz a escrita falhar la). Objeto dynamic: true conta como um campo so, sem os subcampos que os dados
+#    criaram em cada ES.
 # 3. Nomes de classe: toda string com cara de classe do projeto (com.ccp|jn|vis|jb|js...) gravada nos indices
 #    marcados com varrer_classes=sim no entidades.tsv precisa existir no codigo; senao houve renomeio sem script.
 # 4. Registros: as entidades de regra igual/adaptar/merge/carga do entidades.tsv, origem contra destino.
@@ -105,9 +106,14 @@ def code_indices(classes):
 
 
 def flatten_mapping(properties, prefix=""):
+    # um objeto dynamic: true (json, headers) conta como um campo so: os subcampos nascem dos dados gravados em cada ES
+    # e nao da definicao da entidade, entao nao entram na comparacao (decisao do usuario em 2026-11-08)
     fields = {}
     for name, definition in properties.items():
         path = prefix + name
+        if str(definition.get("dynamic", "")).lower() == "true":
+            fields[path] = "object (dynamic)"
+            continue
         if "properties" in definition:
             fields.update(flatten_mapping(definition["properties"], path + "."))
             continue

@@ -10,7 +10,7 @@
 2. Toda conta, currículo, ticket e recrutador criado pelo teste vai para a **planilha de limpeza** (seção L). No fim, apaga-se só o que está nela.
 3. Os candidatos fictícios usam só skills, cargos, pretensões e DDD que existem em currículos reais. Nada de identificador real: e-mail, LinkedIn e nome são inventados.
 4. Simulação de carga e estresse **só no local**.
-5. O convite aos candidatos legados (`executaConviteDeCurriculos.bat`) **não** é testado em produção.
+5. O convite aos candidatos legados (`executaConviteDeCurriculos.bat`) **não** é testado em produção. A prévia a um só destinatário (`onias85@gmail.com`, pelo SendGrid real com a chave de `C:\segredos`, os demais candidatos contados como já convidados e nada gravado em `convidados.txt`) foi feita em 2026-11-07 e não conta como envio.
 6. Nenhum segredo de `C:\segredos\producao.json` ou de `application_properties` aparece em saída, arquivo ou chat.
 7. Defeito achado: corrigir o código, fazer o deploy, passar os dados com um script numerado em `documentation/deploy` (idempotente, pelo túnel) e **testar de novo o mesmo ponto** antes de seguir.
 8. O MX de `onias.site` **não** muda: os subdomínios de teste têm MX próprio, e `curriculos@onias.site` e `privacidade@onias.site` seguem como estão.
@@ -63,10 +63,10 @@ Os candidatos ficam nos aliases do Gmail: domínio não importa para eles. `curr
 | 01 Sugerir habilidade | sim | o operador **rejeita** tudo (ou desiste) para não criar habilidades reais; S8 (decisão vale para todos) só com rejeição; uma conta nova por envio, por causa da cota |
 | 02 Ajuste de hierarquia | sim | o operador **rejeita tudo**: uma aprovação muda a taxonomia real |
 | 03 Login | sim, pela tela | sem `03-modal-de-login.mjs` (ele fala com localhost); bloqueio e desbloqueio com o operador real; tokens no Gmail |
-| 04 e 05 Tela do currículo | sim | currículos montados com dados reais anonimizados; C6 avisa o operador real |
+| 04 e 05 Tela do currículo | sim | currículos montados com dados reais anonimizados; C6 avisa o operador real; o e-mail do currículo salvo (2.11 e 2.12 do 05) chega ao Gmail, com **corrija no formulário** e os links "ver as outras N habilidades" / "+N regiões" para `https://onias.site/meus-dados/sobre-mim`; no Gmail, confira se a dica do `title` aparece ao passar o mouse (no celular ela não existe) |
 | 06 Fale conosco | sim | ver seção F |
 | 07 Acessos | sim | — |
-| 08 E-mail aos recrutadores | sim, com cuidado | o processo agendado **não** está instalado; o envio é o `SendResumesToRecruiters.java` apontado para produção **só com os recrutadores de teste** nos argumentos (ele grava e envia só para eles); os links levam a `https://onias.site` |
+| 08 E-mail aos recrutadores | sim, com cuidado | o processo agendado **não** está instalado; o envio é o `SendResumesToRecruiters.java` apontado para produção **só com os recrutadores de teste** nos argumentos (ele grava e envia só para eles); os links levam a `https://onias.site`; o 1.2 (link com `title` no lugar da lista recolhida) é conferido no Gmail, que apagava o `<details>` |
 | 09 Dinâmica candidato/recrutador | sim | ver seção D (os 5 recrutadores da tabela de contas) |
 | 09 D4 Empresa indesejada | sim | ver seção E |
 
@@ -88,6 +88,7 @@ Os candidatos ficam nos aliases do Gmail: domínio não importa para eles. `curr
 - [ ] D.6 **Meus dados › Quem me viu** de cada candidato, no mês corrente: o total e a grade por domínio da última coluna.
 - [ ] D.7 cand-lk usa o LinkedIn de outro candidato de teste: a visualização conta para todo e-mail do mesmo LinkedIn, e o suporte recebe o aviso do dono do LinkedIn.
 - [ ] D.8 Descadastre `rec-free2` pelo link do e-mail (R5 do roteiro 08). No envio seguinte (outro dia), ele não recebe.
+- [ ] D.9 Numa janela anônima (sem login), abra https://onias.site/meus-dados/quem-me-viu e https://onias.site/meu-recrutamento/curriculos-visualizados e feche o modal de login sem entrar. Esperado: as duas vão para https://onias.site/ (3.4 e 4.3 do roteiro 08; vale depois do deploy do front de 2026-11-07).
 
 ## E — Empresa indesejada em produção
 

@@ -10,10 +10,12 @@
 
 ## Como a tela funciona (resumo)
 
-1. Abas, nesta ordem: **Currículo**, **Idiomas**, **N Habilidades** (só no tipo 1, Tecnologia da Informação, depois de ler o texto colado), **Opções** e **Salários**. O botão de cada aba avança para a próxima e fica desabilitado enquanto houver pendência; o da última é **Salvar dados**. Clicar no título de uma aba distante anda **uma aba por vez** na direção dela (de Currículo, um clique em Salários leva a Idiomas); para chegar, clique de novo.
-2. Ao abrir, a tela lê o currículo gravado (`GET /resume/{email}`) e preenche as abas. A faixa do topo mostra a situação: "Você ainda não tem currículo salvo", "Currículo ativo: visível para os recrutadores" ou "Currículo inativo: oculto dos recrutadores". Sem login, não mostra nada e não abre o modal de login.
-3. O texto do currículo não é gravado (LGPD). O TI já salvo dispensa o texto; colar um texto novo refaz a lista de habilidades (`POST skills/fromText`).
+1. Abas, nesta ordem: **Currículo**, **Idiomas**, **N Habilidades** (só no tipo 1, Tecnologia da Informação, depois de ler o texto colado), **Opções** e **Salários**. O botão azul de cada aba avança para a próxima e fica desabilitado enquanto houver pendência; o da última é **Salvar dados**. Na **edição** (currículo já salvo, ativo ou inativo), cada aba menos a última tem também um **Salvar dados** verde à esquerda do azul (desde 2026-11-07), que confere as pendências de todas as abas, como o da última. Clicar no título de uma aba distante anda **uma aba por vez** na direção dela (de Currículo, um clique em Salários leva a Idiomas); para chegar, clique de novo.
+2. Ao abrir, a tela lê o currículo gravado (`GET /resume/{email}`) e preenche as abas. A faixa do topo mostra a situação: "Você ainda não tem currículo salvo", "Currículo ativo: visível para os recrutadores" ou "Currículo inativo: oculto dos recrutadores". Sem login, ou com o login inválido ou expirado (401), mostra a faixa azul "Você não está logado! Caso tenha cadastrado currículo conosco, **faça login** que seus dados aparecerão aqui." (desde 2026-11-07; antes não mostrava nada), sem abrir o modal sozinha: o modal só abre pelo link **faça login**, e depois de logar a tela relê o currículo e preenche as abas.
+3. O texto do currículo não é gravado (LGPD). O TI já salvo dispensa o texto; colar um texto novo refaz a lista de habilidades (`POST skills/fromText`). Com currículo salvo, o memo do texto vem vazio e o placeholder explica por quê (desde 2026-11-07): no TI, "Seu currículo já está cadastrado, mas o texto dele não aparece aqui porque não o guardamos: para nos resguardar da LGPD ..., gravamos somente o link do seu linkedin e as habilidades encontradas no texto. As habilidades gravadas continuam valendo; cole aqui o texto do seu currículo somente se ele mudou."; num currículo de outro tipo trocado para TI, o mesmo motivo, terminando em "Copie o texto do seu currículo e cole aqui."; sem currículo salvo, só "Copie o texto do seu currículo e cole aqui.".
 4. Na faixa de situação, no topo e visíveis em todas as abas (desde 2026-10-15; antes só ao lado de **Salvar dados**, na última aba): **Inativar** (ativo), **Reativar** (inativo) e **Excluir**, cada um com confirmação. Excluir apaga de vez e limpa o formulário.
+4a. **Uma ação de cada tipo por dia** (desde 2026-11-07; ver o item 5B do roteiro 00): inativar, reativar, excluir e atualizar valem uma vez a cada 24 horas; cadastrar não tem limite. As confirmações das quatro terminam em "Tem certeza de que deseja <ação>? Atenção: só é possível <ação> uma única vez ao dia." (a de atualizar, "Atualizar currículo", abre ao clicar em qualquer **Salvar dados** na edição). Ação já feita: aviso "Limite diário atingido — Só é possível <ação> uma única vez ao dia, e você já fez isso. Poderá fazer de novo a partir de <data e hora>.", sem confirmação e sem requisição (no salvar, o aviso sai em vermelho, como as pendências). 429 do backend (feita em outra janela ou navegador): "Limite diário atingido — ... nas últimas 24 horas. Tente de novo amanhã."
+4b. A lista de idiomas começa pelos mais procurados pelos recrutadores: Inglês, Espanhol, Francês, Alemão, Italiano, Mandarim (Chinês), Japonês, Coreano, Russo, Árabe e Holandês; os outros vêm depois, em ordem alfabética (desde 2026-11-07; antes tudo em ordem alfabética).
 5. Regras de campo (as mesmas no back e no front):
    - LinkedIn no formato `https://www.linkedin.com/in/perfil`, sem hífen no fim do perfil (`/` final aceito);
    - empresas de 2 a 50 caracteres (eram 20 até 2026-10-15), pelo autocomplete (3 letras) ou digitadas + Enter;
@@ -38,7 +40,7 @@ Na página, cada passo é: `eval(await fetch('http://127.0.0.1:3999/helper.js').
 ## C1 — Salvar pela tela, nos 4 tipos
 
 - [ ] 1.1 Para cada tipo (TI, recrutamento, superior, operacional): preencha função buscada, última função, LinkedIn, empresas (uma pelo autocomplete, uma digitada + Enter), tipo e, no TI, o texto do currículo. Avance.
-- [ ] 1.2 Idiomas: marque "Tenho conhecimento em outro(s) idioma(s)", escolha os idiomas e o nível de cada um. Avance (no TI, a aba Habilidades mostra a contagem lida do texto).
+- [ ] 1.2 Idiomas: marque "Tenho conhecimento em outro(s) idioma(s)", escolha os idiomas e o nível de cada um. Esperado na lista: Inglês, Espanhol, Francês, Alemão, Italiano, Mandarim (Chinês), Japonês, Coreano, Russo, Árabe e Holandês nos 11 primeiros lugares, nessa ordem, e depois os demais em ordem alfabética (Amárico, Azerbaijano, Bengali...). Avance (no TI, a aba Habilidades mostra a contagem lida do texto).
 - [ ] 1.3 Opções: regiões, PCD, viagens, experiência, disponibilidade, temporário. Salários: CLT, PJ, bitcoin, negociável. **Salvar dados**.
   > Os campos numéricos aparecem ao **desmarcar** as caixas: "Estou pleiteando meu primeiro emprego" → **Anos de experiência**; "Tenho disponibilidade imediata" → **Dias necessários**; "Não aceito empregos temporários" → **Total mínimo de duração (em meses)**; "Não aceito empregos CLT/PJ" → a pretensão de cada um. Todas começam marcadas, exceto PCD e viagens.
 - [ ] 1.4 Esperado: toast "Currículo salvo com sucesso", com o detalhe "Seu currículo está ativo e visível para os recrutadores." (sem repetir o título: achado 29), e a faixa "Currículo ativo", com **Inativar** e **Excluir**; `vis_resume` com os campos enviados (experiência como ano de início) e `vis_resume_linkedin` com o endereço e o hash do e-mail em `emails`.
@@ -47,17 +49,21 @@ Na página, cada passo é: `eval(await fetch('http://127.0.0.1:3999/helper.js').
 
 - [ ] 2.1 Recarregue a página. Esperado: as abas voltam preenchidas com o que foi salvo, inclusive empresas, idiomas, regiões (67 regiões → "qualquer estado / cidade") e, no TI, a aba **N Habilidades** com as habilidades gravadas.
   > **Corrigido em 2026-10-15:** o TI salvo com uma habilidade sem conhecimento implícito quebrava a recarga (`item.parent is not iterable`) e a aba Habilidades sumia.
+- [ ] 2.2 Memo do texto do currículo depois da recarga (desde 2026-11-07): vazio, com o placeholder do item 3 do resumo. No TI: "Seu currículo já está cadastrado, mas o texto dele não aparece aqui porque não o guardamos... As habilidades gravadas continuam valendo; cole aqui o texto do seu currículo somente se ele mudou.". Com um currículo de outro tipo salvo, troque o tipo para TI: o memo aparece com o mesmo motivo, terminando em "Copie o texto do seu currículo e cole aqui.", e o texto passa a ser obrigatório. Com um candidato sem currículo, o placeholder é só "Copie o texto do seu currículo e cole aqui.".
 
 ## C3 — Inativar e reativar
 
-- [ ] 3.1 Na primeira aba, sem avançar: **Inativar** na faixa → "Sim, inativar". Esperado: faixa "Currículo inativo", agora com **Reativar** e **Excluir**; registro em `vis_inactive_resume` e grupos em `jn_inactive_grouper`.
-- [ ] 3.2 **Reativar** na faixa → "Sim, reativar". Esperado: faixa "Currículo ativo", de volta a `vis_resume` e `jn_grouper`.
+- [ ] 3.1 Na primeira aba, sem avançar: **Inativar** na faixa. Esperado na confirmação: "Seu currículo deixará de aparecer para os recrutadores até que você o reative. Tem certeza de que deseja inativar o currículo? Atenção: só é possível inativar o currículo uma única vez ao dia." → "Sim, inativar". Esperado: faixa "Currículo inativo", agora com **Reativar** e **Excluir**; registro em `vis_inactive_resume` e grupos em `jn_inactive_grouper`; em `vis_resume_daily_action`, um registro `inactivation`.
+- [ ] 3.2 **Reativar** na faixa (confirmação com "... só é possível reativar o currículo uma única vez ao dia.") → "Sim, reativar". Esperado: faixa "Currículo ativo", de volta a `vis_resume` e `jn_grouper`; registro `reactivation`.
 - [ ] 3.3 Avance até a última aba. Esperado: ao lado de **Salvar dados** não há mais Inativar, Reativar nem Excluir (ficam só na faixa).
+- [ ] 3.4 **Segunda inativação do dia** (desde 2026-11-07): **Inativar** de novo. Esperado: aviso "Limite diário atingido — Só é possível inativar o currículo uma única vez ao dia, e você já fez isso. Poderá fazer de novo a partir de <hora do 3.1 + 24 h>."; nenhuma confirmação; no Network, nenhum `DELETE .../status`.
+- [ ] 3.5 **429 do backend**: no Console, `localStorage.removeItem('resumeDailyActions')` (apaga só a marca do navegador) e **Inativar** → "Sim, inativar". Esperado: `DELETE .../status` → 429; aviso "Limite diário atingido — ... nas últimas 24 horas. Tente de novo amanhã."; a faixa continua "Currículo ativo". Um novo **Inativar** já avisa sem chamar o backend (o 429 gravou a marca).
 
 ## C4 — Excluir (ativo e inativo)
 
-- [ ] 4.1 **Excluir** na faixa → "Sim, excluir". Esperado: toast "Currículo excluído", faixa "Você ainda não tem currículo salvo" (sem botões), formulário vazio e nada em `vis_resume` nem em `vis_inactive_resume`; o e-mail sai da lista do endereço em `vis_resume_linkedin` (o registro some se era o único).
-- [ ] 4.2 Repita com um currículo inativo (inativar e depois excluir).
+- [ ] 4.1 **Excluir** na faixa (confirmação com "... só é possível excluir o currículo uma única vez ao dia.") → "Sim, excluir". Esperado: toast "Currículo excluído", faixa "Você ainda não tem currículo salvo" (sem botões), formulário vazio e nada em `vis_resume` nem em `vis_inactive_resume`; o e-mail sai da lista do endereço em `vis_resume_linkedin` (o registro some se era o único); registro `exclusion` em `vis_resume_daily_action`.
+- [ ] 4.2 Repita com um currículo inativo (inativar e depois excluir), **com outro candidato** (ou libere o dia: item 5B do roteiro 00).
+- [ ] 4.3 **Excluir, cadastrar de novo e excluir** (desde 2026-11-07): depois do 4.1, preencha e salve de novo (cadastrar não tem limite nem confirmação: salva direto). **Excluir**. Esperado: aviso "Limite diário atingido" sem confirmação; o currículo continua salvo.
 
 ## C5 — Validações da tela
 
@@ -77,12 +83,24 @@ Na página, cada passo é: `eval(await fetch('http://127.0.0.1:3999/helper.js').
 
 ## C7 — Sem login
 
-- [ ] 7.1 Console: `sessionStorage.removeItem('login'); localStorage.removeItem('logins')` e recarregue. Esperado: sem faixa de situação, formulário vazio, nenhum modal.
+- [ ] 7.1 Console: `sessionStorage.removeItem('login'); localStorage.removeItem('logins')` e recarregue. Esperado (desde 2026-11-07): faixa azul "Você não está logado! Caso tenha cadastrado currículo conosco, faça login que seus dados aparecerão aqui.", com **faça login** como link e sem botões; formulário vazio; o modal **não** abre sozinho. Antes de 2026-11-07, nenhuma faixa.
+- [ ] 7.2 Clique em **faça login** e entre com um candidato que tem currículo. Esperado: o modal de login abre; depois de autenticar, a faixa passa a "Currículo ativo" (ou "inativo") com os botões, e as abas se preenchem com o currículo gravado, sem recarregar a página. Com um candidato sem currículo: faixa "Você ainda não tem currículo salvo".
+- [ ] 7.3 Login inválido: ponha no `sessionStorage` um `login` com `sessionToken` inventado e recarregue. Esperado: `GET /resume` → 401 e a mesma faixa azul do 7.1.
 
 ## C8 — Limite diário das sugestões, a partir desta tela
 
 - [ ] 8.1 Siga o S10 do roteiro 01 e o H12 do roteiro 02 com um currículo de TI recarregado.
-- [ ] 8.2 (Executado em 2026-10-26: confere.) Sem colar o texto do currículo depois de recarregar, abra "Deixamos de listar alguma habilidade?". Esperado: aviso "Para sugerir uma habilidade, cole o texto do seu currículo na aba Currículo..." no topo do modal, campo da habilidade bloqueado e **Enviar** desabilitado (achado 26, corrigido em 2026-10-15). Cole o texto e reabra: o campo libera.
+- [ ] 8.2 **Mudou em 2026-11-07.** Com um currículo de TI **salvo** e recarregado, sem colar o texto, abra "Deixamos de listar alguma habilidade?". Esperado: modal **liberado** (sem o aviso de colar o texto, campo da habilidade habilitado); como não há texto para conferir, a tela não faz a checagem "Habilidade fora do currículo" (quem confere é o suporte ao avaliar). As demais checagens continuam (tamanho, já na lista, sinônimo de uma da lista, sugestão já existente).
+- [ ] 8.3 Com o currículo de TI salvo, cole o texto na aba Currículo, avance até Habilidades e abra o modal. Esperado: com texto, a checagem volta a valer: uma habilidade que não está no texto dá "Habilidade fora do currículo". (A trava do achado 26 — aviso "Para sugerir uma habilidade, cole o texto do seu currículo na aba Currículo...", campo bloqueado, **Enviar** desabilitado — continua no código para quem não tem texto colado **nem** currículo de TI salvo; pela tela, esse candidato não chega à aba Habilidades sem colar o texto.)
+
+## C9 — "Salvar dados" em todas as abas na edição (desde 2026-11-07)
+
+- [ ] 9.1 Candidato sem currículo: percorra as abas. Esperado: nenhum **Salvar dados** verde; só o da última aba.
+- [ ] 9.2 Com currículo salvo (ativo ou inativo), recarregue. Esperado: em **Currículo**, **Idiomas**, **N Habilidades** e **Opções**, um **Salvar dados** verde à esquerda do botão azul de avançar; em **Salários**, só o **Salvar dados** de sempre.
+- [ ] 9.3 Na aba **Idiomas**, troque o nível de um idioma e clique no **Salvar dados** verde. Esperado: confirmação "Atualizar currículo — Os dados do seu currículo serão substituídos pelos desta tela. Tem certeza de que deseja atualizar o currículo? Atenção: só é possível atualizar o currículo uma única vez ao dia." → "Sim, atualizar" → toast "Currículo salvo com sucesso"; `vis_resume` com o nível novo; registro `update` em `vis_resume_daily_action`.
+- [ ] 9.4 Com uma pendência em outra aba (por exemplo, apague a função buscada na aba Currículo e vá para Opções): **Salvar dados** verde. Esperado: avisos vermelhos com a aba na frente ("Aba Currículo: Deve-se informar a função desejada"); nada é salvo.
+- [ ] 9.5 TI: cole um texto novo na aba **Currículo** e clique no **Salvar dados** verde sem avançar. Esperado: aviso "Aba Currículo: você colou um texto novo do currículo. Avance até a aba Habilidades para conferir as habilidades encontradas nele antes de salvar."; nada é salvo. Avance até Habilidades e salve: salva com as habilidades do texto novo.
+- [ ] 9.6 **Segunda atualização do dia**: depois do 9.3 (outro candidato no 9.5, ou libere o dia), clique em qualquer **Salvar dados**. Esperado: aviso vermelho "Só é possível atualizar o currículo uma única vez ao dia, e você já fez isso. Poderá fazer de novo a partir de ..."; nenhuma confirmação, nenhum `POST`.
 
 ## Observações da execução (2026-10-26)
 

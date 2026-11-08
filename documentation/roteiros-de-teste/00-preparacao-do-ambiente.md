@@ -10,8 +10,9 @@ Estes roteiros testam, à mão e de ponta a ponta, as duas funcionalidades da ab
 | [04-tela-do-curriculo.md](04-tela-do-curriculo.md) | Tela do currículo: preencher as 4 abas, salvar, carregar, inativar, reativar e excluir, LinkedIn compartilhado e agrupadores (desde 2026-10-15) | Menu **Como estou indo → Ver meu currículo** |
 | [05-endpoints-do-curriculo-pela-tela.md](05-endpoints-do-curriculo-pela-tela.md) | Os quatro endpoints de `VisRestApiResume` (ler, salvar, inativar/reativar, excluir) a partir da tela, com 401, 404 e respostas sem dados da sessão (desde 2026-10-15) | Tela "Ver meu currículo" |
 | [06-fale-conosco-e-chamados.md](06-fale-conosco-e-chamados.md) | Fale Conosco (com e sem login, cotas, stack trace), tela Chamados e o operador com `/answerContactUs` e `/ignoredContactUs` (criado e executado em 2026-10-26) | Botão **Fale Conosco** no canto inferior direito; menu **Meus dados → Chamados** |
-| [07-acessos-e-logout.md](07-acessos-e-logout.md) | Histórico de acessos (login e logout casados por cliente), logout e novo login pelo modal da tela (criado e executado em 2026-10-26) | Menu **Meus dados → Acessos** |
+| [07-acessos-e-logout.md](07-acessos-e-logout.md) | Histórico de acessos (login e logout casados por cliente; "Expirou" e "Sessão atual" desde 2026-11-07), logout e novo login pelo modal da tela (criado e executado em 2026-10-26) | Menu **Meus dados → Acessos** |
 | [08-recrutador-e-quem-me-viu.md](08-recrutador-e-quem-me-viu.md) | E-mail de currículos aos recrutadores (links assinados de ver currículo e descadastro), apelido, Quem me viu, Currículos visualizados e Currículos da semana (criado e executado em 2026-10-26) | Links do e-mail; menus **Meus dados → Quem me viu** e **Meu Recrutamento** |
+| [12-vagas-compativeis-comigo.md](12-vagas-compativeis-comigo.md) | Vagas compatíveis comigo: sem currículo vai ao formulário e volta, selo "Você tem" / "Não está no seu currículo" em cada habilidade e título "Ver distribuição por habilidades" (criado em 2026-11-07, não executado) | Menu **Grupos de vagas do telegram** → **Pesquisar** |
 
 Cada roteiro é feito de **cenários**. Cada cenário tem: o que fazer na tela do candidato, o que fazer no Telegram como **operador do suporte**, e o que conferir (tela, e-mail, Telegram, Elasticsearch). Marque os `[ ]` à medida que avançar. Onde está escrito **⚠ Atenção**, o comportamento descrito é o atual do sistema e merece a sua avaliação — não é erro de quem testa.
 
@@ -98,7 +99,7 @@ As recusas que não mandam nada vêm antes do limite e **não gastam** a sugest�
 Os roteiros 01 e 02 enviam várias sugestões com o mesmo candidato, e desde 2026-10-23 a sugestão de habilidade e o ajuste de hierarquia gastam a **mesma** cota do dia. **Antes de cada cenário que envia uma sugestão ou um pedido de ajuste**, libere o dia do candidato. Desde 2026-11-01 `jn_ticket_daily_limit` tem cache de 1 hora: apagar só no Elasticsearch não basta, porque as APIs continuariam vendo a cota. O script abaixo primeiro invalida o cache de cada registro, deixando a marca que as APIs locais consultam em `c:\logs\cache\deleted-keys`:
 
 ```powershell
-# libera as cotas do dia (sugestão de habilidade, ajuste de hierarquia, fale conosco e dúvida; todos os candidatos; ambiente local)
+# libera as cotas do dia (sugestão de habilidade, ajuste de hierarquia, fale conosco, dúvida e crítica; todos os candidatos; ambiente local)
 Add-Type -AssemblyName System.Numerics
 $sha1 = [System.Security.Cryptography.SHA1]::Create()
 function Mark([string]$key) {
@@ -119,7 +120,25 @@ Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://loca
 Invoke-RestMethod -Method Post -ContentType 'application/json' -Uri 'http://localhost:9200/jn_ticket_daily_limit/_delete_by_query?refresh=true' -Body '{"query":{"match_all":{}}}'
 ```
 
-O mesmo script está em `automacao/libera-cota.ps1`.
+**Desde 2026-11-07 a tela também guarda as cotas** no `localStorage` (`ticketDailyQuotas`, por e-mail e grupo: `sharedTickets`, `clarifyDoubts`, `makeCriticism`), gravadas quando o backend aceita o chamado e vencidas 24 horas depois. Com a marca, o fale conosco e os dois modais avisam "Você já enviou ... Poderá enviar de novo a partir de dd/mm/aa hh:mm" **sem chamar o backend** (nada no Network). O script acima não alcança o navegador: depois dele, rode `localStorage.removeItem('ticketDailyQuotas')` no Console da tela. Todo envio de chamado (fale conosco, sugestão de habilidade, ajuste de hierarquia) passa antes por um diálogo **"Confirmar envio"** (**Sim, enviar** / **Não**): o do bug só pergunta, o da dúvida e o da crítica avisam da cota própria, e os da cota compartilhada listam os outros chamados que ficarão bloqueados.
+
+O mesmo script está em `automacao/libera-cota.ps1`, que desde 2026-11-07 libera também o limite do currículo (5B). Sem argumentos libera os dois; para só um: `automacao/libera-cota.ps1 -Indices jn_ticket_daily_limit`.
+
+## 5B. Uma ação de cada tipo sobre o currículo salvo por dia (desde 2026-11-07)
+
+Inativar, reativar, excluir e atualizar o currículo mandam e-mail ao candidato. Por isso cada uma das quatro vale **uma vez a cada 24 horas por candidato**, independentes entre si (dá para inativar e reativar no mesmo dia, mas não inativar duas vezes). **Cadastrar** (salvar sem currículo ativo nem inativo) não tem limite, mas excluir, cadastrar de novo e excluir outra vez no mesmo dia esbarra na segunda exclusão.
+
+- **Backend:** `vis_resume_daily_action` (chave `email` + `action`: `inactivation`, `reactivation`, `exclusion`, `update`), descartável diária e com cache de 1 hora; a segunda ação do mesmo tipo responde **429**.
+- **Navegador:** cada ação feita fica marcada no `localStorage` (`resumeDailyActions`, por e-mail e ação) por 24 horas; com a marca, a tela avisa "Limite diário atingido" com a data e a hora em que poderá de novo, sem abrir a confirmação nem chamar o backend. Um 429 do backend também grava a marca.
+
+Os roteiros 04 e 05 repetem essas ações com o mesmo candidato. **Antes de cada cenário que repete uma ação já feita no dia**, use um candidato novo ou libere o dia nos dois lados:
+
+```powershell
+# backend: limite do currículo (registros, cópias descartáveis e marcas de cache)
+& .\automacao\libera-cota.ps1 -Indices vis_resume_daily_action
+```
+
+e, no Console da tela: `localStorage.removeItem('resumeDailyActions')`.
 
 ---
 
@@ -164,7 +183,8 @@ O e-mail é gravado como **hash** — por isso as consultas filtram pela habilid
 | … avaliados | `http://localhost:9200/vis_skill_fix_hierarchy_fulfiled/_search?pretty` |
 | Itens de ajuste pendentes / aprovados / rejeitados | `.../vis_skill_fix_hierarchy_item_pending/_search?pretty`, `.../vis_skill_fix_hierarchy_item_approved/...`, `.../vis_skill_fix_hierarchy_item_rejected/...` |
 | Sinônimos das sugestões, cada um apontando para a habilidade sugerida | `http://localhost:9200/vis_skill_synonym/_search?pretty` |
-| Cotas do dia (uma por candidato e grupo: `sharedTickets` para habilidade, hierarquia e fale conosco, `clarifyDoubts` para dúvida; bloqueiam a segunda com 429) | `http://localhost:9200/jn_ticket_daily_limit/_search?pretty` e `http://localhost:9200/jn_disposable_record/_search?pretty&q=entity:jn_ticket_daily_limit` |
+| Cotas do dia (uma por candidato e grupo: `sharedTickets` para habilidade, hierarquia e fale conosco exceto bug, dúvida e crítica, `clarifyDoubts` para dúvida, `makeCriticism` para crítica desde 2026-11-07; bloqueiam a segunda com 429, e a tela, antes, pela marca `ticketDailyQuotas` do `localStorage`) | `http://localhost:9200/jn_ticket_daily_limit/_search?pretty` e `http://localhost:9200/jn_disposable_record/_search?pretty&q=entity:jn_ticket_daily_limit` |
+| Ações do dia sobre o currículo (uma por candidato e ação: `inactivation`, `reactivation`, `exclusion`, `update`; bloqueiam a segunda com 429) | `http://localhost:9200/vis_resume_daily_action/_search?pretty` e `http://localhost:9200/jn_disposable_record/_search?pretty&q=entity:vis_resume_daily_action` |
 | Dono de cada endereço do LinkedIn (o e-mail é hash) | `http://localhost:9200/vis_resume_linkedin/_search?pretty` |
 | Usuários ignorados pelo suporte (o e-mail legível fica dentro de `description`) | `http://localhost:9200/jn_command_not_allowed_to_user/_search?pretty` |
 | … que voltaram a ser atendidos | `http://localhost:9200/jn_command_reallowed_to_user/_search?pretty` |

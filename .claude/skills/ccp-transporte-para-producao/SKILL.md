@@ -68,7 +68,7 @@ ES_DESTINO_AUTH=<valor> python -X utf8 .claude/skills/ccp-transporte-para-produc
 |---|---|
 | 0 | se toda entidade e gêmea do código tem linha no `entidades.tsv`, e vice-versa |
 | 1 | os índices do código (configuradores `(Jn\|Vis\|Jb\|Js)Entity*` e suas `twinEntityName`) contra os do destino: falta criar, falta apagar |
-| 2 | o mapeamento da origem contra o do destino: campo faltando, campo sobrando, tipo diferente |
+| 2 | o mapeamento da origem contra o do destino: campo faltando, campo sobrando, tipo diferente. Objeto `dynamic: true` (`json`, `headers`, `moreParameters`) conta como um campo só: os subcampos que os dados criaram em cada ES não entram. Campo que falta vai pelo script 43 |
 | 3 | toda string `com.(ccp\|jn\|vis\|jb\|js)...` gravada nos índices com `varrer_classes=sim`: precisa existir no código como classe, tipo aninhado ou item de enum. Se não existir, é renomeio sem script |
 | 4 | os registros das entidades levadas: faltando, diferentes (ignorando os campos de ambiente do `adaptar`) ou sobrando. No `merge` só aponta o que falta; na `carga` compara contagens |
 

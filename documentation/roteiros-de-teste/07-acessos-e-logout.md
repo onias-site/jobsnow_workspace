@@ -10,7 +10,7 @@
 
 1. **Meus dados → Acessos** (`/meus-dados/acessos`; também no menu do usuário) lista os logins do usuário logado, do mais recente ao mais antigo: IP, navegador (User-Agent), data do login e data do logout.
 2. Uma requisição só: `GET localhost:8082/grouper/{email}/jn_login_email/js_login_session_validation/<parentId>/bothSides`. Cada login grava `{userAgent, ip, loginDate}` no grupo do e-mail em `jn_grouper`; cada logout grava `{userAgent, ip, logoutDate}` no mesmo grupo em `jn_inactive_grouper`. A tela casa cada logout com o login mais recente do mesmo cliente (IP e navegador) ainda sem logout. O grupo guarda os 100 últimos de cada lado.
-3. Login sem logout mostra "—" (dica: "Sem logout: a sessão expirou ou ainda está aberta"). A sessão atual é sempre a primeira linha, sem logout.
+3. Login sem logout (desde 2026-11-07): a sessão deste navegador mostra **Sessão atual** em verde (dica: "A sessão aberta neste navegador"); os demais mostram **Expirou** em cinza (dica: "A sessão expirou sem logout"). Até 2026-11-07 todos mostravam "—". A sessão atual é o login mais recente sem logout feito com o mesmo navegador (User-Agent igual ao do navegador); ver `currentSessionIndex` em `accessesReconciliation.ts`.
 4. Sem login, a tela mostra "Entre com o seu e-mail para ver os seus acessos." e abre o modal de login; ao entrar, a busca se repete.
 5. **Sair do Sistema** (menu do usuário) faz `DELETE localhost:8082/login/{email}/{sessionToken}` e apaga `sessionStorage.login`.
 
@@ -18,8 +18,11 @@
 
 ## A1 — Lista
 
-- [ ] 1.1 Logado, abra **Acessos**. Esperado: "N acessos", colunas IP, Navegador, Login e Logout; a primeira linha é a sessão atual (Logout "—").
-- [ ] 1.2 Confira os pares login/logout de sessões anteriores: cada logout fica na linha do login de onde saiu; sessões que expiraram ou foram derrubadas por outro login ficam com "—".
+- [ ] 1.1 Logado, abra **Acessos**. Esperado: "N acessos", colunas IP, Navegador, Login e Logout; a primeira linha é a sessão atual (Logout **Sessão atual**, em verde).
+- [ ] 1.2 Confira os pares login/logout de sessões anteriores: cada logout fica na linha do login de onde saiu; sessões que expiraram ou foram derrubadas por outro login mostram **Expirou**. Nenhuma linha fica com a coluna Logout vazia ou com "—".
+- [ ] 1.3 Só uma linha mostra **Sessão atual**, mesmo quando há outros logins sem logout feitos com este navegador (esses mostram **Expirou**).
+- [ ] 1.4 Logado com a mesma conta em outro navegador (ou no celular), abra **Acessos** lá. Esperado: lá a **Sessão atual** é o login desse navegador, e o login do primeiro navegador aparece como **Expirou**, mesmo ainda aberto.
+  > **⚠ Atenção:** a tela não sabe qual login gravado é o da aba. Com dois logins no mesmo navegador (duas abas), o da aba mais antiga também aparece como **Expirou**, mesmo ainda aberto.
 
 ## A2 — Logout
 
@@ -30,7 +33,7 @@
 ## A3 — Novo login pelo modal da tela
 
 - [ ] 3.1 No modal, e-mail → **Avançar** ("Você já esteve aqui conosco, obrigado pelo retorno!!!") → senha → **Login**.
-- [ ] 3.2 Esperado: o modal fecha e a lista se recarrega sozinha com um acesso a mais: a nova sessão no topo (Logout "—") e a anterior com o logout do A2 (hora do clique em **Sair do Sistema**).
+- [ ] 3.2 Esperado: o modal fecha e a lista se recarrega sozinha com um acesso a mais: a nova sessão no topo (Logout **Sessão atual**) e a anterior com o logout do A2 (hora do clique em **Sair do Sistema**).
 
 ## A4 — Conferência no ES
 

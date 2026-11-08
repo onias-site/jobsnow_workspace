@@ -35,6 +35,7 @@ Saída esperada: `OK {"emailsSent":3, "recruiters":[...], "resumesFound":N}`. Os
 ## R1 — O e-mail
 
 - [ ] 1.1 Rode a automação. Esperado: um e-mail por recrutador, assunto "Currículos inseridos ou alterados nos últimos 7 dias", colunas "O que importa", "Idiomas e habilidades", "Função / papel / emprego / ocupação", "Outras Informações" e "Datas e visualização"; em cada linha "Sua última visualização: nunca" e **Ver currículo**; no rodapé, o link de descadastro.
+- [ ] 1.2 **Mais de 15 habilidades e mais de 3 regiões** (desde 2026-11-07): antes da automação, salve um TI cujo texto renda mais de 15 habilidades, com 5 regiões (o 2.12 do roteiro 05 serve). Esperado na linha dele: "Idiomas e habilidades" com 15 linhas (inglês e espanhol fluentes, as habilidades pela posição no ranking de `vis_skill`, os outros idiomas) e o link **ver as outras N habilidades**; "O que importa" com 3 regiões e o link **+2 regiões**. Os dois links vão ao mesmo endereço do **Ver currículo** daquela linha (assinado para o recrutador), e o `title` de cada um lista o que ficou de fora, separado por vírgula. No código-fonte, **nenhum** `<details>` (o Gmail o apaga e a lista aparecia aberta), e as habilidades e regiões de fora **não** aparecem como linhas.
 
 ## R2 — Ver currículo (sem login)
 
@@ -52,11 +53,15 @@ Saída esperada: `OK {"emailsSent":3, "recruiters":[...], "resumesFound":N}`. Os
 - [ ] 3.1 Logado com o dono, **Meus dados → Quem me viu**. Esperado: campo Mês/ano no mês corrente (máximo: o mês corrente), "3 visualizações no mês" e a grade Nome da consultoria × Visualizações: `empresa08.com.br 1`, `freelancer 1`, `teste.com 1`.
 - [ ] 3.2 Depois do 2.6 (o mesmo recrutador de novo), recarregue. Esperado: os mesmos números (uma por recrutador por mês).
 - [ ] 3.3 Mês anterior → "Nenhum recrutador viu o seu currículo neste mês." Limpar o campo volta ao mês corrente.
+- [ ] 3.4 **Sem login** (desde 2026-11-07): saia da conta e abra `/meus-dados/quem-me-viu`. Esperado: o modal "Diga quem é você, antes de continuar..." Fechado sem entrar (pelo X ou pela tecla Esc; clicar fora não fecha o modal), leva à tela inicial (`/`), em vez de deixar a grade vazia. Abra de novo e entre pelo modal: a tela continua em Quem me viu e carrega o mês.
 
 ## R4 — Telas do recrutador logado
 
 - [ ] 4.1 **Meu Recrutamento → Currículos visualizados**. Esperado: "1 currículo visualizado no mês", colunas Apelido, LinkedIn (legível) e Última visualização; **ver detalhes** expande a linha com as colunas do e-mail.
 - [ ] 4.2 **Meu Recrutamento → Currículos da semana**. Esperado: "N currículos inseridos ou alterados nos últimos 7 dias", as mesmas colunas do e-mail e um **Ver currículo** por linha. A lista é a do momento do envio do e-mail: as visualizações feitas depois não mudam a coluna "Sua última visualização".
+- [ ] 4.3 **Sem login** (desde 2026-11-07): saia da conta e abra `/meu-recrutamento/curriculos-visualizados`. Esperado: o modal de login; fechado sem entrar (X ou Esc), leva à tela inicial (`/`). Entrando pelo modal, a tela fica e carrega os currículos visualizados. As outras telas que abrem o mesmo modal (Currículos da semana, Acessos, Chamados, currículo) **não** mudaram: fechar o modal nelas mantém a tela.
+
+> **3.4 e 4.3 executados em 2026-11-07** no Chrome, no front local sem login: fechar pelo X (Quem me viu) e pela tecla Esc (Currículos visualizados) levou a `/`. A entrada pelo modal não foi refeita: o caminho do login com sucesso não mudou.
 
 ## R5 — Descadastrar (sem login)
 

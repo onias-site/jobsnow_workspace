@@ -12,10 +12,12 @@
 
 | # | Endpoint | Serviço | O que a tela faz para chamá-lo | Respostas esperadas |
 |---|---|---|---|---|
-| 1 | `GET /resume/{email}` | `VisServiceResume.GetData` | abrir ou recarregar a tela | 200 com o registro debaixo de `vis_resume` (ativo) ou `vis_inactive_resume` (inativo), ou sem nenhum dos dois (sem currículo); 401 sem sessão, tratado em silêncio |
-| 2 | `POST /resume/{email}/language/portuguese` | `VisServiceResume.Save` | **Salvar dados**, na última aba | 200 com só os campos do currículo; 422 se o corpo violar a regra de algum campo; 401 sem sessão (abre o modal de login e salva depois dele) |
-| 3 | `DELETE /resume/{email}/language/portuguese/status` | `VisServiceResume.ChangeStatus` | **Inativar** ou **Reativar**, na faixa de situação | 200; 404 quando o currículo não existe mais (a tela relê a situação); 401 sem sessão (modal de login e refaz) |
-| 4 | `DELETE /resume/{email}/language/portuguese` | `VisServiceResume.Delete` | **Excluir**, na faixa de situação | 200; 401 sem sessão (modal de login e refaz) |
+| 1 | `GET /resume/{email}` | `VisServiceResume.GetData` | abrir ou recarregar a tela | 200 com o registro debaixo de `vis_resume` (ativo) ou `vis_inactive_resume` (inativo), ou sem nenhum dos dois (sem currículo); 401 sem sessão, sem modal: a faixa azul "Você não está logado! ... faça login ..." (desde 2026-11-07) |
+| 2 | `POST /resume/{email}/language/portuguese` | `VisServiceResume.Save` | **Salvar dados**, na última aba ou, na edição, o verde das outras abas (desde 2026-11-07); na edição, depois da confirmação "Atualizar currículo" | 200 com só os campos do currículo; 422 se o corpo violar a regra de algum campo; 429 na segunda **atualização** do dia (cadastrar não tem limite); 401 sem sessão (abre o modal de login e salva depois dele) |
+| 3 | `DELETE /resume/{email}/language/portuguese/status` | `VisServiceResume.ChangeStatus` | **Inativar** ou **Reativar**, na faixa de situação | 200; 404 quando o currículo não existe mais (a tela relê a situação); 429 na segunda inativação (ou reativação) do dia; 401 sem sessão (modal de login e refaz) |
+| 4 | `DELETE /resume/{email}/language/portuguese` | `VisServiceResume.Delete` | **Excluir**, na faixa de situação | 200; 429 na segunda exclusão do dia, mesmo depois de cadastrar de novo; 401 sem sessão (modal de login e refaz) |
+
+> **Uma ação de cada tipo por dia** (desde 2026-11-07, item 5B do roteiro 00): atualizar, inativar, reativar e excluir valem uma vez a cada 24 horas por candidato, gravadas em `vis_resume_daily_action`; a tela guarda a mesma marca no `localStorage` (`resumeDailyActions`) e, com ela, avisa sem chamar o backend. Vários cenários abaixo repetem uma ação com o mesmo candidato (2.3 e 2.5 são duas atualizações; 3.1, 3.4 e 3.5 são inativações): **antes de cada um, use um candidato novo ou libere o dia** (`automacao/libera-cota.ps1 -Indices vis_resume_daily_action` e, no Console, `localStorage.removeItem('resumeDailyActions')`).
 
 ## O que conferir fora da tela
 
@@ -26,6 +28,7 @@
 | Currículo inativo | `http://localhost:9200/vis_inactive_resume/_search?pretty` |
 | E-mails do LinkedIn | `http://localhost:9200/vis_resume_linkedin/_search?pretty` (campo `emails`, com os hashes) |
 | Agrupadores | `jn_grouper` (ativos) e `jn_inactive_grouper` (inativos), filtrando por `child` |
+| Ações do dia (desde 2026-11-07) | `http://localhost:9200/vis_resume_daily_action/_search?pretty` (campo `action`: `update`, `inactivation`, `reactivation`, `exclusion`; o e-mail é hash) e, no navegador, `localStorage.getItem('resumeDailyActions')` |
 | E-mail ao candidato | `C:\logs\email\<e-mail>\com.vis.messages.VisMessages$VisNotifyUserAbout<Ação>Resume.html`, com `<Ação>` = `Saved`, `Deactivated`, `Reactivated` ou `Deleted` |
 
 > O Elasticsearch mostra uma escrita só depois do refresh (cerca de 1 s): espere um instante antes de conferir.
@@ -38,8 +41,9 @@ Use candidatos novos, um por cenário, para que um cenário não dependa do ante
 
 ## E1 — Ler o currículo ao abrir a tela (`GET /resume/{email}`)
 
-- [ ] 1.1 **Sem login**: no Console, `sessionStorage.removeItem('login'); localStorage.removeItem('logins')` e recarregue. Esperado: nenhuma faixa de situação, formulário vazio, **nenhum modal de login**; no Network, nenhum `GET /resume` sai (o front barra antes de enviar, sem sessão).
-- [ ] 1.2 **Sessão inválida**: ponha no `sessionStorage` um `login` com `sessionToken` inventado e recarregue. Esperado: `GET /resume` → 401; nenhuma faixa, **nenhum modal**.
+- [ ] 1.1 **Sem login**: no Console, `sessionStorage.removeItem('login'); localStorage.removeItem('logins')` e recarregue. Esperado: faixa azul "Você não está logado! Caso tenha cadastrado currículo conosco, faça login que seus dados aparecerão aqui." (desde 2026-11-07; antes, nenhuma faixa), formulário vazio, **nenhum modal de login** aberto sozinho; no Network, nenhum `GET /resume` sai (o front barra antes de enviar, sem sessão).
+- [ ] 1.2 **Sessão inválida**: ponha no `sessionStorage` um `login` com `sessionToken` inventado e recarregue. Esperado: `GET /resume` → 401; a faixa azul do 1.1, **nenhum modal**.
+- [ ] 1.2b **Login pela faixa** (desde 2026-11-07): clique em **faça login**. Esperado: o modal de login abre; depois de autenticar, sai um novo `GET /resume` → 200 e a faixa e as abas mostram o currículo gravado (ou "Você ainda não tem currículo salvo").
 - [ ] 1.3 **Candidato sem currículo**: logado, recarregue. Esperado: `GET /resume` → 200 sem `vis_resume` nem `vis_inactive_resume`; faixa cinza "Você ainda não tem currículo salvo", **sem botões**; formulário vazio.
 - [ ] 1.4 **Currículo ativo**: recarregue depois do E2. Esperado: 200 com `vis_resume`; faixa verde "Currículo ativo: visível para os recrutadores" com **Inativar** e **Excluir**; as abas voltam preenchidas com o que foi salvo (no TI, a aba **N Habilidades** com as habilidades gravadas, sem precisar colar o texto).
 - [ ] 1.5 **Currículo inativo**: recarregue depois do 3.1. Esperado: 200 com `vis_inactive_resume`; faixa laranja "Currículo inativo: oculto dos recrutadores" com **Reativar** e **Excluir**; abas preenchidas.
@@ -49,19 +53,31 @@ Use candidatos novos, um por cenário, para que um cenário não dependa do ante
 
 - [ ] 2.1 **Inclusão, tipo 1 (TI)**: aba Currículo: função buscada, última função, LinkedIn `https://www.linkedin.com/in/roteiro05-<hora>`, uma empresa pelo autocomplete e outra digitada + Enter, tipo "Tecnologia da Informação" e o texto do currículo (com JAVA e SPRING BOOT). Avance por Idiomas, Habilidades, Opções (uma região, experiência, disponibilidade, temporário) e Salários (CLT). **Salvar dados**. Esperado: `POST` → 200; toast "Currículo salvo com sucesso" com o detalhe "Seu currículo está ativo e visível para os recrutadores."; faixa verde com **Inativar** e **Excluir**; `vis_resume` com os campos; `vis_resume_linkedin` com o endereço e um hash em `emails`; e-mail `...SavedResume.html`.
 - [ ] 2.2 **A resposta não expõe a sessão**: a resposta do 2.1 traz só campos do currículo (sem `sessionToken`, `ip`, `userAgent`).
-- [ ] 2.3 **Atualização**: troque a função buscada, avance até Salários e salve. Esperado: 200; `vis_resume` com a função nova; continua um só registro.
+- [ ] 2.3 **Atualização**: troque a função buscada, avance até Salários e salve. Esperado (desde 2026-11-07): antes do `POST`, a confirmação "Atualizar currículo — Os dados do seu currículo serão substituídos pelos desta tela. Tem certeza de que deseja atualizar o currículo? Atenção: só é possível atualizar o currículo uma única vez ao dia." → **Sim, atualizar**; 200; `vis_resume` com a função nova; continua um só registro; registro `update` em `vis_resume_daily_action`. Com **Não**, nenhuma requisição.
+- [ ] 2.3b **Salvar pelo botão verde** (desde 2026-11-07): com o dia liberado, na aba **Idiomas** troque um nível e clique no **Salvar dados** verde. Esperado: a mesma confirmação do 2.3 e o mesmo `POST` → 200.
+- [ ] 2.3c **Segunda atualização do dia**: depois do 2.3, salve de novo. Esperado: aviso vermelho "Só é possível atualizar o currículo uma única vez ao dia, e você já fez isso. Poderá fazer de novo a partir de ..."; sem confirmação, **nenhum** `POST`. Apague só a marca do navegador (`localStorage.removeItem('resumeDailyActions')`) e salve → confirme: `POST` → 429, aviso "Limite diário atingido — ... nas últimas 24 horas. Tente de novo amanhã."; `vis_resume` sem a mudança.
 - [ ] 2.4 **Tipos 2, 3 e 4**: com outro candidato para cada tipo, preencha e salve. Esperado: sem a aba Habilidades; nenhum `POST skills/fromText`; 200 e o registro com `skill` vazio.
-- [ ] 2.5 **Salvar um currículo inativo reativa**: com o currículo inativo (3.1), mude um campo e salve. Esperado: 200; faixa verde; o registro sai de `vis_inactive_resume` e volta a `vis_resume`.
+- [ ] 2.5 **Salvar um currículo inativo reativa**: com o currículo inativo (3.1), mude um campo e salve (é uma **atualização**: confirmação do 2.3 e, se o 2.3 foi feito com o mesmo candidato, libere o dia antes). Esperado: 200; faixa verde; o registro sai de `vis_inactive_resume` e volta a `vis_resume`.
 - [ ] 2.6 **Sessão expirada no salvar**: com a tela preenchida, encerre a sessão no servidor (Console: `fetch('http://localhost:8082/login/<email>/<sessionToken>', {method:'DELETE', headers:{'Content-Type':'application/json', sessionToken:'<sessionToken>', email:'<email>'}, body:'{}'})`, com os valores do `sessionStorage.login`) e clique **Salvar dados**. Esperado: `POST` → 401 e o modal de login abre; depois de logar, o salvar é refeito sozinho e responde 200.
 - [ ] 2.7 **Validações da tela barram o salvar** (nada sai para o `POST`): LinkedIn terminado em hífen; empresa com mais de 50 caracteres; experiência 71; temporário 13; sem CLT nem PJ. Esperado: o botão da aba fica desabilitado, com a mensagem da regra.
 - [ ] 2.8 **Home office e regiões**: marque três regiões e depois home office; depois marque uma região. Esperado: os avisos "Regiões desmarcadas — ... as 3 regiões escolhidas foram desmarcadas." e "Home office desmarcado — ..."; salvar com home office sozinho → 200 com `ddd: [10]`.
 - [ ] 2.9 **LinkedIn de outro e-mail**: com um segundo candidato, salve com o LinkedIn do 2.1. Esperado: 200; `vis_resume_linkedin` com os dois hashes em `emails`; o operador recebe no Telegram (real) o aviso de LinkedIn compartilhado.
 - [ ] 2.10 **Devolver o LinkedIn emprestado**: o segundo candidato troca para um LinkedIn próprio e salva. Esperado: 200; o endereço do 2.1 fica só com o hash do primeiro candidato.
+- [ ] 2.11 **E-mail do currículo salvo** (desde 2026-11-07), aberto no navegador a partir de `C:\logs\email\<e-mail>\com.vis.messages.VisMessages$VisNotifyUserAboutSavedResume.html`, depois do 2.1 e de novo depois do 2.3. Esperado, igual na inclusão e na atualização:
+  - assunto "O seu currículo foi salvo" (o arquivo guarda só o corpo: confira o assunto no registro do envio, `jn_email_message_sent`);
+  - "Olá, aqui é o Onias, do JobsNow. Os dados do seu currículo foram salvos.", com o nome ligado ao LinkedIn do Onias;
+  - o parágrafo "A partir de agora, o seu currículo entra no e-mail que os recrutadores recebem com os currículos inseridos ou alterados nos últimos 7 dias. Cada vez que você atualizar os seus dados, ele volta a aparecer nesse e-mail por mais 7 dias.";
+  - o título "Como o recrutador verá o seu currículo" e "Confira abaixo, com os dados que você acabou de salvar...", com o link **corrija no formulário** para `http://localhost:3000/meus-dados/sobre-mim` e a lembrança das empresas indesejadas;
+  - a tabela dos recrutadores com **uma linha**, a do currículo com o que foi salvo **agora** (no 2.3, a função nova): as 5 colunas; em "Datas e visualização" só "Você nunca visualizou este currículo" e **Ver currículo** como texto, **sem** linhas de data (o histórico só sai por consulta, que a gravação não faz);
+  - **nenhuma** frase do convite aos candidatos legados ("há algum tempo", "cadastro antigo", "Este convite é único");
+  - no fim, o rodapé com **Política de privacidade**.
+- [ ] 2.12 **Mais de 15 habilidades e mais de 3 regiões no e-mail**: salve um TI cujo texto renda mais de 15 habilidades, com 5 regiões. Esperado no e-mail do 2.11: as 15 primeiras linhas de "Idiomas e habilidades" (inglês e espanhol fluentes, as habilidades pela posição no ranking de `vis_skill`, os outros idiomas) e o link **ver as outras N habilidades**; as 3 primeiras regiões e o link **+2 regiões**. Os dois links levam ao formulário, e o `title` de cada um lista o que ficou de fora, separado por vírgula (passe o mouse: a dica aparece). No código-fonte, **nenhum** `<details>`, e as habilidades e regiões de fora **não** aparecem como linhas.
 
 ## E3 — Inativar e reativar (`DELETE /resume/{email}/language/portuguese/status`)
 
-- [ ] 3.1 **Inativar, sem sair da primeira aba**: **Inativar** na faixa → confirmação "Seu currículo deixará de aparecer para os recrutadores..." → **Sim, inativar**. Esperado: `DELETE .../status` → 200; toast "Currículo inativado" com o detalhe "Seu currículo não aparece mais para os recrutadores até que você o reative."; faixa laranja com **Reativar** e **Excluir**; registro em `vis_inactive_resume` e grupos em `jn_inactive_grouper`; e-mail `...DeactivatedResume.html`.
-- [ ] 3.2 **Reativar**: **Reativar** → **Sim, reativar**. Esperado: 200; toast "Currículo reativado" com "Seu currículo voltou a aparecer para os recrutadores."; faixa verde; de volta a `vis_resume` e `jn_grouper`; e-mail `...ReactivatedResume.html`.
+- [ ] 3.1 **Inativar, sem sair da primeira aba**: **Inativar** na faixa → confirmação "Seu currículo deixará de aparecer para os recrutadores até que você o reative. Tem certeza de que deseja inativar o currículo? Atenção: só é possível inativar o currículo uma única vez ao dia." → **Sim, inativar**. Esperado: `DELETE .../status` → 200; toast "Currículo inativado" com o detalhe "Seu currículo não aparece mais para os recrutadores até que você o reative."; faixa laranja com **Reativar** e **Excluir**; registro em `vis_inactive_resume` e grupos em `jn_inactive_grouper`; registro `inactivation` em `vis_resume_daily_action`; e-mail `...DeactivatedResume.html`.
+- [ ] 3.2 **Reativar**: **Reativar** → confirmação com "... só é possível reativar o currículo uma única vez ao dia." → **Sim, reativar**. Esperado: 200; toast "Currículo reativado" com "Seu currículo voltou a aparecer para os recrutadores."; faixa verde; de volta a `vis_resume` e `jn_grouper`; registro `reactivation`; e-mail `...ReactivatedResume.html`.
+- [ ] 3.2b **Segunda inativação do dia** (desde 2026-11-07): depois do 3.2, **Inativar**. Esperado: aviso "Limite diário atingido — Só é possível inativar o currículo uma única vez ao dia, e você já fez isso. Poderá fazer de novo a partir de ..."; sem confirmação, **nenhum** `DELETE .../status`. Apague só a marca do navegador e repita: `DELETE .../status` → 429, aviso "... nas últimas 24 horas. Tente de novo amanhã.", faixa verde mantida; a resposta do 429 traz só `message` e `status`.
 - [ ] 3.3 **Desistir na confirmação**: **Inativar** → **Não**. Esperado: nenhuma requisição; nada muda.
 - [ ] 3.4 **Currículo excluído em outra aba**: abra a tela em duas abas com o mesmo candidato; exclua na primeira; na segunda, **Inativar** → **Sim**. Esperado: `DELETE .../status` → 404; a segunda aba relê a situação e mostra "Você ainda não tem currículo salvo", sem botões.
 - [ ] 3.5 **Sessão expirada**: encerre a sessão no servidor como no 2.6 e clique **Inativar** → **Sim**. Esperado: 401, modal de login; depois de logar, a inativação é refeita (200).
@@ -69,8 +85,9 @@ Use candidatos novos, um por cenário, para que um cenário não dependa do ante
 
 ## E4 — Excluir (`DELETE /resume/{email}/language/portuguese`)
 
-- [ ] 4.1 **Excluir um currículo ativo**: **Excluir** → confirmação "Todos os dados do seu currículo serão apagados de vez..." → **Sim, excluir**. Esperado: `DELETE` → 200; toast "Currículo excluído" com "Todos os dados do seu currículo foram apagados."; faixa cinza sem botões; **todas as abas vazias**; nada em `vis_resume` nem em `vis_inactive_resume`; o hash sai de `emails` do LinkedIn (o registro some se era o único); grupos removidos; e-mail `...DeletedResume.html`.
-- [ ] 4.2 **Excluir um currículo inativo**: inative e depois exclua. Esperado: o mesmo do 4.1.
+- [ ] 4.1 **Excluir um currículo ativo**: **Excluir** → confirmação "Todos os dados do seu currículo serão apagados de vez, sem como recuperar. Tem certeza de que deseja excluir o currículo? Atenção: só é possível excluir o currículo uma única vez ao dia." → **Sim, excluir**. Registro `exclusion` em `vis_resume_daily_action`. Esperado: `DELETE` → 200; toast "Currículo excluído" com "Todos os dados do seu currículo foram apagados."; faixa cinza sem botões; **todas as abas vazias**; nada em `vis_resume` nem em `vis_inactive_resume`; o hash sai de `emails` do LinkedIn (o registro some se era o único); grupos removidos; e-mail `...DeletedResume.html`.
+- [ ] 4.2 **Excluir um currículo inativo**: com outro candidato (ou com o dia liberado), inative e depois exclua. Esperado: o mesmo do 4.1.
+- [ ] 4.2b **Excluir, cadastrar e excluir de novo** (desde 2026-11-07): depois do 4.1, cadastre de novo (salva direto, sem confirmação: cadastrar não tem limite) e clique **Excluir**. Esperado: aviso "Limite diário atingido", sem confirmação nem `DELETE`; sem a marca do navegador, `DELETE` → 429 e o currículo continua salvo.
 - [ ] 4.3 **Desistir na confirmação**: **Excluir** → **Não**. Esperado: nenhuma requisição; nada muda.
 - [ ] 4.4 **Depois de excluir**: avance pelas abas vazias. Esperado: o salvar exige preencher tudo de novo (o formulário não guarda os dados apagados).
 - [ ] 4.5 **Sessão expirada**: encerre a sessão no servidor como no 2.6 e clique **Excluir** → **Sim**. Esperado: 401, modal de login; depois de logar, a exclusão é refeita (200).
@@ -81,7 +98,9 @@ Use candidatos novos, um por cenário, para que um cenário não dependa do ante
 
 | Regra | Cenário |
 |---|---|
-| Leitura ao abrir: sem login e sessão inválida em silêncio; sem currículo, ativo e inativo | 1.1 a 1.5 |
+| Leitura ao abrir: sem login e sessão inválida com a faixa "não está logado" e o link de login; sem currículo, ativo e inativo | 1.1 a 1.5 |
+| Uma atualização, uma inativação, uma reativação e uma exclusão por dia: aviso pela marca do navegador e 429 do backend; cadastrar sem limite | 2.3c, 3.2b, 4.2b |
+| Confirmação da atualização e "Salvar dados" verde nas abas da edição | 2.3, 2.3b |
 | Faixa de situação com os botões certos para cada situação | 1.3 a 1.5, 3.1, 3.2, 4.1 |
 | Salvar: inclusão, atualização, tipos sem habilidades, reativação pelo salvar | 2.1, 2.3 a 2.5 |
 | Validações da tela antes do salvar; home office × regiões com aviso | 2.7, 2.8 |
@@ -91,6 +110,8 @@ Use candidatos novos, um por cenário, para que um cenário não dependa do ante
 | 401 nas ações: modal de login e refazer | 2.6, 3.5, 4.5 |
 | Respostas sem os dados da sessão | 1.6, 2.2, 3.6 |
 | E-mail ao candidato em cada ação | 2.1, 3.1, 3.2, 4.1 |
+| E-mail do currículo salvo: confirmação, próximo passo, tabela de uma linha sem datas, link ao formulário | 2.11 |
+| Habilidades depois da 15ª e regiões depois da 3ª fora do e-mail, contadas por link com `title` | 2.12 |
 
 ---
 

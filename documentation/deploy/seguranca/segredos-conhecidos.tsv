@@ -1,0 +1,4 @@
+# Achados de segredo ja conhecidos: impressao digital do gitleaks (ou repo:propriedade:objeto do valor exato) <TAB> situacao.
+# Continuam no historico publico: a correcao e revogar a chave, nao reescrever o historico.
+d7c4697479a518a12f36a65e1364e6f73542adf7:src/test/java/com/ccp/jn/test/pocs/Skills.java:gcp-api-key:1126	chave do Gemini (projeto 773624168633, fora do alcance da conta atual) desde 2025-05-24; IGNORADO por decisao do usuario em 2026-11-10
+f996a0588419c49997c87523db62fb4445ca69aa:curl:curl-auth-header:1	token de sessao de terceiro (api.saasexch.com) de 2025-06-05, sem relacao com o JobsNow; arquivo retirado do HEAD em 2026-11-10

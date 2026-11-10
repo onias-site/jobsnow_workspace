@@ -23,7 +23,7 @@ CLAUDE_MD = ROOT / "CLAUDE.md"
 CATALOG = ROOT / "jn_frontend_calistrato-react/presentation/pages/nosso-backend/conceptsCatalog.ts"
 
 SECTIONS = {
-    "Data entities": "Entidades",
+    "Data entities": "Tipos de Entidade",
     "Reading and writing data": "Leitura e escrita de dados",
     "Code shape": "Forma do código",
 }

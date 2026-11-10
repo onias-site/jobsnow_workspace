@@ -1,0 +1,9 @@
+# Configuracao do gitleaks do JobsNow: as regras padrao mais as excecoes de falso positivo.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "falsos positivos conferidos"
+# chave do localStorage do painel 27 (nome de coluna oculta, nao e segredo)
+regexTarget = "line"
+regexes = ['''HIDDEN_KEY\s*=\s*'painel27\.colunasOcultas''']

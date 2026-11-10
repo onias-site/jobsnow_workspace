@@ -27,3 +27,7 @@
 target/
 node_modules/
 __pycache__/
+
+# dados pessoais e estado local dos roteiros (repositorio publico)
+documentation/roteiros-de-teste/cv.txt
+documentation/roteiros-de-teste/automacao/*-state.json

@@ -56,6 +56,8 @@ A saída termina em `OK {...}` com os contadores: `legacyCandidates`, `invalidAd
 
 ---
 
+> **Executado em 2026-11-10 (local):** C1-C5 ok; C6 não executado (SendGrid real, decisão pendente do usuário); 6.4 e 6.5 conferidos com o provedor local. Texto do 2.2, 2.3 e 4.1 atualizado (marca Onias.Site; 110/95 habilidades). Achado: "em 1 dias" na disponibilidade (R11-1).
+
 ## C1 — Simulação
 
 - [ ] 1.1 Anote o número de linhas de `convidados.txt`. Rode `simular`. Esperado: `emailsSent: 3`; três pastas novas (ou regravadas) em `C:\logs\email`; `convidados.txt` com o mesmo número de linhas.
@@ -67,8 +69,8 @@ A saída termina em `OK {...}` com os contadores: `legacyCandidates`, `invalidAd
 Abra no navegador um e-mail do C1 (ou o da prévia, no C6). Esperado, nesta ordem:
 
 - [ ] 2.1 Assunto "Envie seu currículo para 2.000 recrutadores gratuitamente". O convite sai sempre em português; o template em inglês existe, mas não é usado.
-- [ ] 2.2 "Olá, aqui é o Onias, do JobsNow. Você cadastrou o seu currículo conosco há algum tempo.", com o nome ligado a `https://www.linkedin.com/in/onias85/`.
-- [ ] 2.3 O parágrafo "O JobsNow foi refeito, e o seu cadastro antigo não aparece para os recrutadores do novo sistema..." e o botão **Cadastrar meu currículo** para `<endereço do front>/meus-dados/sobre-mim` (`http://localhost:3000` na simulação, `https://onias.site` na prévia; nunca `www.jobsnow.com.br`).
+- [ ] 2.2 "Olá, aqui é o Onias, do Onias.Site. Você cadastrou o seu currículo conosco há algum tempo.", com o nome ligado a `https://www.linkedin.com/in/onias85/` (marca Onias.Site, script 41).
+- [ ] 2.3 O parágrafo "O JobsNow foi refeito e agora se chama Onias.Site. O seu cadastro antigo não aparece para os recrutadores do novo sistema..." e o botão **Cadastrar meu currículo** para `<endereço do front>/meus-dados/sobre-mim` (`http://localhost:3000` na simulação, `https://onias.site` na prévia; nunca `www.jobsnow.com.br`).
 - [ ] 2.4 "No cadastro, você também pode informar as empresas para as quais não quer que o seu currículo seja enviado."
 - [ ] 2.5 O título "Como o recrutador verá o seu currículo", o parágrafo da prévia ("feita com os dados do seu cadastro antigo...") e a tabela de uma linha, com as 5 colunas dos recrutadores.
 - [ ] 2.6 "Este convite é único: se você não se cadastrar, não enviaremos outro e-mail sobre este assunto." e o rodapé com **Política de privacidade**, sem endereço.
@@ -77,15 +79,15 @@ Abra no navegador um e-mail do C1 (ou o da prévia, no C6). Esperado, nesta orde
 
 Compare a linha com o documento legado do mesmo e-mail.
 
-- [ ] 3.1 "O que importa": CLT e PJ sempre; "Pretensões salariais negociáveis" só se houver `pretensaoNegociavel`; "Experiência em anos" só se houver `experiencia`; a região do DDD, ou "Aceita somente homeoffice" com home office e DDD 0; com DDD 0 e sem home office, nenhuma região.
+- [ ] 3.1 "O que importa": CLT e PJ sempre; "Pretensões salariais negociáveis" só se houver `pretensaoNegociavel` (com `false` sai "Não"); "Experiência em anos" só se houver `experiencia`; a região do DDD, ou "Aceita somente homeoffice" com home office e DDD 0; com DDD 0 e sem home office, nenhuma região.
 - [ ] 3.2 "Outras Informações": disponibilidade só com `disponibilidade` maior que 0; "Pessoa com deficiência (PCD)" sempre; **nenhuma** linha de viagem, temporário ou idioma.
 - [ ] 3.3 Tipos 2, 3 e 4 (`tipoVaga`): "Idiomas e habilidades" vazia. Um tipo 1 sem `curriculo.t` também sai vazio (os primeiros documentos do índice são assim: não é defeito).
 - [ ] 3.4 "Datas e visualização": "Você nunca visualizou este currículo", **Ver currículo** como texto (sem link: o candidato ainda não tem currículo) e as duas datas com a hora do envio (regra 5).
 
 ## C4 — Mais de 15 habilidades
 
-- [ ] 4.1 Use um tipo 1 com texto longo (`onias85@gmail.com` rende 109 habilidades em 2026-11-07). Esperado: 15 linhas, da mais pedida para a menos pedida no ranking de `vis_skill` (JAVA, JAVASCRIPT, SQL...), e o link **ver as outras 94 habilidades** para o formulário.
-- [ ] 4.2 O `title` do link lista as 94 restantes, separadas por vírgula, na mesma ordem. Nenhuma delas aparece como linha, e o código-fonte não tem `<details>`.
+- [ ] 4.1 Use um tipo 1 com texto longo (`onias85@gmail.com` rende 110 habilidades em 2026-11-10; 109 em 2026-11-07: o número cresce com o dicionário). Esperado: 15 linhas, da mais pedida para a menos pedida no ranking de `vis_skill` (o menor `ranking` primeiro: JAVA, JAVASCRIPT, SQL...), e o link **ver as outras N habilidades** (95 em 2026-11-10) para o formulário. A `simular` não escolhe o candidato: no local, use um executor que trate todos os outros como já convidados (como a `previa`), mas com o provedor de e-mail local.
+- [ ] 4.2 O `title` do link lista as N restantes, separadas por vírgula, na mesma ordem. Nenhuma delas aparece como linha, e o código-fonte não tem `<details>`.
 - [ ] 4.3 Com 15 ou menos, nenhum link.
 
 ## C5 — Quem fica de fora

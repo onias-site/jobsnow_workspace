@@ -9,6 +9,8 @@
 > **Atualizado em 2026-11-07:** a crítica ganhou cota diária própria (`quotaGroup: makeCriticism`, como a dúvida) e deixou a compartilhada; todo envio passa por um diálogo **"Confirmar envio"**; e a tela guarda a cota de cada grupo no `localStorage` (`ticketDailyQuotas`, por e-mail), sem chamar o backend enquanto ela valer. Cenário F2 refeito. **Antes do F2**, libere o dia (item 5A da preparação) e rode `localStorage.removeItem('ticketDailyQuotas')` no Console da tela.
 >
 > **Atualizado em 2026-11-07 (2):** na tela de chamados, célula com mais de 120 caracteres ou 3 linhas mostra o começo do texto com "…" e o link **ver tudo**, que abre um modal com o texto inteiro. Cenários 4.3 a 4.6.
+>
+> **Atualizado em 2026-11-09:** na tela de chamados, (1) o combo nomeia o tipo do chamado já aberto ("Bug", "Elogio", "Crítica", "Sugestão", "Comentário", "Dúvida"), e não a ação de abrir um ("Reportar um bug"...), que continua só no painel do Fale Conosco; (2) fechar o modal de login sem entrar leva à tela inicial; (3) a grade é paginada, 10 chamados por página. Cenários 3.5, 4.0, 4.7 e 5.5.
 
 ## Como funciona (resumo)
 
@@ -37,7 +39,7 @@
    - `responder <texto>` (10 a 500 caracteres): o ticket vai para a gêmea `js_contact_us_solved` com `supportResponse` e o usuário recebe "O seu ticket do fale conosco foi respondido".
    - `próximo`: o ticket continua aberto e o bot mostra a lista de pendentes.
    - `ignorar` → `sim`: o usuário passa a ser ignorado em todos os comandos (`JnEntityCommandNotAllowedToUser`); os tickets abertos dele e os comandos no inbox são descartados; novos envios dão 403. `/ignoredContactUs` lista os ignorados e volta a atendê-los.
-8. A tela **Meus dados → Chamados** (`/meus-dados/chamados`) lê os tickets do usuário logado, por tipo, de `GET localhost:8082/grouper/{email}/jn_login_email/<entidade>/<parentId>/bothSides`: os do `jn_grouper` aparecem "Em análise"; os do `jn_inactive_grouper`, com a situação final ("Respondido" no fale conosco). O combo traz também as associações e dissociações de hierarquia e as sugestões de habilidade (roteiros 01 e 02).
+8. A tela **Meus dados → Chamados** (`/meus-dados/chamados`) lê os tickets do usuário logado, por tipo, de `GET localhost:8082/grouper/{email}/jn_login_email/<entidade>/<parentId>/bothSides`: os do `jn_grouper` aparecem "Em análise"; os do `jn_inactive_grouper`, com a situação final ("Respondido" no fale conosco). O combo traz também as associações e dissociações de hierarquia e as sugestões de habilidade (roteiros 01 e 02). Desde 2026-11-09, as opções do combo dizem o tipo do chamado (Bug, Elogio, Crítica, Sugestão, Comentário, Dúvida, Associação de hierarquia, Dissociação de hierarquia, Sugestão de habilidade), para a tela não parecer servir para abrir chamados; a grade mostra 10 chamados por página, com o rodapé "1 a 10 de N" e os botões de página; sem login, fechar o modal sem entrar leva à tela inicial (`/`).
 
 ---
 
@@ -65,19 +67,22 @@
 
 ## F3 — Envio sem login
 
-- [ ] 3.1 Em outra aba, `sessionStorage.removeItem('login')` e abra `/meus-dados/chamados`. Abra **Fale Conosco**. Esperado: campo "Seu e-mail".
+- [ ] 3.1 Numa **janela anônima** (desde 2026-11-09 as abas normais compartilham o login, e apagá-lo numa desloga todas), abra `/meus-dados/chamados`. Abra **Fale Conosco**. Esperado: campo "Seu e-mail".
 - [ ] 3.2 E-mail `naoeumemail` → o navegador barra o envio (campo `type=email`). Com um e-mail válido, um elogio → diálogo de confirmação → **Sim, enviar** → toast "Mensagem enviada!" com o e-mail digitado; inbox com prioridade 6. A marca do `localStorage` fica com o e-mail digitado.
 - [ ] 3.3 Escolha um tipo na tela de chamados → "Entre com o seu e-mail para ver os seus chamados." e o modal de login. Digite um e-mail no modal e abra **Fale Conosco**: "Responderemos para" o e-mail digitado.
 - [ ] 3.4 Provoque um erro na aba (console: `setTimeout(() => { function quebraNoRoteiro06(){ throw new Error('erro proposital do roteiro 06'); } quebraNoRoteiro06(); })`) e reporte um bug. Esperado: o ticket mostrado ao operador traz o "Stack trace: Error: erro proposital do roteiro 06 ...".
+- [ ] 3.5 **Fechar o modal sem entrar** (desde 2026-11-09): ainda sem login, recarregue `/meus-dados/chamados` e escolha um tipo. Esperado: o modal "Diga quem é você, antes de continuar..."; fechado sem entrar (pelo X ou pela tecla Esc), leva à tela inicial (`/`), em vez de deixar a tela de chamados vazia. Abra de novo, escolha um tipo e entre pelo modal: a tela continua em Chamados e carrega os chamados do tipo escolhido.
 
 ## F4 — Tela de chamados
 
+- [ ] 4.0 **Rótulos do combo** (desde 2026-11-09): logado, abra **Chamados** e abra o combo "Tipo de chamado". Esperado, nesta ordem: Bug, Elogio, Crítica, Sugestão, Comentário, Dúvida, Associação de hierarquia, Dissociação de hierarquia, Sugestão de habilidade. Nenhuma opção começa por verbo ("Reportar", "Fazer", "Esclarecer"). O combo do painel **Fale Conosco** continua com os verbos (Reportar um bug, Fazer um elogio...).
 - [ ] 4.1 Logado, em **Chamados**, escolha cada tipo enviado. Esperado: "1 chamado", colunas Data, Situação, Título, Mensagem e Resposta do suporte, situação "Em análise" e resposta "—".
 - [ ] 4.2 Um tipo sem envio → "Nenhum chamado deste tipo."
 - [ ] 4.3 **Texto comprido na grade** (desde 2026-11-07): envie um chamado com mensagem de mais de 120 caracteres (ou de 4 linhas ou mais, mesmo curtas) e outro com mensagem curta, de tipos diferentes; recarregue a tela e escolha o tipo do comprido. Esperado: a coluna **Mensagem** mostra o começo do texto (até 120 caracteres e 3 linhas, cortado no último espaço) terminando em "…" e o link **ver tudo**; o tipo da mensagem curta mostra o texto inteiro, sem link.
 - [ ] 4.4 Clique em **ver tudo**. Esperado: modal com o título da coluna ("Mensagem") e o texto inteiro, com as quebras de linha; fecha pelo X, pelo Esc e clicando fora (a grade continua igual).
 - [ ] 4.5 Depois do 5.4 com uma resposta de mais de 120 caracteres, a coluna **Resposta do suporte** do chamado respondido mostra o mesmo corte e o link **ver tudo**, e o modal tem o título "Resposta do suporte". O mesmo vale para a **Justificativa** e a **Resposta do suporte** dos tipos de hierarquia e de sugestão de habilidade (roteiros 01 e 02).
 - [ ] 4.6 Celular (largura de 390 px): o link fica junto do texto cortado e o modal ocupa a largura da tela, sem rolagem horizontal da página.
+- [ ] 4.7 **Paginação** (desde 2026-11-09): num tipo com chamados, abaixo da grade aparece "1 a N de N" (N até 10) e nenhum botão de página. Num tipo sem chamados, só "Nenhum chamado deste tipo.", sem rodapé. Com mais de 10 chamados de um tipo (difícil de produzir pela tela: as cotas e o mesmo e-mail e tipo sobrescrevem o fale conosco), o rodapé mostra "1 a 10 de N" e os botões de página; trocar de tipo volta à página 1. A divisão em páginas é coberta por `presentation/components/source/paginate.test.ts`.
 
 ## F5 — Operador do suporte
 
@@ -85,7 +90,7 @@
 - [ ] 5.2 `/answerContactUs reportBug {email}`. Esperado: "Fale conosco de {email}", tipo, título, descrição, stack trace e as opções.
 - [ ] 5.3 Resposta sem opção (`curto`) → "Não entendi a resposta. A resposta ao usuário precisa ter de 10 a 500 caracteres." e as opções de novo.
 - [ ] 5.4 `responder <texto>` → "O ticket (Reportar um bug) de {email} foi respondido. O usuário receberá a resposta por e-mail."; o ticket sai de `js_contact_us` e vai para `js_contact_us_solved` com `supportResponse`; e-mail "O seu ticket do fale conosco foi respondido" com a resposta; o comando sai do inbox.
-- [ ] 5.5 Recarregue a tela de chamados e escolha "Reportar um bug". Esperado: situação **Respondido** e a resposta do suporte.
+- [ ] 5.5 Recarregue a tela de chamados e escolha "Bug". Esperado: situação **Respondido** e a resposta do suporte.
 - [ ] 5.6 `/answerContactUs clarifyDoubts {email}` → `próximo`. Esperado: "O ticket (Esclarecer dúvidas) de {email} continua aberto." e a lista de pendentes; a tela continua mostrando "Em análise".
 - [ ] 5.7 `/answerContactUs makeCompliment {email}` sem ticket desse tipo → "Não há ticket aberto do fale conosco do tipo 'makeCompliment' para o e-mail '{email}'".
 

@@ -15,7 +15,7 @@ Os títulos, as quantidades, as tabelas e os links saem deles, então atualizar 
 
 | Porção da tela | Arquivo | Fonte |
 |----------------|---------|-------|
-| Conceitos (Entidades, Leitura e escrita de dados, Forma do código, Centros de custo) | `conceptsCatalog.ts` | `## Architectural Rules` e regra de dependência do `CLAUDE.md` |
+| Conceitos (Tipos de Entidade, Leitura e escrita de dados, Forma do código, Centros de custo) | `conceptsCatalog.ts` | `## Architectural Rules` e regra de dependência do `CLAUDE.md` |
 | Repositórios GIT | `repositoriesCatalog.ts` | Repositórios git do workspace e tabela `Module Structure` do `CLAUDE.md` |
 
 Fazer sempre as duas partes.

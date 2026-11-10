@@ -12,7 +12,8 @@ Estes roteiros testam, à mão e de ponta a ponta, as duas funcionalidades da ab
 | [06-fale-conosco-e-chamados.md](06-fale-conosco-e-chamados.md) | Fale Conosco (com e sem login, cotas, stack trace), tela Chamados e o operador com `/answerContactUs` e `/ignoredContactUs` (criado e executado em 2026-10-26) | Botão **Fale Conosco** no canto inferior direito; menu **Meus dados → Chamados** |
 | [07-acessos-e-logout.md](07-acessos-e-logout.md) | Histórico de acessos (login e logout casados por cliente; "Expirou" e "Sessão atual" desde 2026-11-07), logout e novo login pelo modal da tela (criado e executado em 2026-10-26) | Menu **Meus dados → Acessos** |
 | [08-recrutador-e-quem-me-viu.md](08-recrutador-e-quem-me-viu.md) | E-mail de currículos aos recrutadores (links assinados de ver currículo e descadastro), apelido, Quem me viu, Currículos visualizados e Currículos da semana (criado e executado em 2026-10-26) | Links do e-mail; menus **Meus dados → Quem me viu** e **Meu Recrutamento** |
-| [12-vagas-compativeis-comigo.md](12-vagas-compativeis-comigo.md) | Vagas compatíveis comigo: sem currículo vai ao formulário e volta, selo "Você tem" / "Não está no seu currículo" em cada habilidade e título "Ver distribuição por habilidades" (criado em 2026-11-07, não executado) | Menu **Grupos de vagas do telegram** → **Pesquisar** |
+| [13-quem-me-viu-por-tipo-de-recrutador.md](13-quem-me-viu-por-tipo-de-recrutador.md) | Contagem do Quem me viu do ponto de vista do candidato: 3 freelancers (gmail, hotmail, yahoo) sob `freelancer`, 2 recrutadores do mesmo domínio e 1 de outro, com repetições que não contam (criado em 2026-11-09) | Menu **Meus dados → Quem me viu** |
+| [12-vagas-compativeis-comigo.md](12-vagas-compativeis-comigo.md) | Habilidades do meu currículo: tela aberta já pesquisada, filtros numa linha, checkbox "Ver quais dessas habilidades estão em meu currículo" (sessão validada no backend, sem currículo vai ao formulário com faixa no topo e volta com os mesmos filtros), selos "Você tem" / "Não está no seu currículo", total com percentual e cargo pretendido (criado em 2026-11-07, reescrito em 2026-11-09, não executado) | Menu **Grupos de vagas do telegram** |
 
 Cada roteiro é feito de **cenários**. Cada cenário tem: o que fazer na tela do candidato, o que fazer no Telegram como **operador do suporte**, e o que conferir (tela, e-mail, Telegram, Elasticsearch). Marque os `[ ]` à medida que avançar. Onde está escrito **⚠ Atenção**, o comportamento descrito é o atual do sistema e merece a sua avaliação — não é erro de quem testa.
 
@@ -63,7 +64,7 @@ Os roteiros supõem que nenhuma sugestão foi feita ainda. Para isso:
 
 Recriar o jn apaga o seu login, mas o navegador ainda se lembra dele e entra num laço ("O seu login não foi encontrado"). Resolva assim:
 
-- [ ] 4.1 Abra `http://localhost:3000`, aperte **F12 → Console** e execute: `localStorage.removeItem('logins'); sessionStorage.removeItem('login')` (a sessão da aba fica no `sessionStorage`. Sem apagá-la, a tela continua usando o login antigo, inclusive ao trocar de conta no S8 do roteiro 01)
+- [ ] 4.1 Abra `http://localhost:3000`, aperte **F12 → Console** e execute: `localStorage.removeItem('logins'); localStorage.removeItem('login')` (desde 2026-11-09 a sessão fica no `localStorage`, chave `login`, e vale para todas as abas do navegador; antes ficava no `sessionStorage`, de cada aba. Sem apagá-la, a tela continua usando o login antigo, inclusive ao trocar de conta no S8 do roteiro 01. Para ter **duas sessões ao mesmo tempo**, use uma janela anônima ou outro navegador, não outra aba)
 - [ ] 4.2 O login será pedido quando você **enviar** a primeira sugestão (abrir os modais não exige login). Quando ele aparecer:
   1. Informe `onias85@gmail.com` → **Avançar**.
   2. "Por favor, confirme o e-mail": digite o e-mail de novo → **Confirmar**.
@@ -80,7 +81,7 @@ Recriar o jn apaga o seu login, mas o navegador ainda se lembra dele e entra num
 - [ ] 5.1 Abra `http://localhost:3000/meus-dados/sobre-mim` (menu **Meus dados → Sobre Mim**; a rota antiga `/portuguese-version/como-estou-indo/ver-meu-curriculo` responde 404)
 - [ ] 5.2 "Função / papel / emprego / ocupação que estou buscando:" → `Programador Beta`
 - [ ] 5.3 "Endereço (URL) para encontrar o meu linkedin:" → `https://www.linkedin.com/in/onias85/`
-- [ ] 5.4 "Todo o texto que copiei do meu currículo" → todo o conteúdo de `C:\eclipse-workspaces\ccp\cv.txt`
+- [ ] 5.4 "Todo o texto que copiei do meu currículo" → todo o conteúdo de `C:\eclipse-workspaces\ccp\documentation\roteiros-de-teste\cv.txt` (até 2026-11-05 ficava na raiz do workspace; restaurado aqui em 2026-11-10)
 - [ ] 5.5 Clique em **Idiomas** e aguarde.
 - [ ] 5.6 Vá para a aba **Habilidades** (o título da aba traz a contagem: **105 Habilidades**). Esperado: três colunas — **Conhecimentos implícitos (36)**, "Habilidades pelas quais eu NÃO quero que o meu currículo seja encontrado" (vazia) e "Habilidades pelas quais eu quero que o meu currículo seja ENCONTRADO (105)", com o link **"Deixamos de listar alguma habilidade?"**.
 

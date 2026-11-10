@@ -4,6 +4,12 @@
 
 > **Criado e executado em 2026-11-03** (local, e-mail mock). Resultado em [resultados/2026-11-03-campanha/08-recrutador-e-quem-me-viu.md](resultados/2026-11-03-campanha/08-recrutador-e-quem-me-viu.md). A versão de produção está no [roteiro 10](10-versoes-de-producao.md).
 
+> **Executado de novo em 2026-11-10** (local): a automação foi reescrita a partir da do roteiro 13 (contas `.20261109`: candidatos `cand09a`..`cand09f.<d>@teste.com`, F com o LinkedIn de A, B/C/D/E com `Empresa09`, `empresa 09`, `EMPRESA-09` e `pre`; recrutadores `rec09a`/`rec09b.<d>@gmail.com`, `rec091`/`rec092.<d>@empresa09.com.br`, `rec09c.<d>@consultoria09.com.br` e o logado `rec09l.<d>@teste.com`). Comandos: `candidates`, `sessions`, `recruiters` (lista para o `SendResumesToRecruiters.java`), `links` (já confere o D4), `views`, `check` (Quem me viu **e** Currículos visualizados; `check <yyyyMM>` espera vazio), `present <recrutador>`, `resave <candidato> [empresas...]`, `url`, `storage`. As sessões usam o User-Agent do Chrome 157 e valem no `localStorage` da tela. Sessões expiram em algumas horas: depois disso apague `sessions` do `dyn-state.json` e rode `sessions` de novo (cada chamada com token vencido é uma tentativa, R05-1).
+>
+> - O mesmo recrutador não recebe o 2º e-mail no mesmo dia (regra do "já enviado"), mas o `emailsSent` conta assim mesmo e a lista de **Currículos da semana** é regravada: confira o D4 pela API (`present`).
+> - **3.4:** não passe o recrutador descadastrado ao `SendResumesToRecruiters.java`: ele grava cada argumento em `vis_recruiter`, o que o recadastra (a gêmea `vis_inactive_recruiter` perde o registro). Confira o descadastro pelo ES (`vis_recruiter` 0, `vis_inactive_recruiter` 1).
+> - **4.5 pela API:** mande `notAllowedCompany: []` (como a tela). Sem o campo, o update não apaga as empresas gravadas (R09-1).
+
 ## Objetivo
 
 Vários recrutadores de tipos diferentes recebem o e-mail de currículos e abrem alguns currículos. Depois se confere:
@@ -25,7 +31,7 @@ Vários recrutadores de tipos diferentes recebem o e-mail de currículos e abrem
 | Arquivo | Para quê |
 |---|---|
 | `automacao/SendResumesToRecruiters.java` | grava os recrutadores em `vis_recruiter` (fonte "roteiro") e manda o e-mail de currículos só para eles |
-| `automacao/09-dinamica-candidato-recrutador.mjs` | `sessions`: abre a sessão de cada recrutador (cadastro pelo token do e-mail mock); `links`: lê `GET /recruiter/{email}/resumes-of-the-week` e guarda os links assinados dos candidatos de teste; `view <recrutador> <candidato> [apelido]`: faz o que o **Sim, abrir** da tela faz; `url`: imprime o link para abrir no Chrome |
+| `automacao/09-dinamica-candidato-recrutador.mjs` | (reescrita em 2026-11-10, ver a nota do topo; texto antigo:) `sessions`: abre a sessão de cada recrutador (cadastro pelo token do e-mail mock); `links`: lê `GET /recruiter/{email}/resumes-of-the-week` e guarda os links assinados dos candidatos de teste; `view <recrutador> <candidato> [apelido]`: faz o que o **Sim, abrir** da tela faz; `url`: imprime o link para abrir no Chrome |
 
 > O e-mail traz só os 40 primeiros currículos. Depois de um reset, todos os currículos contam como alterados nos últimos 7 dias, e os de teste podem ficar fora do e-mail. Por isso a automação usa a lista inteira da tela **Currículos da semana**, que é a mesma do e-mail.
 
@@ -43,7 +49,7 @@ Vários recrutadores de tipos diferentes recebem o e-mail de currículos e abrem
 ## D3 — Telas
 
 - [ ] 3.1 **Currículos visualizados** de cada recrutador, no **mês corrente** (o campo abre no mês anterior). Esperado: um item por LinkedIn visto. Dois candidatos com o mesmo LinkedIn viram um item só.
-- [ ] 3.2 **Quem me viu** de cada candidato, no mês corrente. Para entrar como cada um, abra a sessão pela API em `localhost` com o User-Agent do Chrome e ponha `{email, sessionToken}` no `sessionStorage.login`. Com sessão aberta, o `POST /login/{email}/password` com o token do primeiro cadastro desfaz o outro login. Esperado: o total e a grade por domínio da matriz do D2.2, e a 2ª visualização do mesmo recrutador não conta.
+- [ ] 3.2 **Quem me viu** de cada candidato, no mês corrente. Para entrar como cada um, abra a sessão pela API em `localhost` com o User-Agent do Chrome e ponha `{email, sessionToken}` no `login` do `localStorage` (até 2026-11-09, no `sessionStorage`; o helper `automacao/08-tela-curriculo-helper.js`, `switchTo`, já faz assim). Com sessão aberta, o `POST /login/{email}/password` com o token do primeiro cadastro desfaz o outro login. Esperado: o total e a grade por domínio da matriz do D2.2, e a 2ª visualização do mesmo recrutador não conta.
   > **Por projeto:** a visualização conta para **todos os e-mails** que usam o LinkedIn visto (`VisResumeViewsOfTheMonthCombinations`). O candidato com o LinkedIn emprestado mostra os mesmos números do dono do endereço.
 - [ ] 3.3 Mês anterior: "Nenhum recrutador viu o seu currículo neste mês."
 - [ ] 3.4 Descadastre um dos freelancers (R5 do roteiro 08). Rode o envio de novo num outro dia. Esperado: ele não recebe.

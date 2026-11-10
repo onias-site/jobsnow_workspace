@@ -12,6 +12,11 @@
 
 > **Executado de novo em 2026-11-03**, depois do reset da base local: `automacao/03-modal-de-login.mjs` com 113/113.
 
+> **Atualizado em 2026-11-09** (só o front; a API e a automação não mudaram):
+> - **A sessão saiu do `sessionStorage` e foi para o `localStorage`** (chave `login`). Antes ficava presa à aba; agora vale em todas as abas e janelas normais do navegador, que acompanham o login e a saída umas das outras sem recarregar ([L12](#l12--o-login-vale-em-todas-as-abas-desde-2026-11-09)). Por isso uma **segunda sessão** do mesmo e-mail (L5) e um **segundo candidato** (L9) agora pedem uma **janela anônima** ou outro navegador, e não outra aba.
+> - **Enter no último campo** de cada tela do modal executa o botão da tela. Antes abria o diálogo de ajuda do "?" ([L11](#l11--enter-no-último-campo-desde-2026-11-09)).
+> - **O motivo de ir para a tela de senha** ("Desbloqueie seu login", "Desbloqueie a sua senha") fica numa **caixa amarela própria**, acima dos campos. Antes, a resposta do envio do token apagava esse motivo assim que a tela abria (4.6, 5.2).
+
 ## Como o modal funciona (resumo)
 
 - O modal abre de dois jeitos: sozinho, quando uma ação precisa de login e a API responde 401 (depois do login, a ação que pediu o login é **refeita sozinha**); ou pelo menu do usuário (ícone no canto superior direito), que, sem login, mostra **"Entrar no sistema"** (desde 2026-10-17; até então não existia botão de entrar).
@@ -29,7 +34,8 @@
 
 - E-mail de teste: use um e-mail que **ainda não existe** (ex.: `roteiro.login@teste.com`). Não use o seu e-mail real: o roteiro bloqueia senha e token.
 - Senhas: qualquer uma com 8+ caracteres, maiúscula, número e caractere especial (ex.: `Roteiro@2026`, `Roteiro@2027`...).
-- Antes de começar: **F12 → Console** → `localStorage.removeItem('logins'); sessionStorage.removeItem('login')` (o navegador guarda respostas de login por e-mail e pode pular telas).
+- Antes de começar: **F12 → Console** → `localStorage.removeItem('logins'); localStorage.removeItem('login')` (o navegador guarda respostas de login por e-mail e pode pular telas; `login` é a sessão, no `localStorage` desde 2026-11-09, antes no `sessionStorage`).
+- **Segunda sessão ou segundo candidato:** as abas e janelas normais do navegador compartilham a sessão. Para simular outra estação, use uma **janela anônima** (Ctrl+Shift+N): ela tem o próprio `localStorage`, compartilhado só com as outras abas anônimas. Para uma terceira estação, use **outro navegador** (Edge, Firefox) ou outro perfil do Chrome.
 - **Vários candidatos ao mesmo tempo:** cada destinatário tem a sua pasta de e-mails, então os tokens de um não sobrescrevem os de outro (até 2026-10-17 o arquivo era um só para todos).
 - **Conferir no Elasticsearch:** os índices do login são `js_login_*` (até 2026-10-17, `jn_login_*`), e o campo `email` deles guarda o SHA-1 do e-mail (no Git Bash: `printf '<e-mail>' | sha1sum`).
 
@@ -74,7 +80,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 ## L1 — Primeiro acesso (e-mail novo)
 
 ### Tela do e-mail
-- [ ] 1.1 Esperado ao abrir: campo vazio, em vermelho "Favor informar um e-mail ao qual você tenha pleno acesso", **Avançar** desabilitado, rodapé "Informe o seu e-mail".
+- [ ] 1.1 Esperado ao abrir: campo vazio e **com o foco**, **sem** aviso vermelho (desde 2026-11-08; o "Favor informar um e-mail ao qual você tenha pleno acesso" só aparece depois de digitar e apagar), **Avançar** desabilitado, rodapé "Informe o seu e-mail".
 - [ ] 1.2 Digite `roteiro.login`. Esperado: "O e-mail 'roteiro.login' está em formato inválido", Avançar desabilitado, rodapé "Seja bem vindo ao seu primeiro acesso!!!".
 - [ ] 1.3 Complete `roteiro.login@teste.com`. Esperado: a mensagem some, Avançar habilitado.
 - [ ] 1.4 **Avançar**. Network: `HEAD /login/roteiro.login@teste.com/token` → **404** (e-mail ainda não existe).
@@ -103,7 +109,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 | Confirmação `Roteiro@2026`, token vazio | "Informe o token, ele deve conter exatamente 8 caracteres" |
 | Token `ABC` | "Token não digitado corretamente, ele deve conter exatamente 8 caracteres" |
 
-> Dica: ao digitar a senha, o painel de força ("Digite uma senha", "Senha difícil de descobrir"...) abre **por cima** do campo de confirmação. Tecle **Esc** antes de clicar na confirmação.
+> Desde 2026-11-08 a força da senha é uma barra **abaixo** do campo e não cobre a confirmação. **Não tecle Esc** no modal: ele fecha o modal inteiro e perde a senha, a confirmação e o token digitados.
 
 - [ ] 1.15 Token errado de 8 caracteres (`ZZZZZZZZ`) → **Salvar senha**. Network `POST /password` → **427** (~6 s). Esperado: "O token informado está incorreto, você ainda pode tentar mais 2 vez(es)" e o campo do token limpo.
 - [ ] 1.16 Digite `ZZZZZZZZ` de novo. Esperado: "Este token já foi digitado antes e está incorreto, tente outro!" (sem ir ao servidor).
@@ -122,37 +128,39 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 ## L3 — Sair do sistema
 
 - [ ] 3.1 Menu do usuário → **Sair do Sistema**. Network `DELETE /login/{email}/{sessionToken}` → **200**. Toast "Sucesso!!! O usuário '...' encerrou o login com sucesso!".
-- [ ] 3.2 Menu do usuário de novo (sem login). Esperado: só **"Entrar no sistema"** e **"Acessos"**; **Sair do Sistema** e **Trocar Senha** não aparecem mais (até 2026-10-17 apareciam e respondiam "Erro!!! Usuário não logado!!!"). O nome do último e-mail continua no topo do menu.
+- [ ] 3.2 Menu do usuário de novo (sem login). Esperado: só **"Entrar no sistema"**; **Sair do Sistema**, **Trocar Senha** e **Acessos** não aparecem (até 2026-10-17 os dois primeiros apareciam e respondiam "Erro!!! Usuário não logado!!!"), e o topo do menu não mostra e-mail: o logout apaga a sessão (`header.tsx`).
 
 ## L4 — Login de quem já tem senha (e bloqueio da senha)
 
 - [ ] 4.1 Abra o modal (outra habilidade de teste). Digite o e-mail. Esperado: rodapé "Você já esteve aqui conosco, obrigado pelo retorno!!!".
-- [ ] 4.2 **Avançar** → `HEAD /token` → **200** → "Informe a senha para o login '...'", com "Esqueceu sua senha? Clique aqui!" e "Clique aqui para trocar o e-mail". O botão **Login** começa **desabilitado**. *(Corrigido em 2026-10-08 — antes vinha habilitado com a senha vazia e o clique terminava num 422 mudo.)*
+- [ ] 4.2 **Avançar** → `HEAD /token` → **200** (o Network pode ficar vazio: a resposta do HEAD fica no cache `logins` do `localStorage`; o mesmo vale para o 429 do 2.2) → "Informe a senha para o login '...'", com "Esqueceu sua senha? Clique aqui!" e "Clique aqui para trocar o e-mail". O botão **Login** começa **desabilitado**. *(Corrigido em 2026-10-08 — antes vinha habilitado com a senha vazia e o clique terminava num 422 mudo.)*
 - [ ] 4.3 Senha errada `Errada@111` → **Login** → `POST /login/{email}` → **427** (~6 s). Esperado: "A senha informada está incorreta, você ainda tem direito a 2 tentativa(s)", campo limpo.
 - [ ] 4.4 Digite `Errada@111` de novo. Esperado: "Esta senha já foi digitada antes e está incorreta, tente outra senha!" (a tela registra a tentativa no envio, antes da resposta).
 - [ ] 4.5 `Errada@222` → "... você ainda tem direito a 1 tentativa(s)".
-- [ ] 4.6 `Errada@333` → `POST /login` → **429**. Esperado: tela **"Desbloqueie a sua senha"** com a mensagem do token ainda válido (como no 2.2), que prevalece sobre "Devido a tentativas de acessos suspeitos, sua senha foi preventivamente bloqueada...". *(Até 2026-10-26 as duas frases saíam coladas, com ponto duplo: "desbloqueá-la.. Seu token foi enviado...".)*
+- [ ] 4.6 `Errada@333` → `POST /login` → **429**. Esperado: tela **"Desbloqueie a sua senha"**. No alto, uma caixa **amarela** diz "Devido a tentativas de acessos suspeitos, sua senha foi preventivamente bloqueada. Preencha os campos abaixo para desbloqueá-la."; abaixo dos campos, a caixa azul traz a mensagem do token ainda válido (como no 2.2). Digite nos campos: as validações trocam só a caixa de baixo, e a amarela continua. *(Até 2026-10-26 as duas frases saíam coladas, com ponto duplo: "desbloqueá-la.. Seu token foi enviado..."; de 2026-10-26 a 2026-11-09 a do token apagava a do bloqueio.)*
 - [ ] 4.6b Com a senha bloqueada, a senha **certa** também é recusada: `POST /login` → **423** (a tela mostra "Desbloqueie a sua senha"); a verificação do e-mail também responde **423** (desde 2026-10-15; antes, 427: a senha bloqueada agora é 423 em todo endpoint). Nenhuma resposta de login recusado traz `sessionToken`.
 - [ ] 4.7 Senha nova + confirmação + token válido → **Salvar senha** → 200, login feito, ação original refeita.
 - [ ] 4.8 Faça logout e entre com a senha nova: `POST /login` → **200** (medido: **14 s** em 2026-10-08; **0,8 s** em 2026-10-26), toast "Sucesso!!! O usuário '...' foi autenticado com sucesso!" e a ação original refeita.
   > Executado com um segundo e-mail de teste, porque o primeiro ficou com o token bloqueado (ver L7): **com o token bloqueado, nem a senha certa entra** — a verificação do e-mail responde 403 e a tela mostra só "Seu token está bloqueado!". Nesse estado o campo de e-mail também fica **somente leitura**; para usar outro e-mail é preciso fechar o modal e abri-lo de novo.
 
-## L5 — Login concorrente (duas abas)
+## L5 — Login concorrente (janela normal x janela anônima)
 
-- [ ] 5.1 Com a aba 1 logada, abra **outra aba** (a sessão é por aba), faça o item 5 da preparação nela e abra o modal.
-- [ ] 5.2 E-mail + senha certa → **Login** → `POST /login` → **409**. Esperado: tela **"Desbloqueie seu login"** com "Já há um login corrente em sua conta, pode ser que você não tenha feito a saída em seu último login, ou se trata de algum acesso concorrente em sua conta em outra estação de trabalho. De qualquer forma, preencha os campos deste formulário para desfazer o outro login corrente".
-- [ ] 5.3 Senha + confirmação + token válido → **Salvar senha** → 200, login feito na aba 2.
-- [ ] 5.4 Volte à aba 1 e faça uma ação que exige login (enviar uma sugestão). Esperado: a aba 1 perdeu o login (a API responde 401 e o modal de login abre). Se entrar de novo pela aba 1, recebe o 409 do 5.2, porque agora o login corrente é o da aba 2. *(Corrigido em 2026-10-11 — bug 3.)*
-- [ ] 5.5 Logo depois do 5.3, faça login com o mesmo e-mail numa **terceira** aba. Esperado: 409 de novo, porque a sessão da aba 2 é o login corrente. Vale para qualquer sessão aberta por **"Salvar senha"** (primeiro acesso, troca de senha, desbloqueio). *(Corrigido em 2026-10-11 — bug 7.)*
-- [ ] 5.6 Na aba 1 (sessão derrubada), clique em **Sair do Sistema**. Esperado: "Aviso!!! — O usuário '...' não está logado neste sistema!" (404), e a aba 2 **continua logada** (confira abrindo **Acessos** nela). Para chegar ao menu na aba 1, feche antes o modal de login que o 5.4 abriu.
-- [ ] 5.7 Na aba 2, **Trocar Senha** (senha nova + token). Esperado: 200; qualquer outra sessão desse e-mail deixa de valer.
+Desde 2026-11-09 as abas da mesma janela compartilham a sessão, então outra aba já entra logada e não reproduz o conflito. Chame de **janela 1** a janela normal e de **janela 2** uma **janela anônima** (Ctrl+Shift+N).
+
+- [ ] 5.1 Com a janela 1 logada, abra a janela 2, faça o item 5 da preparação nela e abra o modal. Esperado: a janela 2 começa **sem login** (o menu do usuário mostra "Entrar no sistema").
+- [ ] 5.2 E-mail + senha certa → **Login** → `POST /login` → **409**. Esse caminho só ocorre quando o 200 do `HEAD /login/{email}/token` está no cache `logins` (como na janela 1 do 5.4); sem o cache, o próprio HEAD já responde **409** com a outra sessão aberta e o modal vai direto à mesma tela, sem pedir a senha. Esperado: tela **"Desbloqueie seu login"** com uma caixa **amarela** no alto: "Já há um login aberto na sua conta: pode ser que você não tenha saído do sistema no seu último acesso, ou que alguém esteja acessando a sua conta em outro navegador ou dispositivo. Para entrar aqui e encerrar o outro login, crie uma nova senha preenchendo os campos abaixo com o token que enviamos ao seu e-mail." Abaixo dos campos, a caixa azul do token ("Seu token está sendo enviado..." ou "Seu token foi enviado ao e-mail ... no dia ..."). A caixa amarela **continua** quando o token responde e enquanto se digita nos campos. *(Corrigido em 2026-11-09: até então a resposta do envio do token apagava o motivo assim que a tela abria, e a tela ficava sem dizer por que o candidato estava ali.)*
+- [ ] 5.3 Senha + confirmação + token válido → **Salvar senha** → 200, login feito na janela 2.
+- [ ] 5.4 Volte à janela 1 e faça uma ação que exige login (enviar uma sugestão). Esperado: a janela 1 perdeu o login (a API responde 401 e o modal de login abre). Se entrar de novo pela janela 1, recebe o 409 do 5.2, porque agora o login corrente é o da janela 2. *(Corrigido em 2026-10-11 — bug 3.)*
+- [ ] 5.5 Logo depois do 5.3, faça login com o mesmo e-mail num **outro navegador** (Edge, Firefox ou outro perfil do Chrome; outra aba anônima não serve, porque compartilha a sessão da janela 2). Esperado: 409 de novo, com a mesma caixa amarela, porque a sessão da janela 2 é o login corrente. Vale para qualquer sessão aberta por **"Salvar senha"** (primeiro acesso, troca de senha, desbloqueio). *(Corrigido em 2026-10-11 — bug 7.)*
+- [ ] 5.6 Na janela 1 (sessão derrubada), clique em **Sair do Sistema**. Esperado: "Aviso!!! — O usuário '...' não está logado neste sistema!" (404), e a janela 2 **continua logada** (confira abrindo **Acessos** nela). Para chegar ao menu na janela 1, feche antes o modal de login que o 5.4 abriu.
+- [ ] 5.7 Na janela 2, **Trocar Senha** (senha nova + token). Esperado: 200; qualquer outra sessão desse e-mail deixa de valer.
 
 > **Regra das sessões (desde 2026-10-11):** cada e-mail tem **uma** sessão corrente. Login com senha e "Salvar senha" (primeiro acesso, troca, desbloqueio, "desfazer o outro login") abrem uma sessão nova, e todas as anteriores deixam de valer na hora, no jn e no vis. Uma sessão derrubada recebe 401 **sem contar tentativa** (uma aba antiga repetindo requisições não bloqueia a senha do dono).
 
 ## L6 — "Trocar o e-mail" e "Esqueceu sua senha?"
 
 - [ ] 6.1 Na tela de senha, **Clique aqui para trocar o e-mail**. Esperado: volta à 1ª tela com o título "Trocar o e-mail" e o e-mail anterior já preenchido.
-- [ ] 6.2 **Avançar** → tela de senha → **Esqueceu sua senha? Clique aqui!**. Esperado: "Refazer sua senha" com "Preencha os campos para refazer a sua senha" + a mensagem do token já enviado (como no 2.2).
+- [ ] 6.2 **Avançar** → tela de senha → **Esqueceu sua senha? Clique aqui!**. Esperado: "Refazer sua senha" com "Preencha os campos para refazer a sua senha", trocada logo em seguida pela mensagem do token já enviado (como no 2.2). Aqui não há caixa amarela: foi o candidato quem escolheu vir.
 
 ## L7 — Bloqueio do token e desbloqueio pelo suporte
 
@@ -177,7 +185,7 @@ Ordem do que ela faz (cada passo alterna os candidatos):
 
 ## L9 — Dois candidatos intercalados no navegador
 
-Use duas abas da mesma janela. A sessão fica no `sessionStorage`, que é de cada aba, e o cache de respostas do login fica no `localStorage`, que as duas abas compartilham, guardado **por e-mail**. Chame de D o candidato da aba 1 e de E o da aba 2, ambos com e-mails novos. Limpe o `localStorage` só antes de começar, na aba 1.
+Use a janela normal como **aba 1** e uma **janela anônima** como **aba 2**. Desde 2026-11-09 a sessão fica no `localStorage`, que as abas da mesma janela compartilham: com duas abas normais, o login de E na aba 2 trocaria também o usuário da aba 1, que voltaria à home. *(Executado em 2026-10-11 com duas abas da mesma janela, quando a sessão ainda era do `sessionStorage`, de cada aba.)* O cache de respostas do login (`logins`) é guardado **por e-mail**. Chame de D o candidato da aba 1 e de E o da aba 2, ambos com e-mails novos. Limpe o `localStorage` antes de começar, na aba 1. A janela anônima já nasce limpa.
 
 - [ ] 9.1 Aba 1: abra o modal e leve D até "Criando uma nova senha". Leia o token de D **na hora**.
 - [ ] 9.2 Aba 2: abra o modal e leve E até "Criando uma nova senha". Leia o token de E (o arquivo do e-mail agora é o de E).
@@ -205,6 +213,31 @@ Feito pela automação (`automacao/03-modal-de-login.mjs`) ou com `curl`, porque
 - [ ] 10.4 Errar a senha 3 vezes (429) e chamar `POST /login/{email}/token` (verificação do e-mail). Esperado: **423** `lockedPassword` (até 2026-10-14, 427).
 - [ ] 10.5 Nenhuma resposta recusada de `POST /login` traz `sessionToken` (veja o corpo no Network).
 - [ ] 10.6 Virada da hora: faça login alguns minutos antes da hora cheia e repita uma ação logada logo depois dela. Esperado: **200**. Até 2026-10-13 a sessão caía na virada da hora (401) e as repetições da tela bloqueavam a senha.
+
+---
+
+## L11 — Enter no último campo (desde 2026-11-09)
+
+Em cada tela do modal, **Enter no último campo** faz o mesmo que clicar no botão da tela, desde que o botão esteja habilitado. Nos outros campos, o Enter não faz nada. Em nenhum caso abre a ajuda do "?". *(Até 2026-11-09 o Enter abria o diálogo de ajuda do primeiro "?" do formulário: o botão de ajuda era o único botão de submit do formulário.)*
+
+- [ ] 11.1 Tela do e-mail: digite um e-mail inválido (`roteiro.login`) e tecle **Enter**. Esperado: nada acontece (Avançar desabilitado), nenhuma janela de ajuda abre, nada no Network. Complete o e-mail e tecle **Enter**. Esperado: o mesmo que **Avançar** (`HEAD /login/.../token`).
+- [ ] 11.2 Confirmação do e-mail (primeiro acesso): **Enter** no campo com o e-mail certo → o mesmo que **Confirmar** (`POST /login/.../token`).
+- [ ] 11.3 Preferências: abra o select "Qual seu objetivo?" e, com a lista aberta, escolha uma opção com as setas + **Enter**. Esperado: a opção é escolhida e nada é enviado. Com a lista fechada e o foco nesse select (o último), **Enter** → o mesmo que **Enviar** (`POST /pre-registration`). Enter no primeiro select ("Como você nos conheceu?") com a lista fechada não envia.
+- [ ] 11.4 Tela de senha nova: **Enter** na senha e na confirmação não envia nada. **Enter** no token (o último campo) com os três campos válidos → o mesmo que **Salvar senha** (`POST /password`). Com algum campo inválido, o Enter no token não vai ao servidor.
+- [ ] 11.5 "Informe a senha": senha válida + **Enter** → o mesmo que **Login** (`POST /login/...`). Senha vazia ou fora das regras + Enter → nada.
+- [ ] 11.6 Clique no **?** ao lado de qualquer rótulo: a ajuda continua abrindo pelo clique.
+
+## L12 — O login vale em todas as abas (desde 2026-11-09)
+
+A sessão fica no `localStorage` (chave `login`), que todas as abas e janelas **normais** do navegador compartilham. Uma janela anônima tem um `localStorage` próprio. *(Até 2026-11-09 ficava no `sessionStorage`, que é de uma aba só: cada aba nova pedia o login de novo.)*
+
+- [ ] 12.1 Faça login na aba 1. Abra uma **aba nova** em `http://localhost:3000/meus-dados/acessos` (ou na tela do currículo). Esperado: ela já entra logada, com o e-mail no menu do usuário e os dados carregados, sem abrir o modal. No Console: `localStorage.getItem('login')` traz `email` e `sessionToken`, e `sessionStorage.getItem('login')` é `null`.
+- [ ] 12.2 Com as duas abas abertas, **Sair do Sistema** na aba 1. Esperado, na aba 2 e **sem recarregar**: o menu do usuário passa a mostrar "Entrar no sistema", a aba volta à home e não mostra mais os dados de quem saiu.
+- [ ] 12.3 Com as duas abas sem login, entre pela aba 2. Esperado, na aba 1 e sem recarregar: o e-mail aparece no menu do usuário. Uma ação que exige login na aba 1 já não abre o modal.
+- [ ] 12.4 Troca de usuário: com as duas abas logadas com D, saia na aba 1 e entre com E. Esperado: a aba 2 volta à home ao ver a saída de D e, depois do login de E, mostra E no menu, sem nenhum dado de D na tela.
+- [ ] 12.5 Feche o navegador inteiro, abra de novo e vá a `http://localhost:3000`. Esperado: continua logado (o `localStorage` sobrevive), até a sessão expirar ou ser derrubada no backend. Nesse caso a primeira ação logada recebe 401 e abre o modal.
+- [ ] 12.6 **Passagem de quem já estava logado antes do deploy:** na aba, `localStorage.removeItem('login')` e `sessionStorage.setItem('login', JSON.stringify({email: '<e-mail>', sessionToken: '<token válido>'}))` (pegue o token com `localStorage.getItem('login')` antes de apagar), e recarregue. Esperado: continua logado; o `login` passa para o `localStorage` e sai do `sessionStorage`.
+- [ ] 12.7 Abra uma **janela anônima** com a janela normal logada. Esperado: a anônima começa sem login. Entrar nela com o mesmo e-mail dá o 409 do L5.
 
 ---
 
@@ -243,3 +276,11 @@ Feito pela automação (`automacao/03-modal-de-login.mjs`) ou com `curl`, porque
 | 6 | Depois de "Sair do Sistema" na tela **Acessos**, a lista de acessos continua na tela até navegar para outra página. Depois de entrar de novo, a lista também não se atualiza sozinha. | **a avaliar** (dado do usuário visível depois da saída) |
 | 7 | As respostas recusadas do login (409, 423) trazem `userAgent`, `ip` e `email` (sem `sessionToken`, como esperado). | informativo |
 | 8 | Login com senha medido em 0,8 s (eram 14 s em 2026-10-08). | informativo |
+
+## Correções de 2026-11-09 (relatadas pelo usuário no uso)
+
+| # | O que acontecia | Situação |
+|---|---|---|
+| 1 | Enter no campo de senha (ou no último campo de qualquer tela do modal) abria o diálogo de ajuda do "?" em vez de executar o botão. O botão da tela é `type="button"`, então o submit implícito do formulário caía no primeiro `<button>` sem `type`: o `ActionIcon` do `HelpButton` | **Corrigido** (front): `HelpButton` com `type="button"` (vale para todas as telas) e o `ModalLogin` executa o botão no Enter do último campo. Ver L11 |
+| 2 | O login feito numa aba não valia em outra: a sessão ficava no `sessionStorage`, que é de uma aba só | **Corrigido** (front): sessão no `localStorage` (`JnAjax.LOGIN_KEY`), com passagem automática da sessão antiga, e o header acompanha login, saída e troca de usuário das outras abas pelo evento `storage`. Ver L12 |
+| 3 | Na tela "Desbloqueie seu login" (409 de outro navegador) não aparecia o motivo: o envio do token, pedido quando a tela abre, apagava a mensagem. O mesmo acontecia em "Desbloqueie a sua senha" | **Corrigido** (front): o motivo fica numa caixa amarela própria (`reasonMessage` do `ModalLoginStore`), que nada na tela reescreve. Ver 4.6 e 5.2 |

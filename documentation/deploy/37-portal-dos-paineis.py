@@ -8,7 +8,8 @@
 #   Monitoria > Email: SendGrid
 #   Cadastros: system_message, instant_message, email, bot (telas ainda vazias)
 #   Backend: Relatorio de cobertura de testes (o HTML gerado pela skill ccp-relatorio-de-cobertura em %TEMP%\ccp-coverage,
-#            servido em /cobertura porque o navegador nao deixa uma pagina http abrir file:// num iframe)
+#            servido em /cobertura porque o navegador nao deixa uma pagina http abrir file:// num iframe),
+#            e Seguranca (painel 51: resultados das suites de seguranca, scripts 47 a 50 e SecuritySuite)
 #
 # Uso: python 37-portal-dos-paineis.py [porta]   (abre http://127.0.0.1:8773; atalho na area de trabalho)
 
@@ -36,6 +37,7 @@ PANELS = {
     "34": "34-chamadas-ao-elasticsearch.py",
     "35": "35-gravacoes-das-entidades-das-telas.py",
     "36": "36-indicadores-do-sendgrid.py",
+    "51": "51-painel-de-seguranca.py",
 }
 
 TEMP_DIR = os.environ.get("TEMP") or os.path.join(os.environ.get("LOCALAPPDATA", ""), "Temp")
@@ -194,7 +196,8 @@ const MENU=[
   {id:'email',name:'email',tables:['jn_email_template_message','jn_email_parameters_to_send']},
   {id:'bot',name:'bot',tables:['jb_bot','jb_bot_allowed_user','jb_bot_explanation','jn_bot_update_handler','jn_bot_command','jn_bot_command_name','jn_bot_command_explanation','jn_bot_command_step','jn_bot_command_step_end_message','jn_command_not_allowed_to_user']}]},
  {name:'Backend',children:[
-  {id:'cobertura',name:'Relatório de cobertura de testes',url:'/cobertura'}]}];
+  {id:'cobertura',name:'Relatório de cobertura de testes',url:'/cobertura'},
+  {id:'seguranca',name:'Segurança',panel:'51'}]}];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const leaves={};const frames={};

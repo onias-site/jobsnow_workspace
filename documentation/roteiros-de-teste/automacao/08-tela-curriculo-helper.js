@@ -284,9 +284,11 @@ window.T = {
         window.__amostra = window.__amostra || (await fetch('http://127.0.0.1:3999/').then((r) => r.json()));
         return window.__amostra;
     },
-    // troca o candidato da aba: a sessão fica no sessionStorage, como o modal de login deixa
+    // troca o candidato: a sessão fica no localStorage, como o modal de login deixa desde 2026-11-09 (antes, no
+    // sessionStorage), e vale para todas as abas do navegador
     switchTo(item) {
-        sessionStorage.setItem('login', JSON.stringify({ email: item.email, sessionToken: item.sessionToken }));
+        sessionStorage.removeItem('login');
+        localStorage.setItem('login', JSON.stringify({ email: item.email, sessionToken: item.sessionToken }));
         localStorage.removeItem('logins');
         location.reload();
     },

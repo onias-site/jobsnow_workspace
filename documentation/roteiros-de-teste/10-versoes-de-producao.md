@@ -63,7 +63,7 @@ Os candidatos ficam nos aliases do Gmail: domínio não importa para eles. `curr
 | 01 Sugerir habilidade | sim | o operador **rejeita** tudo (ou desiste) para não criar habilidades reais; S8 (decisão vale para todos) só com rejeição; uma conta nova por envio, por causa da cota |
 | 02 Ajuste de hierarquia | sim | o operador **rejeita tudo**: uma aprovação muda a taxonomia real |
 | 03 Login | sim, pela tela | sem `03-modal-de-login.mjs` (ele fala com localhost); bloqueio e desbloqueio com o operador real; tokens no Gmail |
-| 04 e 05 Tela do currículo | sim | currículos montados com dados reais anonimizados; C6 avisa o operador real; o e-mail do currículo salvo (2.11 e 2.12 do 05) chega ao Gmail, com **corrija no formulário** e os links "ver as outras N habilidades" / "+N regiões" para `https://onias.site/meus-dados/sobre-mim`; no Gmail, confira se a dica do `title` aparece ao passar o mouse (no celular ela não existe) |
+| 04 e 05 Tela do currículo | sim | currículos montados com dados reais anonimizados; C6 avisa o operador real; o e-mail do currículo salvo (2.11 e 2.12 do 05) chega ao Gmail, com **corrija no formulário** e os links "ver as outras N habilidades" / "+N regiões" para `https://onias.site/meus-dados/sobre-mim`; no Gmail, confira se a dica do `title` aparece ao passar o mouse (no celular ela não existe); o e-mail do currículo inativado (3.1b do 05) chega ao Gmail com a tabela e o link **reative o seu currículo** para `https://onias.site/meus-dados/sobre-mim` (vale depois do deploy da vis e dos consumidores e do script 45, passo 5n da fila do transporte) |
 | 06 Fale conosco | sim | ver seção F |
 | 07 Acessos | sim | — |
 | 08 E-mail aos recrutadores | sim, com cuidado | o processo agendado **não** está instalado; o envio é o `SendResumesToRecruiters.java` apontado para produção **só com os recrutadores de teste** nos argumentos (ele grava e envia só para eles); os links levam a `https://onias.site`; o 1.2 (link com `title` no lugar da lista recolhida) é conferido no Gmail, que apagava o `<details>` |
@@ -88,7 +88,7 @@ Os candidatos ficam nos aliases do Gmail: domínio não importa para eles. `curr
 - [ ] D.6 **Meus dados › Quem me viu** de cada candidato, no mês corrente: o total e a grade por domínio da última coluna.
 - [ ] D.7 cand-lk usa o LinkedIn de outro candidato de teste: a visualização conta para todo e-mail do mesmo LinkedIn, e o suporte recebe o aviso do dono do LinkedIn.
 - [ ] D.8 Descadastre `rec-free2` pelo link do e-mail (R5 do roteiro 08). No envio seguinte (outro dia), ele não recebe.
-- [ ] D.9 Numa janela anônima (sem login), abra https://onias.site/meus-dados/quem-me-viu e https://onias.site/meu-recrutamento/curriculos-visualizados e feche o modal de login sem entrar. Esperado: as duas vão para https://onias.site/ (3.4 e 4.3 do roteiro 08; vale depois do deploy do front de 2026-11-07).
+- [ ] D.9 Numa janela anônima (sem login), abra https://onias.site/meus-dados/quem-me-viu e https://onias.site/meu-recrutamento/curriculos-visualizados e feche o modal de login sem entrar. Esperado: as duas vão para https://onias.site/ (3.4 e 4.3 do roteiro 08; vale depois do deploy do front de 2026-11-07). Depois do deploy do front com as mudanças de 2026-11-09, o mesmo vale para https://onias.site/meus-dados/acessos e para https://onias.site/meus-dados/chamados, nesta depois de escolher um tipo (roteiro 07, 2.3, e roteiro 06, 3.5).
 
 ## E — Empresa indesejada em produção
 
@@ -124,7 +124,7 @@ Vários usuários abrem chamados de tipos diferentes; o operador real atende pel
 - [ ] F.2 Segundo envio de um tipo com cota, pela mesma conta: 429. **Não** libere a cota.
 - [ ] F.3 O operador manda `/ticketsPendentes`. Esperado: o bug primeiro, depois dúvida, crítica, sugestão e, por último, elogio e comentário (mesma prioridade, por data). Os dados de cada usuário aparecem no ticket certo.
 - [ ] F.4 O operador responde cada um (`responder <texto>`), com um texto que diga de quem é o ticket. Esperado: cada endereço recebe **só** a sua resposta, e o registro passa para `js_contact_us_solved` com `supportResponse`.
-- [ ] F.5 Tela **Meus chamados** de cand-ti e cand-op: "Respondido" com a resposta certa; a de cada um não mostra o chamado do outro.
+- [ ] F.5 Tela **Meus chamados** de cand-ti e cand-op: "Respondido" com a resposta certa; a de cada um não mostra o chamado do outro. Depois do deploy do front com as mudanças de 2026-11-09, o combo diz o tipo (Bug, Crítica...) e a grade tem o rodapé "1 a N de N" (roteiro 06, 4.0 e 4.7).
 - [ ] F.6 O operador ignora `ignorado-<d>`. O bug dele dá 403 `userNotAllowed`. Desfaça no fim e confira que um novo envio passa.
 - [ ] F.7 Depois de responder tudo, a fila diz "Você não tem tickets para resolver." Se houver tickets reais de usuários na fila, o operador **não** os responde: anote quantos eram antes e confira que continuam lá.
 - [ ] F.8 Cota de 24 h (D2, corrigido): no dia seguinte, a mesma conta envia de novo o tipo do F.2 e passa.

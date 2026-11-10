@@ -18,6 +18,8 @@
 
 > **Executado de novo em 2026-11-03**, no Chrome, depois do reset da base local, com `roteiro01.20261103@teste.com` e `roteiro01b.20261103@teste.com` e o operador pelo `automacao/SupportBotCommand.java`. Resultado em [resultados/2026-11-03-campanha/01-sugerir-habilidade.md](resultados/2026-11-03-campanha/01-sugerir-habilidade.md). **Valores atuais:** a leitura do `cv.txt` dá **109 habilidades e 38 conhecimentos implícitos** (não 105/36); a sugestão de habilidade tem **prioridade 4** (todas as prioridades subiram 1 com o `/solveStackTrace`, que tem a 0); `PICK BY LIGHT` e `LINUX EMBARCADO` já existem na base preservada, e foram trocadas por `STATE MACHINE` e `SIGOM`. Antes de cada envio, libere a cota com `automacao/libera-cota.ps1`. Defeito **D2** (a cota diária bloqueava por 48 h, e não por 24 h) corrigido no mesmo dia.
 
+> **Executado de novo em 2026-11-09**, no Chrome, com `roteiro01.20261109@teste.com` (S1-S7, S9, S10) e `roteiro01b.20261109@teste.com` (S8 e 7.7), operador pelo `automacao/SupportBotCommand.java`. **O `cv.txt` não está mais na raiz do workspace** (apagado no commit `32d72c4` do repositório guarda-chuva, em 2026-11-05): foi recuperado com `git show 837bcfd:cv.txt`. Palavras usadas no lugar das já avaliadas: `SIGOM` (S1, sinônimos `SISTEMA SIGOM`, `SGOM`, `GESTAO ORCAMENTARIA MUNICIPAL`), `REINF` (S2 e S8), `BOLETOS` (S3, S4), `CARCON` (4.10), `AMGSTROM` (S5), `NOXXONSATT` (5.7 e S6), `NPORTALBRA` e `WECONNECT` (S10). Contagens atuais: **110** habilidades antes da aprovação, **111** depois, **38** conhecimentos implícitos. Prioridade da sugestão: **4** (passos 1.6 e 6.2 corrigidos).
+
 ## Como a funcionalidade funciona (resumo)
 
 1. O candidato sugere uma habilidade que **consta no texto do currículo** e não foi listada, com sinônimos (várias frases) e uma justificativa. Os sinônimos e a justificativa só ficam habilitados depois que a habilidade passa pelas validações, feitas **ao sair do campo** da habilidade.
@@ -74,7 +76,7 @@ Esperado fora da tela:
 - [ ] Telegram: o bot manda `/reviewSkillSuggestion onias85@gmail.com PICK BY LIGHT`.
 - [ ] `vis_skill_pending`: um registro com `skill: PICK BY LIGHT`, os 3 sinônimos, a justificativa e o `email` em hash.
 - [ ] `jn_versionable?q=entity:vis_skill_pending`: ganha um registro de histórico (o índice é cumulativo — conte antes e depois).
-- [ ] `jn_support_pending_command`: `"command": "/reviewSkillSuggestion onias85@gmail.com PICK BY LIGHT"` e `"priority": 3` (desde 2026-10-23 todo ticket tem prioridade; a da sugestão de habilidade é 3).
+- [ ] `jn_support_pending_command`: `"command": "/reviewSkillSuggestion onias85@gmail.com PICK BY LIGHT"` e `"priority": 4` (desde 2026-10-23 todo ticket tem prioridade; a da sugestão de habilidade era 3 e passou a 4 com o `/solveStackTrace`, que tem a 0).
 
 ### Candidato consulta a sugestão pendente
 
@@ -214,7 +216,7 @@ Abra o modal para cada item. Esperado (em todos): aviso amarelo, o modal continu
 
 - [ ] 6.1 Candidato sugere `JAB` (depois do 5.9), justificativa `Java Arquitetura Brasil, framework do Santander.`
   > **Corrigido em 2026-10-11:** na execução de 2026-10-11, este envio deu `Connection reset` no Telegram. A conexão com o Telegram tinha ficado parada no pool desde o 5.9 e foi descartada pelo outro lado sem aviso. Agora uma conexão parada há mais de 20 segundos não é reaproveitada. Para conferir, faça o 6.1 alguns minutos depois do 5.9: o aviso chega ao Telegram normalmente.
-- [ ] 6.2 Operador envia `/pendingTickets`. Esperado: "Você tem N tickets para resolver" e "Ticket 1 de N => ... — Digite "1" para resolver ou "2" para ir ao próximo". Desde 2026-10-23 a ordem é por **prioridade** e, dentro dela, do mais antigo para o mais novo: bug (0), dúvida e login (1), crítica (2), sugestão de habilidade e ajuste de hierarquia (3), sugestão do fale conosco (4), elogio e comentário (5). O de JAB (prioridade 3, o mais novo) vem depois dos tickets de login e dos outros de prioridade 3; use `2` até chegar a ele (em 2026-10-26 era o 40 de 40).
+- [ ] 6.2 Operador envia `/pendingTickets`. Esperado: "Você tem N tickets para resolver" e "Ticket 1 de N => ... — Digite "1" para resolver ou "2" para ir ao próximo". Desde 2026-10-23 a ordem é por **prioridade** e, dentro dela, do mais antigo para o mais novo: erro não tratado (`/solveStackTrace`, 0), bug (1), dúvida e login (2), crítica (3), sugestão de habilidade e ajuste de hierarquia (4), sugestão do fale conosco (5), elogio e comentário (6) (todas subiram 1 com o `/solveStackTrace`). O de JAB (prioridade 4, o mais novo) vem depois dos tickets de login e dos outros de prioridade 4; use `2` até chegar a ele (em 2026-10-26 era o 40 de 40; em 2026-11-09, o 51 de 51).
 - [ ] 6.3 Responde `1`. Esperado: "Resolvendo o ticket ..." e logo a sugestão de JAB com as opções, como se você tivesse digitado o comando.
 - [ ] 6.4 Rejeite com justificativa. Esperado: depois do resumo, a lista de tickets reabre sem o de JAB.
 
@@ -244,7 +246,7 @@ Digite cada palavra no campo da habilidade e **saia do campo**. Esperado: aviso 
   Esperado: "Habilidade fora do currículo — A habilidade 'PICK TO LIGHT SYSTEM' não aparece no texto do seu currículo. Só é possível sugerir uma habilidade escrita exatamente como consta nele."
   Exceção ao "nada no Network": aqui aparece `POST ...skills/suggestion/search` → 200. Esta é a única checagem feita depois da consulta ao servidor, porque um sinônimo de uma sugestão anterior pode não constar no currículo e precisa ser reconhecido antes (cenário S9).
   Só vale **com o texto colado** na aba Currículo. Desde 2026-11-07, com o currículo de TI salvo e recarregado **sem** colar o texto, o modal fica liberado e `PICK TO LIGHT SYSTEM` passa por esta checagem (segue para o servidor como uma sugestão comum).
-- [ ] 7.7 **Currículo de TI salvo, sem texto colado** (desde 2026-11-07): recarregue a tela (o texto some) e abra o modal direto na aba Habilidades. Esperado: sem o aviso "Para sugerir uma habilidade, cole o texto do seu currículo...", campo da habilidade habilitado; `JAVA`, `WEM` e `JVM` continuam recusados como nos itens acima (essas checagens usam a lista gravada, não o texto).
+- [ ] 7.7 **Currículo de TI salvo, sem texto colado** (desde 2026-11-07): recarregue a tela (o texto some) e abra o modal direto na aba Habilidades. Esperado: sem o aviso "Para sugerir uma habilidade, cole o texto do seu currículo...", campo da habilidade habilitado; `JAVA`, `WEM` e `JVM` continuam recusados como nos itens acima (essas checagens usam a lista gravada, não o texto). Só o aviso do `WEM` muda: sem o texto colado sai "Habilidade não adicionada / O sinônimo (VCM) para esta palavra já está presente em sua lista", e não "Habilidade já cadastrada por meio de sinônimo" (a lista gravada não traz os sinônimos de cada habilidade; visto em 2026-11-10, R01-5).
 
 > **Defesa do servidor (opcional, com Postman ou similar):** o servidor também recusa `JAVA`, `WEM`, `ASP` e `JVM` com **412** mesmo se a chamada não vier da tela — inclusive `WEM`, que é só sinônimo. `PRIMEFACE` passaria (não é palavra conhecida, só pedaço de uma): só a tela, que lê o currículo, sabe barrá-la.
 >
@@ -256,7 +258,7 @@ Digite cada palavra no campo da habilidade e **saia do campo**. Esperado: aviso 
 
 **Pré-requisito:** S1 (`PICK BY LIGHT` aprovada) e S2 (`KIPREV` rejeitada) feitos **depois de 2026-10-10**. Decisões anteriores a essa data não foram registradas por habilidade e não valem para os outros candidatos.
 
-- [ ] 8.1 Saia e faça login com **outra conta**, cujo currículo também contenha `KIPREV`. Para sair, use no console `localStorage.removeItem('logins'); sessionStorage.removeItem('login')` e recarregue. Depois preencha a aba Currículo com o mesmo `cv.txt` (item 5 da preparação).
+- [ ] 8.1 Saia e faça login com **outra conta**, cujo currículo também contenha `KIPREV`. Para sair, use **Sair do Sistema** no menu do usuário, ou no console `localStorage.removeItem('logins'); localStorage.removeItem('login')` e recarregue (a sessão fica no `localStorage` desde 2026-11-09, antes no `sessionStorage`). Depois preencha a aba Currículo com o mesmo `cv.txt` (item 5 da preparação).
 - [ ] 8.1b **Sem sessão, a tela não consulta o servidor** ao sair do campo: com a conta nova ainda deslogada, digitar `KIPREV` deixa o **Enviar** habilitado. Preencha uma justificativa e clique em **Enviar**: abre o login. Faça o primeiro acesso da conta nova (item 4 da preparação). Esperado depois do "Salvar senha": o envio é refeito, o servidor responde **410** (`alreadyReviewed`), aparece o aviso **"Sugestão já avaliada — A habilidade 'KIPREV' já foi avaliada pelo suporte. Veja abaixo o resultado e o motivo."** e o modal mostra a decisão (visto em 2026-10-26).
 - [ ] 8.2 Feche o modal, abra de novo, digite `KIPREV` e clique fora. Esperado: **"status: Rejeitada"** + **Motivo** com a justificativa que o operador deu no S2. Os campos ficam desabilitados e aparece o botão **Nova sugestão**. A justificativa do primeiro candidato **não** aparece (o campo fica vazio).
 - [ ] 8.3 Só por fora da tela (Postman): enviar `KIPREV` para esta conta. Esperado: **410** (`alreadyReviewed`). Nada fica pendente em `vis_skill_pending`, e nada chega ao Telegram nem a `jn_support_pending_command` / `/pendingTickets`.
@@ -313,7 +315,7 @@ Este cenário acompanha o S1: cada passo diz em que ponto do S1 ele deve ser fei
 | 3 | Passos 1.18, 3.4 e 5.8b desatualizados: a tela agora barra frases fora do currículo, e o bot mostra os comandos em português. | **roteiro atualizado** |
 | 4 | Sugestão sem sinônimo: o e-mail de "sugestão recebida" mostra `(sinônimos: )` vazio, como a linha `Sinônimos:` do bot (observação 3 de 2026-10-08). | cosmético |
 | 5 | A confirmação do `ignorar` ainda diz "Esta sugestão será descartada", mas desde 2026-10-10 **todas** as pendências do candidato são descartadas. | cosmético |
-| 6 | Para trocar de conta no navegador não basta apagar `logins` do localStorage: a sessão também fica em `sessionStorage` (`login`). | informativo (ver item 4 da preparação) |
+| 6 | Para trocar de conta no navegador não basta apagar `logins` do localStorage: a sessão também fica guardada (`login`; no `sessionStorage` até 2026-11-09, no `localStorage` desde então). | informativo (ver item 4 da preparação) |
 
 ## Observações da execução (2026-10-26)
 

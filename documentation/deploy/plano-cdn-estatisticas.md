@@ -18,7 +18,7 @@ numa recarga das vagas:
 ## As rotas da tela "Grupos de vagas do telegram" (conferido em 2026-11-03)
 
 A tela é a `SkillStatistics` do front (`presentation/pages/estatisticas/skills/SkillStatistics.tsx`), aberta pela home
-já pesquisada e pela página `/estatisticas/skills`. Todas as chamadas dela que são impessoais são as três rotas acima, na
+já pesquisada e pela página `/estatisticas/telegram/vagas`. Todas as chamadas dela que são impessoais são as três rotas acima, na
 API vis (`api.onias.site`), sem sessão:
 
 | O que a tela mostra | Chamada do front | Entra no CDN? |

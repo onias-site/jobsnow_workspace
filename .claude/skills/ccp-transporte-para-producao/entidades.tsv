@@ -92,7 +92,6 @@ vis_skill_reviewed	VisEntitySkillReviewed	nao-levar		nao
 vis_skill_synonym	VisEntitySkillSynonym	nao-levar		nao
 vis_viewed_resume	VisEntityViewedResume	nao-levar		nao
 vis_inactive_viewed_resume	VisEntityViewedResume (gemea)	nao-levar		nao
-jn_records_count	JnEntityRecordsCount	nao-levar		nao
 vis_login_token_attempts	VisEntityLoginTokenAttempts	nao-levar		nao
 vis_resume_message	VisEntityResumeMessage	nao-levar		nao
 vis_resume_restriction	VisEntityResumeRestriction	nao-levar		nao

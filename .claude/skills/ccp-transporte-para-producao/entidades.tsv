@@ -14,6 +14,7 @@ jb_bot	JbEntityBot	igual		sim
 jb_bot_explanation	JbEntityBotExplanation	igual		sim
 jn_session_validator	JnEntitySessionValidator	igual		sim
 jn_write_event_subscribers	JnEntityWriteEventSubscribers	igual		sim
+jn_grouper_charts_providers	JnEntityGrouperChartsProviders	igual		sim
 vis_skill_dictionary	VisEntitySkillDictionary	igual		nao
 jn_email_parameters_to_send	JnEntityEmailParametersToSend	adaptar	sender,moreParameters	sim
 jn_instant_messenger_parameters_to_send	JnEntityInstantMessengerParametersToSend	adaptar	chatId,moreParameters	sim

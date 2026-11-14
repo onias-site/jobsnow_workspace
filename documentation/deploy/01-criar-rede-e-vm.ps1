@@ -1,4 +1,4 @@
-# Item A do deploy: rede privada, firewall, conta de servico e a VM e2-medium em southamerica-east1.
+# Item A do deploy: rede privada, firewall, conta de servico e a VM e2-standard-2 em southamerica-east1.
 # A porta 9200 fica aberta so para a sub-rede privada, de onde o Cloud Run sai por Direct VPC egress.
 # O SSH entra so pelo IAP (gcloud compute ssh --tunnel-through-iap). Pode rodar de novo: pula o que ja existe.
 param(
@@ -9,7 +9,7 @@ param(
 	[string]$Subnet = 'jobsnow-subnet',
 	[string]$SubnetRange = '10.20.0.0/24',
 	[string]$VmName = 'jobsnow-vm',
-	[string]$MachineType = 'e2-medium',
+	[string]$MachineType = 'e2-standard-2',
 	[int]$DiskGb = 50
 )
 

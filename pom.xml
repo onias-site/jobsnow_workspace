@@ -30,6 +30,7 @@
 		<module>ccp_email_sendgrid</module>
 		<module>ccp_file-bucket_gcp</module>
 		<module>ccp_http_apache-mime</module>
+		<module>ccp_http-request-log_gcp-logging</module>
 		<module>ccp_instant-messenger_telegram</module>
 		<module>ccp_main-authentication_gcp-oauth</module>
 		<module>ccp_mensageria-consumer_gcp-pubsub-pull_dependency-chooser</module>

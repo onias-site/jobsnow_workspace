@@ -1,6 +1,6 @@
 ---
 name: ccp-apresentar-estatisticas
-description: Relatório por centro de custo (com.ccp, com.js, com.jn, com.jb, com.vis) com as classes e os métodos públicos do código de produção, o índice de métodos por classe (IMC), os testes JUnit (@Test) de cada pacote, o índice de testes por classe (ITC) e a fatia de cada pacote no total de métodos, de testes e de classes, mais a linha agregadora do módulo de testes, os @Ignore e os testes do front end à parte. Só lê o código-fonte, não compila nem roda nada. Use quando perguntarem "quantos testes temos", "tamanho da suíte", "quantos @Test", "quantos métodos públicos", "quantas classes por pacote", "proporção de testes por classe", ou antes/depois de uma campanha de testes para comparar.
+description: Relatório por centro de custo (com.ccp, com.js, com.jn, com.jb, com.vis) com as classes e os métodos públicos do código de produção, o índice de métodos por classe (IMC), os testes JUnit (@Test) de cada pacote, o índice de testes por método público (ITM) e a fatia de cada pacote no total de métodos, de testes e de classes (entre parênteses ao lado de cada número), mais a linha agregadora do módulo de testes, os @Ignore e os testes do front end à parte. Só lê o código-fonte, não compila nem roda nada. Use quando perguntarem "quantos testes temos", "tamanho da suíte", "quantos @Test", "quantos métodos públicos", "quantas classes por pacote", "proporção de testes por método", ou antes/depois de uma campanha de testes para comparar.
 disable-model-invocation: true
 ---
 
@@ -26,19 +26,21 @@ Funde as antigas `ccp-contar-testes` e `ccp-contar-metodos-publicos` (fusão ped
 2. Responder com o total de testes e o total de classes em destaque na primeira frase e uma tabela com as colunas,
    nesta ordem:
 
-   **Pacote** | **Classes** | **Métodos públicos** | **IMC** | **Testes** | **ITC** | **% do total de métodos** | **% do total de testes** | **% do total de classes**
+   **Pacote** | **Classes** | **Métodos públicos** | **IMC** | **Testes** | **ITM**
 
-   - Uma linha por `pacote`, na ordem do script, e depois a linha do `agregador`, com Métodos públicos, IMC, Testes,
-     ITC, % do total de métodos e % do total de testes zerados (os testes dele já estão distribuídos nos pacotes).
+   - A fatia de cada linha no total vai entre parênteses ao lado do número, nas colunas Classes, Métodos públicos e
+     Testes, sem colunas de porcentagem (pedido do usuário em 2026-11-10). Exemplo de linha:
+     `com.ccp │ 641 (37,62%) │ 1.142 (61,76%) │ 1,78 │ 1.887 (58,19%) │ 1,65`.
+   - Uma linha por `pacote`, na ordem do script, e depois a linha do `agregador`, com Métodos públicos, IMC, Testes e
+     ITM zerados e sem porcentagem (os testes dele já estão distribuídos nos pacotes); só as Classes dele levam a fatia.
    - **IMC** (índice métodos por classe) = Métodos públicos ÷ Classes da linha, com duas casas decimais e vírgula
      (ex.: `3,73`).
-   - **ITC** (índice de testes por classe; até 2026-10-12 se chamava ICT) = Testes ÷ Classes da linha, com duas casas decimais e vírgula (ex.: `6,36`).
+   - **ITM** (índice de testes por método público; em 2026-11-10 substituiu o ITC, testes por classe, que até 2026-10-12 se chamava ICT) = Testes ÷ Métodos públicos da linha, com duas casas decimais e vírgula (ex.: `1,65`); linha sem métodos públicos fica `0,00`.
    - As porcentagens têm duas casas decimais e vírgula (ex.: `66,06%`), arredondadas. O total de classes inclui as
      classes do agregador.
-   - Fechar com a linha **Total**: soma das colunas, IMC = total de métodos públicos ÷ total de classes, ITC = total
-     de testes ÷ total de classes, e **100%** nas três
-     colunas de porcentagem. Se uma soma de porcentagens não der 100% por causa do arredondamento, dizer isso em uma
-     linha abaixo da tabela.
+   - Fechar com a linha **Total**: soma das colunas com `(100%)` ao lado de cada uma, IMC = total de métodos públicos
+     ÷ total de classes, ITM = total de testes ÷ total de métodos públicos. Se uma soma de porcentagens não der 100% por causa
+     do arredondamento, dizer isso em uma linha abaixo da tabela.
    - Citar em uma linha os `@Ignore` (quantos e em quais classes) e, se houver, os testes do front end, deixando claro
      que ficam fora da suíte Java (rodam com `npm test`/Jest). Se aparecer mais de um módulo Java com testes,
      acrescentar a divisão por módulo.

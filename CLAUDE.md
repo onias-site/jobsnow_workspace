@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**jobsnow** is a multi-module Java backend framework built around a custom decorator/DI pattern framework with Elasticsearch as the primary database, paired with a Next.js frontend. All 27 Maven modules live under a single aggregator `pom.xml` at the root and are managed as one Eclipse workspace (`C:\eclipse-workspaces\ccp`), each module being a separate Eclipse project.
+**jobsnow** is a multi-module Java backend framework built around a custom decorator/DI pattern framework with Elasticsearch as the primary database, paired with a Next.js frontend. All 28 Maven modules live under a single aggregator `pom.xml` at the root and are managed as one Eclipse workspace (`C:\eclipse-workspaces\ccp`), each module being a separate Eclipse project.
 
 ## Module Structure
 
@@ -19,6 +19,7 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 | 1 | `ccp_email_sendgrid` | Email via SendGrid |
 | 1 | `ccp_file-bucket_gcp` | File storage via GCP |
 | 1 | `ccp_http_apache-mime` | HTTP client via Apache MIME |
+| 1 | `ccp_http-request-log_gcp-logging` | Log of the requests answered by a Cloud Run service (`CcpHttpRequestLog`) via Cloud Logging |
 | 1 | `ccp_instant-messenger_telegram` | Telegram messaging |
 | 1 | `ccp_main-authentication_gcp-oauth` | GCP OAuth authentication |
 | 1 | `ccp_mensageria-sender_gcp-pubsub` | PubSub message sender |
@@ -28,9 +29,9 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 | 2 | `ccp_db-query_elasticsearch` | Elasticsearch query builder |
 | 2 | `vis_business_jobsnow` | Visualization business logic |
 | 2 | `jb_business_jobsnow` | BackOffice business logic and the bot engine (`/pendingTickets` sorted by `priority`, then date; a step may skip its ticket with `skipTheTicket`) |
-| 2 | `js_business_jobsnow` | JobsNow System: login service, login entities (`js_login_*`), session validator, bot command `solveLoginTokenTicket`; the contact us (`js_contact_us`, twin `js_contact_us_solved`, `POST /contact-us/{email}` without session) and its bot commands `answerContactUs` and `ignoredContactUs` |
+| 2 | `js_business_jobsnow` | JobsNow System: login service, login entities (`js_login_*`), session validator, bot command `solveLoginTokenTicket`; the contact us (`js_contact_us`, twin `js_contact_us_solved`, `POST /contact-us/{email}` with session, for every type of ticket) and its bot commands `answerContactUs` and `ignoredContactUs` |
 | 3 | `ccp_mocking_jobsnow` | Test mocks and DI wiring |
-| 4 | `ccp_cron-tasks_jobsnow` | Standalone `main` of the scheduled process (the business modules at runtime, run by class name; what it sends to the messaging runs in the same thread, by `SyncMensageriaListener`) |
+| 4 | `ccp_cron-tasks_jobsnow` | Standalone `main` of the scheduled processes, each a Cloud Run Job fired by Cloud Scheduler: `jobsnow-processo-diario` and `jobsnow-reenvio-token-login` (every hour, `JsBusinessDailyLoginTokenProcess`) (the business modules at runtime, run by class name; what it sends to the messaging runs in the same thread, by `SyncMensageriaListener`) |
 | 4 | `ccp_mensageria-consumer_gcp-pubsub-pull_dependency-chooser` | PubSub pull consumers of production, kept up by PM2 (the business modules at runtime, each message names its receiver; the bot updates go from the queue of each bot, `JnBusinessHandleBotUpdate~<bot>` (1 thread), to one queue per command of each bot, `JbBusinessRunBotCommand~<bot>~<command>` (support 1 thread, user 4), every one a line of `documentation/deploy/topicos.tsv` whose optional 4th column `senderClass` gives that consumer, only in its own thread, its own `CcpMensageriaSender` (only the 2 bot dispatchers name the Pub/Sub one; the command queues and the others keep the sync one); what they send to the messaging runs in the same thread, by `SyncMensageriaListener`) |
 | 4 | `jb_instant-messenger-listener_jobsnow_dependency-chooser` | BackOffice bot listener (vis and js on the classpath for the steps run by class name) |
 | 4 | `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency` | PubSub push consumer / Spring Boot app (own Spring parent) |
@@ -41,6 +42,8 @@ The root `pom.xml` is an aggregator (not a parent — modules keep their own `<p
 ## Repository Layout
 
 Not a monorepo: each module directory (plus `jn_frontend_calistrato-react`) is its own git repository. The umbrella repository `onias-site/jobsnow_workspace` versions only the root files (aggregator `pom.xml`, `.bat` scripts, this file, `.claude/`, `documentation/`); its `.gitignore` excludes every root directory. Retired modules are kept as plain source under `ccp_rest-api-tests_jobsnow/documentation/`.
+
+**Commit after Java changes (since 2026-11-12)** — whenever Java classes of a repository are changed, commit in that repository right after the applicable tests pass (never before, never with a failing test), one commit per repository touched. The message is a succinct explanation, in Portuguese, of why the classes are being changed (the reason, not a list of files). Push stays with the user.
 
 `fazPullEmTodosProjetosLocais.bat` and `fazPushEmTodosProjetosLocais.bat` pull/push every repository at once. **The pull script runs `git reset --hard`: uncommitted work in any repository is discarded.**
 
@@ -93,6 +96,8 @@ Named rules that govern how classes are written and how requests are interpreted
 - **Disposable Entity (DSE)** — records discarded after some time: `@CcpEntityDisposable(value = JnDisposableEntity.class, timeOption = <CcpEntityExpurgableOptions>)`. The daily maintenance (`JnBusinessDailyDatabaseMaintenance`) deletes the expired periods and then backs the database up; an entity whose past periods feed charts or searches keeps them with `removeCompletely = false`.
 - **Versionable Entity (VE)** — versioned records: `@CcpEntityVersionable(JnVersionableEntity.class)`, always together with the purge of the history: `@CcpEntityVersionablePurge(JnVersionablePurgeEntity.class)`.
 - **Twin Entity (TWE)** — records with a mirror table that receives what is deleted from the main one: `@CcpEntityTwin(twinEntityName = <twin table>, bulkExecutorClass = JnExecuteBulkOperation.class, functionToDeleteKeysInTheCacheClass = JnDeleteKeysFromCache.class)`.
+- **Records Counter Entity (RCE)** — how many records the main side and the twin side have now, counted again after each insertion, deactivation, reactivation and delete: `@CcpEntityRecordsCounter(JnRecordsCounterEntity.class)`; one record per entity in `jn_records_count` (`JnEntityRecordsCount`).
+- **Insertion Date Entity (IDE)** — records that keep the moment of their insertion in `insertionDate` (set by the first save, kept by the next ones and by the moves between the sides, the input ignored): `@CcpEntityInsertionDate(JnInsertionDateEntity.class)` plus the field `insertionDate` copied from `JnJsonCommonsFields`. Counted by month of insertion (`yyyyMM`, active records only) with `@CcpEntityGrouperChildCounter(value = {VisEntityVirtualInsertionMonthCounter.class}, counterKeyClass = JnInsertionYearMonthCounterKeys.class, beforeDecoratorClass = JnGrouperChildCurrentCounterEntityBeforeWrite.class)`.
 - **Read Only Entity (ROE)** — read-only records: `@CcpEntityOlyReadable` (spelled that way); they change only through bulk operations.
 - **Cache Entity (CE)** — cacheable records: `@CcpEntityCache(<ttl in seconds>)`.
 - **Async Entity (AE)** — records whose writes run asynchronously: `@CcpEntityAsyncWriter(JnAsyncWriterEntity.class)`.
@@ -100,7 +105,8 @@ Named rules that govern how classes are written and how requests are interpreted
   - **oneToMany** (the default; the parents come from the record's own values, e.g. a view has one recruiter and one resume): `@CcpEntityGrouperParentCombinations(parent = <parent entity>, value = <combinations producer>)` on the entity, no field needed.
   - **manyToMany** (only when a stored-ids field is asked for; the parents change with the record's contents, e.g. a resume in the group of each search it satisfies): a list field of parent ids annotated with `@CcpStoredParentIdsField(value = <combinations producer>, parent = <parent entity>)`.
   - **Child by field** (the child is a value that several records may share, not the id, e.g. the domain of the recruiters): `beforeDecoratorClass = JnGrouperChildFieldEntityBeforeWrite.class, afterDecoratorClass = JnGrouperChildFieldEntityAfterWrite.class, childField = "<field>"`; the value goes once to the main group and stays there after the deletes.
-  - **Counter** (one JSON of counters as the only child, each record counted once per parent): `@CcpEntityGrouperChildCounter(value = {<parent entity>, ...}, counterKeyClass = <key producer>, beforeDecoratorClass = JnGrouperChildCounterEntityBeforeWrite.class)`.
+  - **Child as a JSON of fields** (the child is part of the record, not only its id, e.g. a resume in the group of each of its ddds; a view of a resume in the group of views of each ddd, the caller handing the fields of the resume over in the saved json): `childFields = {"<field>", ...}` on the same decorators of the id; the child is a JSON text with those fields (as stored), the fields calculated by its `childFieldsProducers` (functions from the record to a JSON merged into the child, e.g. `VisResumeSkillsFromResumeChildField`) plus `id`, and follows the record between the sides like the id. `@CcpEntityGrouperChild` is repeatable: one declaration per kind of child.
+  - **Counter** (one JSON of counters as the only child, each record counted once per parent): `@CcpEntityGrouperChildCounter(value = {<parent entity>, ...}, counterKeyClass = <key producer>, beforeDecoratorClass = JnGrouperChildCounterEntityBeforeWrite.class)`; repeatable as well, one declaration per counting (e.g. the forbidden consultancies and the excluded skills of the resume, both current state with `JnGrouperChildCurrentCounterEntityBeforeWrite`).
 - **LGPD Fields Entity (LFE)** — records holding sensitive data (e-mail, password): `@CcpEntityFieldsTransformer(<transformer catalog>)` on the entity, or `@CcpEntityFieldTransformer(<subclass of CcpJsonTransformersDefaultEntityField>)` on the field.
 
 ### Reading and writing data

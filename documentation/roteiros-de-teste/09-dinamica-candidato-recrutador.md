@@ -33,7 +33,7 @@ Vários recrutadores de tipos diferentes recebem o e-mail de currículos e abrem
 | `automacao/SendResumesToRecruiters.java` | grava os recrutadores em `vis_recruiter` (fonte "roteiro") e manda o e-mail de currículos só para eles |
 | `automacao/09-dinamica-candidato-recrutador.mjs` | (reescrita em 2026-11-10, ver a nota do topo; texto antigo:) `sessions`: abre a sessão de cada recrutador (cadastro pelo token do e-mail mock); `links`: lê `GET /recruiter/{email}/resumes-of-the-week` e guarda os links assinados dos candidatos de teste; `view <recrutador> <candidato> [apelido]`: faz o que o **Sim, abrir** da tela faz; `url`: imprime o link para abrir no Chrome |
 
-> O e-mail traz só os 40 primeiros currículos. Depois de um reset, todos os currículos contam como alterados nos últimos 7 dias, e os de teste podem ficar fora do e-mail. Por isso a automação usa a lista inteira da tela **Currículos da semana**, que é a mesma do e-mail.
+> O e-mail traz só os 30 primeiros currículos. Depois de um reset, todos os currículos contam como alterados nos últimos 7 dias, e os de teste podem ficar fora do e-mail. Por isso a automação usa a lista inteira da tela **Currículos da semana**, que é a mesma do e-mail.
 
 ## D1 — Envio
 

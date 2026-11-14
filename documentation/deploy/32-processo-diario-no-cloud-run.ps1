@@ -1,5 +1,5 @@
-# Tira o processo diario (VisBusinessDailyScheduledProcess: carga das supressoes do SendGrid, e-mail de curriculos aos
-# recrutadores, expurgo dos disposable e backup por snapshot) da VM: vira o Cloud Run Job jobsnow-processo-diario,
+# Tira o processo diario (VisBusinessDailyScheduledProcess: e-mail de curriculos aos recrutadores, expurgo dos disposable
+# e backup por snapshot; as supressoes do SendGrid vem do reenvio do token, de hora em hora) da VM: vira o Cloud Run Job jobsnow-processo-diario,
 # disparado pelo Cloud Scheduler, e deixa de disputar a memoria da VM com o Elasticsearch e os consumidores.
 # O agendamento nasce PAUSADO (decisao do usuario em 2026-11-04): o envio aos recrutadores so comeca por ordem dele.
 # Para ligar:     gcloud scheduler jobs resume jobsnow-processo-diario --location=southamerica-east1 --project=jobsnow-prd
@@ -20,7 +20,7 @@ param(
 	[string]$Subnet = 'jobsnow-subnet',
 	[string]$PropertiesSecret = 'jobsnow-application-properties',
 	[string]$Job = 'jobsnow-processo-diario',
-	[string]$Schedule = '0 22 * * 1-5',
+	[string]$Schedule = '0 22 * * *',
 	[string]$TimeZone = 'America/Sao_Paulo',
 	[string]$JarDoProcesso = '',
 	[switch]$SemImagem

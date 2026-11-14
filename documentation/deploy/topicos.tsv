@@ -33,10 +33,13 @@ com.jb.business.bots.engine.JbBusinessRunBotCommand~support~setLanguage	1	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~support~showAllCommands	1	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~support~solveLoginTokenTicket	1	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~support~solveStackTrace	1	600
+com.jb.business.bots.engine.JbBusinessRunBotCommand~support~verifyLinkedinAddress	1	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~chatId	4	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~exit	4	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~explainThisBot	4	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~explainThisCommand	4	600
+com.jb.business.bots.engine.JbBusinessRunBotCommand~user~receiveMessages	4	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~removeSession	4	600
+com.jb.business.bots.engine.JbBusinessRunBotCommand~user~resendLoginToken	4	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~setLanguage	4	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~showAllCommands	4	600

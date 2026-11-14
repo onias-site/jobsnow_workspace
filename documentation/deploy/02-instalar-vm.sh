@@ -42,8 +42,8 @@ ingest.geoip.downloader.enabled: false
 YML
 
 cat > /etc/elasticsearch/jvm.options.d/heap.options <<'HEAP'
--Xms1g
--Xmx1g
+-Xms3g
+-Xmx3g
 HEAP
 
 # the password is the bootstrap one: it only takes effect before the security index exists

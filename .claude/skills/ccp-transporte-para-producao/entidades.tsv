@@ -65,6 +65,7 @@ js_login_token_locked	JsEntityLoginToken (gemea)	nao-levar		nao
 js_login_token_attempts	JsEntityLoginTokenAttempts	nao-levar		nao
 js_login_token_request_resend	JsEntityLoginTokenRequestResend	nao-levar		nao
 js_login_token_fulfilled_resend	JsEntityLoginTokenRequestResend (gemea)	nao-levar		nao
+js_login_token_resent_without_password	JsEntityLoginTokenResentWithoutPassword	nao-levar		nao
 js_login_token_request_unlock	JsEntityLoginTokenRequestUnlock	nao-levar		nao
 js_login_token_fulfilled_unlock	JsEntityLoginTokenRequestUnlock (gemea)	nao-levar		nao
 vis_position	VisEntityPosition	nao-levar		nao
@@ -83,8 +84,16 @@ vis_skill_fix_hierarchy_item_approved	VisEntitySkillFixHierarchyItemApproved	nao
 vis_skill_fix_hierarchy_item_pending	VisEntitySkillFixHierarchyItemPending	nao-levar		nao
 vis_skill_fix_hierarchy_item_rejected	VisEntitySkillFixHierarchyItemPending (gemea)	nao-levar		nao
 vis_skill_fix_hierarchy_pending	VisEntitySkillFixHierarchyPending	nao-levar		nao
+vis_invalid_linkedin_report	VisEntityInvalidLinkedinReport	nao-levar		nao
+vis_invalid_linkedin_report_solved	VisEntityInvalidLinkedinReport (gemea)	nao-levar		nao
 vis_skill_pending	VisEntitySkillPending	nao-levar		nao
 vis_skill_rejected	VisEntitySkillRejected	nao-levar		nao
 vis_skill_reviewed	VisEntitySkillReviewed	nao-levar		nao
 vis_skill_synonym	VisEntitySkillSynonym	nao-levar		nao
 vis_viewed_resume	VisEntityViewedResume	nao-levar		nao
+vis_inactive_viewed_resume	VisEntityViewedResume (gemea)	nao-levar		nao
+jn_records_count	JnEntityRecordsCount	nao-levar		nao
+vis_login_token_attempts	VisEntityLoginTokenAttempts	nao-levar		nao
+vis_resume_message	VisEntityResumeMessage	nao-levar		nao
+vis_resume_restriction	VisEntityResumeRestriction	nao-levar		nao
+jn_instant_messenger_user	JnEntityInstantMessengerUser	nao-levar		nao

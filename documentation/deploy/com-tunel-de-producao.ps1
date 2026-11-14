@@ -1,8 +1,11 @@
 # Roda um script Python do deploy contra o ES de producao: abre o tunel IAP ate a VM (porta local 9210), le o
 # Authorization de C:\segredos\producao.json para ES_DESTINO_AUTH (so neste processo) e fecha o tunel no fim.
 # Uso: powershell -ExecutionPolicy Bypass -File com-tunel-de-producao.ps1 -Script <caminho do .py> [-Argumentos a,b]
-param([Parameter(Mandatory = $true)][string]$Script, [int]$Port = 9210, [string[]]$Argumentos = @())
+# Chamado de outro .ps1 (com &), aceita -Bloco { ... } em vez de -Script: o bloco roda com o tunel aberto e ES_DESTINO_AUTH
+# definida (desde 2026-11-12, para o java gravar em producao pela entidade).
+param([string]$Script = '', [int]$Port = 9210, [string[]]$Argumentos = @(), [scriptblock]$Bloco = $null)
 $ErrorActionPreference = 'Stop'
+if (-not $Script -and -not $Bloco) { throw 'informe -Script ou -Bloco' }
 $gcloud = Join-Path $env:LOCALAPPDATA 'Google\Cloud SDK\google-cloud-sdk\bin\gcloud.cmd'
 $arguments = "compute ssh jobsnow-vm --project=jobsnow-prd --zone=southamerica-east1-a --tunnel-through-iap --quiet -- -L ${Port}:localhost:9200 -N"
 $tunnel = Start-Process -FilePath $gcloud -ArgumentList $arguments -PassThru -WindowStyle Hidden
@@ -21,8 +24,12 @@ try {
 	$env:ES_DESTINO_AUTH = $auth
 	$env:PYTHONIOENCODING = 'utf-8'
 	$ErrorActionPreference = 'Continue'
-	& python -I $Script @Argumentos 2>&1 | ForEach-Object { "$_" }
-	"script saiu com $LASTEXITCODE"
+	if ($Bloco) {
+		& $Bloco
+	} else {
+		& python -I $Script @Argumentos 2>&1 | ForEach-Object { "$_" }
+		"script saiu com $LASTEXITCODE"
+	}
 } finally {
 	Remove-Item Env:ES_DESTINO_AUTH -ErrorAction SilentlyContinue
 	if (-not $tunnel.HasExited) { & taskkill /T /F /PID $tunnel.Id *> $null }

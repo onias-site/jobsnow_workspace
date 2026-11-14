@@ -69,5 +69,10 @@ if ($requested -contains 'cron') {
 	& (Join-Path $workspace 'documentation\deploy\32-processo-diario-no-cloud-run.ps1')
 	if (-not $?) { exit 1 }
 	Write-Host "processo diario publicado"
+	# o mesmo jar no job do reenvio diario do token de login (8h); o agendamento fica como ja estiver
+	Write-Host "== reenvio do token de login (Cloud Run Job)"
+	& (Join-Path $workspace 'documentation\deploy\54-reenvio-do-token-de-login-no-cloud-run.ps1')
+	if (-not $?) { exit 1 }
+	Write-Host "reenvio do token de login publicado"
 }
 exit 0

@@ -12,6 +12,7 @@
 # Uso: powershell -File com-tunel-de-producao.ps1 -Script 57-grupos-de-ddd-dos-curriculos.py
 #      ou: ES_DESTINO_AUTH=<valor> python 57-grupos-de-ddd-dos-curriculos.py [destino]
 # Imprime so contagens; nao imprime e-mails nem dados dos candidatos.
+# 2026-11-14: negotiableClaim entrou no child (pizza "Negocia pretensao salarial"); o script 78 roda este de novo.
 import json
 import os
 import sys
@@ -20,7 +21,7 @@ import urllib.request
 
 PARENT_NAME = "vis_virtual_ddd_grouper"
 CHILD_NAME = "vis_resume"
-CHILD_FIELDS = ["btc", "clt", "disponibility", "experience", "spokenLanguage", "pcd", "pj", "resumeType",
+CHILD_FIELDS = ["btc", "clt", "disponibility", "experience", "spokenLanguage", "negotiableClaim", "pcd", "pj", "resumeType",
                 "temporallyJobTime", "travel"]
 SIDES = [("vis_resume", "jn_grouper"), ("vis_inactive_resume", "jn_inactive_grouper")]
 

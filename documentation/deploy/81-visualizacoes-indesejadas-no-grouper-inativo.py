@@ -82,7 +82,11 @@ def search_all(index, query):
 
 
 def sha1(text):
-    return hashlib.sha1(text.encode("utf-8")).hexdigest()
+    # o mesmo texto do CcpHashDecorator.asString: o digest como BigInteger COM SINAL em base 16 (sem zeros a esquerda e
+    # com "-" quando negativo), nao o hexdigest
+    digest = hashlib.sha1(text.encode("utf-8")).digest()
+    number = int.from_bytes(digest, "big", signed=True)
+    return format(number, "x")
 
 
 def parse(child):

@@ -41,8 +41,8 @@ WEB = set('CcpJsonServletInputStream CcpRawServletInputStream CcpMissingPathPara
           'CcpPutSessionValuesAndExecuteTaskFilter CcpPutSessionValuesRequestWrapper CcpValidEmailFilter '
           'CcpRestApiUtils CcpMessageReceiver CcpPubSubStarter CcpPubSubTopicConsumer GcpPubSubSdkPublishing '
           'GcpPubSubPublishing CcpJsonExtractorFromHttpServletRequest AsyncMensageriaProcessRun '
-          'CcpLocalMensageriaRunningMarks CcpHttpRequestRetryHandler JbInstantMessengerDependencyChooser '
-          'JbInstantMessengerMessageReader CcpRestApiExceptionHandlerSpring CcpRestApiSessionValuesRemoverSpring '
+          'CcpLocalMensageriaRunningMarks CcpHttpRequestRetryHandler '
+          'CcpRestApiExceptionHandlerSpring CcpRestApiSessionValuesRemoverSpring '
           'JsRestApiPrivacyPolicyCacheHeader VisRestApiSkillStatisticsCacheHeader'.split())
 UTIL = set('CacheDeletionMarks JnEmailHtml VisEmailHtml JnMessages VisMessages JnGroupers JnSystemProperties '
            'JsTelegramWebhookSecret JsContactUsMessageValues VisRecruiterDomainGroups VisResumeEmails '

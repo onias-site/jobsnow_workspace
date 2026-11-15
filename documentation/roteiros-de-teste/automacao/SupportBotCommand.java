@@ -18,8 +18,8 @@ import com.jb.business.bots.engine.JbBotType;
  * do Telegram entregaria, e roda o bot neste processo. As respostas do bot vão para
  * {@code c:\logs\telegram\support-751717896.txt} (o "Telegram" local) e os e-mails para {@code c:\logs\email}.
  *
- * <p>As dependências são as do leitor do bot ({@code JbInstantMessengerDependencyChooser}), trocando o Telegram pelo
- * arquivo local. O cache é o mock, como no leitor: nunca lê dado velho e, ao apagar, grava a marca de exclusão que
+ * <p>As dependências são as do antigo leitor do bot ({@code JbInstantMessengerDependencyChooser}, removido em
+ * 2026-11-15), trocando o Telegram pelo arquivo local. O cache é o mock: nunca lê dado velho e, ao apagar, grava a marca de exclusão que
  * faz as APIs locais descartarem o que tinham guardado.
  *
  * <p>Uso (pasta de trabalho em {@code ccp_rest-api-tests_jobsnow}, depois de um {@code executaCcpCreateEntities.bat},

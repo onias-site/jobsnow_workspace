@@ -44,3 +44,13 @@ com.jb.business.bots.engine.JbBusinessRunBotCommand~user~removeSession	4	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~resendLoginToken	4	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~setLanguage	4	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~user~showAllCommands	4	600
+com.js.entities.JsEntityContactUs	2	120
+com.vis.entities.VisEntityInvalidLinkedinReport	2	120
+com.vis.entities.VisEntityResumeMessage	2	120
+com.vis.entities.VisEntityRecruiter	2	120
+com.vis.entities.VisEntitySkill	2	120
+com.vis.entities.VisEntityStatisSkillLineChart	2	120
+com.vis.entities.VisEntityTelegramPosition	2	120
+com.vis.entities.VisEntityViewedResume	2	120
+com.vis.entities.VisEntityResumeDailyAction	2	120
+com.jn.entities.JnEntityTicketDailyLimit	2	120

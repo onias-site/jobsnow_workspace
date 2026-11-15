@@ -39,10 +39,11 @@ As sugestões do candidato chegam ao operador **como uma mensagem do bot no Tele
 | 2.1 | Elasticsearch local | o serviço de sempre | `http://localhost:9200` responde um JSON com `"cluster_name"` |
 | 2.2 | API do **js** (login) — porta 8082 | Eclipse: rodar `com.js.rest.api.JsRestApiSpringStarter` do projeto `js_rest-api_spring_jobsnow_dependency-chooser` (até 2026-10-17 o login ficava na API do jn, porta 8080) | `http://localhost:8082/rota/inexistente` responde 404 |
 | 2.3 | API do **vis** (habilidades) — porta 8081 | Eclipse: rodar `com.vis.rest.api.VisRestApiSpringStarter` | `http://localhost:8081/rota/inexistente` responde 404 |
-| 2.4 | Leitor do bot de suporte (Telegram) | Eclipse: rodar `com.jb.instant.messenger.reader.JbInstantMessengerReaderStarter` do projeto `jb_instant-messenger-listener_jobsnow_dependency-chooser` (sem argumentos = bot `support`, lendo para sempre) | mande `/chatId` ao bot no Telegram: ele responde `751717896` |
+| 2.3a | Consumidor **push** das filas — porta 8083 (desde 2026-11-15) | Eclipse: rodar `com.jn.topic.consumer.pubsub.push.application.JnMensageriaConsumerGcpPubSubPushSpringStarter` do projeto `jn_mensageria-consumer_gcp-pubsub-push-spring_dependency`. As APIs locais entregam aqui cada mensagem da fila (`PubSubPushEmulator`), como o push do Pub/Sub; sem ele no ar, nada do que é assíncrono (currículo, sugestão de skill, token de login, fale conosco) é gravado | `POST http://localhost:8083/qualquer` responde erro HTTP, não recusa a conexão |
+| 2.4 | ~~Leitor do bot de suporte (Telegram)~~ — removido em 2026-11-15 junto com o projeto `jb_instant-messenger-listener_jobsnow_dependency-chooser`; no local, o bot é acionado por `automacao/SupportBotCommand.java` | — | — |
 | 2.5 | Front end | em `jn_frontend_calistrato-react`: `npm run dev` | `http://localhost:3000` abre |
 
-- [ ] 2.1 a 2.5 no ar.
+- [ ] 2.1 a 2.5 (com o 2.3a) no ar.
 
 > Se as APIs já estiverem rodando fora do Eclipse (por exemplo, iniciadas pelo Claude), a porta estará ocupada. Pare o processo da porta (`Get-NetTCPConnection -LocalPort 8081` no PowerShell mostra o PID) antes de subir no Eclipse.
 >

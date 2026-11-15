@@ -11,7 +11,7 @@ Peças técnicas das APIs REST e da mensageria que não são ponto de entrada: f
 
 ## Exemplos
 
-`CcpValidEmailFilter`, `CcpPutSessionValuesRequestWrapper`, `CcpRestApiExceptionHandlerSpring`, `VisRestApiSkillStatisticsCacheHeader`, `CcpMessageReceiver`, `CcpPubSubTopicConsumer`, `GcpPubSubSdkPublishing`, `AsyncMensageriaProcessRun`, `JbInstantMessengerMessageReader`
+`CcpValidEmailFilter`, `CcpPutSessionValuesRequestWrapper`, `CcpRestApiExceptionHandlerSpring`, `VisRestApiSkillStatisticsCacheHeader`, `CcpMessageReceiver`, `CcpPubSubTopicConsumer`, `GcpPubSubSdkPublishing`, `AsyncMensageriaProcessRun`
 
 ## Lugar na taxonomia
 

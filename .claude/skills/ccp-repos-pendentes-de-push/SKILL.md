@@ -1,38 +1,40 @@
 ---
 name: ccp-repos-pendentes-de-push
-description: Lista quais repositórios git do workspace (a raiz jobsnow_workspace e cada módulo) têm alterações não commitadas — arquivos modificados, arquivos novos não rastreados ou arquivos removidos. Use quando pedirem "quais repositórios estão pendentes de push", "o que falta subir", "tem algo sem commit", "quais projetos mudaram", ou antes de rodar o fazPushEmTodosProjetosLocais.bat / fazPullEmTodosProjetosLocais.bat.
+description: Lista quais repositórios git do workspace (a raiz jobsnow_workspace e cada módulo) têm push pendente — commits locais que o GitHub ainda não tem —, com quantos commits faltam enviar e quantos arquivos ainda estão sem commit. Use quando pedirem "quais repositórios estão pendentes de push", "o que falta subir", "o que falta dar push", ou antes de rodar o fazPushEmTodosProjetosLocais.bat / fazPullEmTodosProjetosLocais.bat.
 disable-model-invocation: true
 ---
 
 # Repositórios pendentes de push
 
-O workspace não é monorepo: a raiz e cada módulo são repositórios git separados. Esta skill
-varre todos e mostra só os que têm alterações não commitadas.
+O workspace não é monorepo: a raiz e cada módulo são repositórios git separados. Esta skill varre todos e mostra os que
+têm **commits locais ainda não enviados** ao remoto (mudou em 2026-11-14 a pedido do usuário; antes listava só as
+alterações não commitadas).
 
 ## Passos
 
-1. Rodar o script. Ele só lê o disco: não faz `git fetch` nem compara com o remoto do GitHub.
+1. Rodar o script. Ele não faz `git fetch`: compara cada branch com a referência remota local (`@{u}`), que o último
+   push, pull ou fetch atualizou. Por isso é rápido e responde exatamente "o que eu ainda não enviei" (um commit que
+   outra máquina tenha mandado ao GitHub não aparece, e não importa para o push).
 
    ```bash
    bash "C:/eclipse-workspaces/ccp/.claude/skills/ccp-repos-pendentes-de-push/scripts/pendentes.sh"
    ```
 
-2. Apresentar uma tabela Markdown só com os pendentes: **#** (contador
-   iniciado em 1, incrementado a cada linha) | **Repositório** | **Modificados** |
-   **Novos** | **Removidos**. Fechar com a linha de totais.
-   As colunas vêm do `git status --porcelain`: **Novos** são os não rastreados (`??`),
-   **Removidos** os que têm `D` no stage ou na árvore de trabalho, e **Modificados** todo o
-   resto (editados, renomeados com `git mv`, adicionados ao stage). Somadas, as três dão o
-   total de arquivos com mudança no repositório.
-3. Destacar o repositório cuja branch é diferente de `main`.
-4. Se houver pendentes, lembrar que o `fazPullEmTodosProjetosLocais.bat` faz `reset --hard`
-   e descartaria esse trabalho.
+   Saída, separada por TAB:
+   - `repo <nome> <commits a enviar> <arquivos sem commit> <branch>`, um por repositório com push pendente;
+   - `semUpstream <nome> <branch>`, branch sem remoto configurado (tudo nela é pendente);
+   - `resumo <com push pendente> <sem upstream> <total de repositórios>`.
 
-As colunas "Commits à frente" e "Atrás" foram retiradas a pedido do usuário (2026-11-05):
-exigiam um `git fetch` por repositório e deixavam o relatório lento. Por isso, um repositório
-com commits locais ainda não enviados, mas sem alterações no disco, não aparece aqui.
+2. Apresentar em grade desenhada (bloco de código, como manda a skill ccp-exibir-em-tabela) só os repositórios com push
+   pendente: **#** (a partir de 1) | **Repositório** | **Commits a enviar** | **Sem commit**. Fechar com a linha de
+   totais (soma dos commits e dos arquivos). Sem coluna de último commit (retirada a pedido do usuário em 2026-11-14).
+3. Destacar o repositório cuja branch é diferente de `main` e os que aparecerem como `semUpstream`.
+4. Em uma linha, citar os repositórios que têm arquivos sem commit mas nenhum commit a enviar não aparecem aqui; se o
+   usuário quiser vê-los, `git status` em cada um.
+5. Lembrar que o push é do usuário (`fazPushEmTodosProjetosLocais.bat`) e que o `fazPullEmTodosProjetosLocais.bat` faz
+   `reset --hard`: descartaria o que estiver sem commit e, sem push antes, poderia perder os commits locais.
 
 ## Restrições
 
-- Somente leitura: nunca commitar, fazer push ou pull a partir desta skill.
+- Somente leitura: nunca commitar, fazer push, pull ou fetch a partir desta skill.
 - Se nada estiver pendente, responder em uma linha.

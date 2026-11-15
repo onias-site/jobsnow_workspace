@@ -13,15 +13,17 @@ todo dia.
 
 ## Passos
 
-1. **Ver o que está pendente** com o script da skill `ccp-repos-pendentes-de-push` (faz `git fetch`):
+1. **Ver o que está pendente** com o script da skill `ccp-repos-pendentes-de-push` (commits a enviar e arquivos sem
+   commit; não faz `git fetch`) e com `git status --porcelain` nos demais repositórios:
 
    ```bash
    bash "C:/eclipse-workspaces/ccp/.claude/skills/ccp-repos-pendentes-de-push/scripts/pendentes.sh"
    ```
 
-   - Nada pendente: dizer isso em uma linha e parar.
-   - Algum repositório **atrás** do remoto (BEHIND > 0) ou `sem-upstream`: **não rodar o push**. O `git push`
-     daquele repositório seria rejeitado depois do commit. Avisar quais são e parar.
+   - Nada pendente (nenhum commit a enviar e nenhum arquivo sem commit): dizer isso em uma linha e parar.
+   - Em cada repositório pendente, `git -C <repo> fetch -q` e `git -C <repo> rev-list --count HEAD..@{u}`. Algum
+     **atrás** do remoto (> 0) ou `semUpstream`: **não rodar o push**. O `git push` daquele repositório seria
+     rejeitado depois do commit. Avisar quais são e parar.
 
 2. **Entender o que mudou**, para a mensagem dizer o assunto e não a lista de arquivos:
    - o que foi feito nesta conversa (a fonte principal, quando houver);

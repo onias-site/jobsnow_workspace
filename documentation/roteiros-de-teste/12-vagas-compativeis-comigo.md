@@ -10,12 +10,12 @@
 
 ## Como a tela funciona (resumo)
 
-1. **Grupos de vagas do telegram** (`/estatisticas/skills`) abre **já pesquisada** com os filtros padrão: mês anterior ao corrente, **Pleno** e **Home office** (a home, `/`, abre do mesmo jeito, mas com **Sênior**).
+1. **Grupos de vagas do telegram** (`/estatisticas/telegram/vagas`) abre **já pesquisada** com os filtros padrão: mês anterior ao corrente, **Pleno** e **Home office** (a home, `/`, abre do mesmo jeito, mas com **Sênior**).
 2. **Mês/ano**, **Senioridade**, **Região Metropolitana**, o botão **Pesquisar** e o checkbox ficam **numa linha só** (quebram apenas em tela estreita). O botão **De onde vieram essas vagas?** fica sozinho na linha de baixo e abre a lista de grupos num popover. Mudar um filtro esconde o resultado até o próximo **Pesquisar**.
 3. **Pesquisar** é uma pesquisa só (a antiga "Todas as Vagas"): as skills do mês, da senioridade e da região escolhidos.
 4. **Checkbox "Ver quais dessas habilidades estão em meu currículo"**: **não pesquisa**. Marcado, lê o currículo do usuário e coloca, ao lado de cada habilidade da lista, o selo verde **Você tem** ou o de contorno vermelho **Não está no seu currículo**; desmarcado, os selos somem. A lista continua a da última pesquisa, e uma pesquisa nova com o checkbox marcado já vem com selos.
    - Cada clique faz `GET localhost:8081/resume/{email}`: o backend valida a sessão, e sessão ausente, inválida ou expirada (401 `invalidSession`) abre o **modal de login**, com o checkbox desmarcado; depois de entrar, o clique continua sozinho. Até 2026-11-09 a cópia do currículo guardada no navegador bastava, sem passar pelo backend.
-   - Logado e **sem currículo** (404, ou 200 sem `vis_resume` nem `vis_inactive_resume`): vai ao formulário `/meus-dados/sobre-mim`, que mostra no topo a faixa azul "Você será redirecionado à tela de estatísticas de vagas no Telegram assim que terminar o cadastro do seu currículo, que ainda não existe em nossa base de dados." Ao salvar, na mesma aba, volta a `/estatisticas/skills`, refaz a pesquisa **com os filtros de antes** (não os padrão) e marca o checkbox. Quem volta à tela de estatísticas sem salvar desiste da volta: a faixa deixa de aparecer. (sessionStorage: `compatiblePositionsWaitingForTheResume` e `compatiblePositionsFiltersOfThePendingSearch`.)
+   - Logado e **sem currículo** (404, ou 200 sem `vis_resume` nem `vis_inactive_resume`): vai ao formulário `/meus-dados/sobre-mim`, que mostra no topo a faixa azul "Você será redirecionado à tela de estatísticas de vagas no Telegram assim que terminar o cadastro do seu currículo, que ainda não existe em nossa base de dados." Ao salvar, na mesma aba, volta a `/estatisticas/telegram/vagas`, refaz a pesquisa **com os filtros de antes** (não os padrão) e marca o checkbox. Quem volta à tela de estatísticas sem salvar desiste da volta: a faixa deixa de aparecer. (sessionStorage: `compatiblePositionsWaitingForTheResume` e `compatiblePositionsFiltersOfThePendingSearch`.)
    - Currículo que não é de tecnologia: aviso "Funcionalidade disponível apenas para currículos de tecnologia (Por enquanto)", checkbox desmarcado.
    - Lido o currículo, o rótulo vira **Ver quais dessas habilidades estão em meu currículo de '&lt;cargo pretendido&gt;'** (campo `desiredJob`); antes do primeiro clique, e em currículo sem cargo, sem o trecho "de '...'".
    - Logout com o checkbox marcado: os selos e o cargo somem da tela.
@@ -45,7 +45,7 @@
 ## V3 — Logado sem currículo: ida ao formulário e volta
 
 - [ ] 3.1 Logado com a conta sem currículo, mude os filtros para algo diferente do padrão (por exemplo, outro mês, **Sênior** e uma região), **Pesquisar**, e marque o checkbox. Esperado: o formulário `/meus-dados/sobre-mim` com a faixa azul no topo: "Você será redirecionado à tela de estatísticas de vagas no Telegram assim que terminar o cadastro do seu currículo, que ainda não existe em nossa base de dados."
-- [ ] 3.2 Preencha um currículo de tecnologia e salve. Esperado: "Currículo salvo com sucesso", volta a `/estatisticas/skills` com **os filtros da 3.1** (não os padrão), a pesquisa refeita e o checkbox **marcado**, com selos e o cargo no rótulo.
+- [ ] 3.2 Preencha um currículo de tecnologia e salve. Esperado: "Currículo salvo com sucesso", volta a `/estatisticas/telegram/vagas` com **os filtros da 3.1** (não os padrão), a pesquisa refeita e o checkbox **marcado**, com selos e o cargo no rótulo.
 - [ ] 3.3 Recarregue a tela. Esperado: abre com a pesquisa padrão e o checkbox desmarcado (a volta é usada uma vez só).
 - [ ] 3.4 Desistência: com outra conta sem currículo, repita a 3.1, mas volte ao menu **Grupos de vagas do telegram** sem salvar; depois abra **Meus dados** → currículo. Esperado: a faixa azul **não** aparece mais.
 

@@ -20,10 +20,13 @@ param(
 # coverage-report.html (collapsible, EclEmma layout) and coverage.tsv (one line per file) into $OutDir.
 
 # the APIs the suite calls: com.jn.rest.api.login.* (the login, since 2026-10-17 in the js API) uses 8082,
-# com.vis.rest.api.* (resume validations) uses 8081; the jn API (port 8080) was removed on 2026-10-22
+# com.vis.rest.api.* (resume validations) uses 8081; the jn API (port 8080) was removed on 2026-10-22.
+# Since 2026-11-15 the APIs write the async entities (messages, groupers) through the PubSubPushEmulator, which posts
+# every message to the push consumer on 8083: without it those writes never land and the duplicate/daily-limit tests fail
 $apis = @(
 	[pscustomobject]@{ Name = 'vis'; Module = 'vis_rest-api_spring_jobsnow_dependency-chooser'; Main = 'com.vis.rest.api.VisRestApiSpringStarter'; Port = 8081; AgentPort = 6301 },
-	[pscustomobject]@{ Name = 'js';  Module = 'js_rest-api_spring_jobsnow_dependency-chooser';  Main = 'com.js.rest.api.JsRestApiSpringStarter';   Port = 8082; AgentPort = 6302 }
+	[pscustomobject]@{ Name = 'js';  Module = 'js_rest-api_spring_jobsnow_dependency-chooser';  Main = 'com.js.rest.api.JsRestApiSpringStarter';   Port = 8082; AgentPort = 6302 },
+	[pscustomobject]@{ Name = 'push'; Module = 'jn_mensageria-consumer_gcp-pubsub-push-spring_dependency'; Main = 'com.jn.topic.consumer.pubsub.push.application.JnMensageriaConsumerGcpPubSubPushSpringStarter'; Port = 8083; AgentPort = 6303 }
 )
 
 $ErrorActionPreference = 'Stop'

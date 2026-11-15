@@ -4,8 +4,8 @@
 # O agendamento nasce PAUSADO (decisao do usuario em 2026-11-04): o envio aos recrutadores so comeca por ordem dele.
 # Para ligar:     gcloud scheduler jobs resume jobsnow-processo-diario --location=southamerica-east1 --project=jobsnow-prd
 # Rodar uma vez:  gcloud run jobs execute jobsnow-processo-diario --region=southamerica-east1 --project=jobsnow-prd
-# O horario e o mesmo de 06-agendamento.cron (22h de segunda a sexta, America/Sao_Paulo). O crontab da VM nunca foi
-# instalado; com o job, ele nao deve ser instalado.
+# Horario: todo dia as 00:10 (America/Sao_Paulo) desde 2026-11-15 (era 22h); o envio aos recrutadores pula sabado e
+# domingo sozinho. O crontab da VM nunca foi instalado; com o job, ele nao deve ser instalado.
 # Pode rodar de novo: atualiza a imagem do job e o agendamento, e mantem a pausa (ou a retomada) que ja existir.
 # Concessoes de IAM: a conta jobsnow-vm@ dispara o job (roles/run.invoker no proprio job) e quem roda este script precisa
 # de iam.serviceAccounts.actAs sobre ela; como as demais concessoes, roda como administrador.
@@ -20,7 +20,7 @@ param(
 	[string]$Subnet = 'jobsnow-subnet',
 	[string]$PropertiesSecret = 'jobsnow-application-properties',
 	[string]$Job = 'jobsnow-processo-diario',
-	[string]$Schedule = '0 22 * * *',
+	[string]$Schedule = '10 0 * * *',
 	[string]$TimeZone = 'America/Sao_Paulo',
 	[string]$JarDoProcesso = '',
 	[switch]$SemImagem

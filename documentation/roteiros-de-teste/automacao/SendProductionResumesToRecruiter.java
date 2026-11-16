@@ -13,7 +13,6 @@ import com.ccp.constants.CcpOtherConstants;
 import com.ccp.decorators.CcpFieldName;
 import com.ccp.decorators.CcpJsonRepresentation;
 import com.ccp.dependency.injection.CcpDependencyInjection;
-import com.ccp.dependency.injection.CcpInstanceProvider;
 import com.ccp.implementations.db.bulk.elasticsearch.CcpElasticSerchDbBulk;
 import com.ccp.implementations.db.crud.elasticsearch.CcpElasticSearchCrud;
 import com.ccp.implementations.db.query.elasticsearch.CcpElasticSearchQueryExecutor;
@@ -34,51 +33,39 @@ import com.vis.messages.VisMessages;
 
 /**
  * Envia a um único recrutador o e-mail de currículos ({@code VisNotifyRecruiterAboutResumes}) com TODOS os currículos de
- * {@code vis_resume} de produção, e não só os alterados nos últimos 7 dias. Os dados de produção chegam por um arquivo,
- * gravado antes pelo {@code ler-curriculos-de-producao.py} (só leitura, pelo túnel): este processo roda contra o
- * Elasticsearch local e nada grava em produção.
+ * {@code vis_resume} de produção, e não só os alterados nos últimos 7 dias. Roda só contra produção (desde 2026-11-15):
+ * a {@code application_properties} deste processo aponta o Elasticsearch para o túnel de produção e traz as chaves de
+ * produção (SendGrid e {@code recruiterLinksSecret}); quem cuida disso é o
+ * {@code enviar-curriculos-de-producao-a-um-recrutador.ps1}, por onde este executor deve ser rodado. Não há simulação
+ * nem Elasticsearch local: template, parâmetros de envio, marca de "já enviado hoje" e a lista da tela "Ver todos" são
+ * os de produção.
  *
- * <p>As regras são as do processo diário ({@code VisBusinessSendResumesToRecruiters}), chamadas por reflexão porque são
- * de pacote: ordem dos currículos, {@code notAllowedCompany} do domínio do recrutador, última visualização, apelido, links
- * assinados e descadastro. O que muda: não há janela de 7 dias, fim de semana, fila nem limite diário, e o recrutador não
- * precisa estar em {@code vis_recruiter}.
+ * <p>Os currículos, rankings, datas, visualizações e apelidos chegam por um arquivo, gravado antes pelo
+ * {@code ler-curriculos-de-producao.py} (só leitura, pelo mesmo túnel). As regras são as do processo diário
+ * ({@code VisBusinessSendResumesToRecruiters}), chamadas por reflexão porque são de pacote: ordem dos currículos,
+ * {@code notAllowedCompany} do domínio do recrutador, última visualização, apelido, links assinados e descadastro. O que
+ * muda: não há janela de 7 dias, fim de semana, fila nem limite diário, e o recrutador não precisa estar em
+ * {@code vis_recruiter}.
  *
- * <p>Para os links funcionarem em produção, a {@code application_properties} deste processo precisa do
- * {@code recruiterLinksSecret} de produção, além da chave do SendGrid: quem cuida disso é o
- * {@code enviar-curriculos-de-producao-a-um-recrutador.ps1}, por onde este executor deve ser rodado.
+ * <p>Gravações em produção: a marca de "já enviado hoje" deste e-mail a este destinatário é apagada antes do envio (para
+ * poder reenviar no mesmo dia); o envio grava a marca nova e a lista completa da tela "Ver todos"
+ * ({@code vis_recruiter_resumes}, descartável diário do próprio recrutador), conferida relendo.
  *
- * <p>A marca local de "já enviado hoje" deste e-mail a este destinatário é apagada antes do envio, para o executor poder
- * rodar mais de uma vez no dia (simular e depois enviar). O template e os parâmetros de envio são os do Elasticsearch
- * local. A lista completa ({@code vis_recruiter_resumes}) é gravada pelo envio no local; no modo enviar ela também vai
- * para um arquivo, que o {@code .ps1} grava em produção (modo {@code gravar-lista}, com o Elasticsearch de produção pelo
- * túnel): sem isso o link "ver todos" do e-mail abria a tela vazia (404) em produção (corrigido em 2026-11-12). Esta é a
- * única gravação em produção, um registro descartável diário do próprio recrutador.
- *
- * <p>Uso: {@code simular|enviar <e-mail do recrutador> <arquivo dos dados de produção> <endereço do front> <endereço da API vis> [arquivo da lista]}
- * e {@code gravar-lista <e-mail do recrutador> <arquivo da lista>}
+ * <p>Uso: {@code <e-mail do recrutador> <arquivo dos dados de produção> <endereço do front> <endereço da API vis>}
  */
 public class SendProductionResumesToRecruiter {
 
 	public static void main(String[] args) throws Exception {
-		boolean saveTheList = "gravar-lista".equals(args[0]);
-		if(saveTheList) {
-			saveTheListOfTheScreenSeeAll(args);
-			return;
-		}
-		boolean send = "enviar".equals(args[0]);
-		boolean simulate = "simular".equals(args[0]);
-		if((false == send && false == simulate) || args.length < 5) {
-			System.out.println("Uso: simular|enviar <e-mail do recrutador> <arquivo dos dados de producao> <endereco do front> <endereco da API vis> [arquivo da lista]");
-			System.out.println("     gravar-lista <e-mail do recrutador> <arquivo da lista>");
+		if(args.length < 4) {
+			System.out.println("Uso: <e-mail do recrutador> <arquivo dos dados de producao> <endereco do front> <endereco da API vis>");
 			System.exit(1);
 		}
-		String email = args[1].trim().toLowerCase();
-		String productionDataText = Files.readString(Path.of(args[2]), StandardCharsets.UTF_8);
-		String frontendUrl = args[3];
-		String visApiUrl = args[4];
+		String email = args[0].trim().toLowerCase();
+		String productionDataText = Files.readString(Path.of(args[1]), StandardCharsets.UTF_8);
+		String frontendUrl = args[2];
+		String visApiUrl = args[3];
 
-		CcpInstanceProvider<?> emailProvider = send ? CcpSendGridEmailProvider.INSTANCE : CcpLocalInstances.email;
-		loadDependencies(emailProvider);
+		loadDependencies();
 
 		CcpJsonRepresentation productionData = new CcpJsonRepresentation(productionDataText);
 		List<CcpJsonRepresentation> resumes = productionData.getAsJsonList(new CcpFieldName("resumes"));
@@ -99,7 +86,7 @@ public class SendProductionResumesToRecruiter {
 		CcpJsonRepresentation withProfessional = VisJsonTransformerRecruiterProfessional.INSTANCE.execute(recruiterEmail);
 		CcpJsonRepresentation recruiter = VisJsonTransformerRecruiterDomain.INSTANCE.execute(withProfessional);
 		Object emailHash = call("getEmailHash", new Class<?>[] {String.class}, email);
-		// os pares de vis_inactive_viewed_resume (desde 2026-11-12); um arquivo lido antes disso nao os tem
+		// os pares de vis_inactive_viewed_resume (desde 2026-11-12)
 		List<String> inactivePairsList = productionData.getOrDefault(new CcpFieldName("inactivePairs"), () -> List.of());
 		Set<String> inactivePairs = new HashSet<>(inactivePairsList);
 		List<?> rows = (List<?>) call("getRowsOfTheRecruiter", new Class<?>[] {CcpJsonRepresentation.class, String.class, List.class, Map.class, Map.class, Set.class},
@@ -123,57 +110,26 @@ public class SendProductionResumesToRecruiter {
 		// o envio registra a falha como aviso em vez de lancar: a marca de "ja enviado" so existe quando o provedor aceitou
 		boolean accepted = JnEntityEmailMessageSent.ENTITY.exists(sentMark);
 		int shown = Math.min(VisBusinessSendResumesToRecruiters.RESUMES_IN_THE_EMAIL, rows.size());
-		System.out.println((accepted ? "OK " : "FALHOU ") + (send ? "enviar" : "simular") + " curriculosEmProducao=" + resumes.size()
+		System.out.println((accepted ? "OK " : "FALHOU ") + "enviar curriculosEmProducao=" + resumes.size()
 				+ " linhasDoRecrutador=" + rows.size() + " noEmail=" + shown);
 		if(false == accepted) {
-			System.out.println("O e-mail nao foi aceito: veja o ultimo registro de jn_jobsnow_warning no Elasticsearch local.");
+			System.out.println("O e-mail nao foi aceito: veja o ultimo registro de jn_jobsnow_warning de producao.");
 			System.exit(3);
 		}
-		// a lista inteira da tela "ver todos", gravada pelo envio no ES local, vai para um arquivo: o .ps1 a grava em
-		// producao (modo gravar-lista), onde a tela a le pelo e-mail do recrutador logado
-		boolean exportTheList = send && args.length > 5;
-		if(exportTheList) {
-			CcpJsonRepresentation key = CcpOtherConstants.EMPTY_JSON.put(VisEntityRecruiterResumes.Fields.email, email);
-			CcpJsonRepresentation savedList = VisEntityRecruiterResumes.ENTITY.getOneById(key);
-			List<CcpJsonRepresentation> listRows = savedList.getAsJsonList(VisEntityRecruiterResumes.Fields.resumes);
-			CcpJsonRepresentation list = CcpOtherConstants.EMPTY_JSON.put(VisEntityRecruiterResumes.Fields.resumes, listRows);
-			Files.writeString(Path.of(args[5]), list.asUgglyJson(), StandardCharsets.UTF_8);
-			System.out.println("listaDaTelaVerTodos=" + listRows.size());
-		}
-		System.exit(0);
-	}
-
-	/**
-	 * Modo gravar-lista: grava em {@code vis_recruiter_resumes} a lista da tela "ver todos" exportada pelo envio. Roda com
-	 * a {@code application_properties} apontando o Elasticsearch para producao (pelo tunel), e grava pela propria entidade,
-	 * com os seus decorators (o descartavel diario inclusive), como o processo diario grava. Confere a gravacao relendo.
-	 */
-	private static void saveTheListOfTheScreenSeeAll(String[] args) throws Exception {
-		if(args.length < 3) {
-			System.out.println("Uso: gravar-lista <e-mail do recrutador> <arquivo da lista>");
-			System.exit(1);
-		}
-		loadDependencies(CcpLocalInstances.email);
-		String email = args[1].trim().toLowerCase();
-		String listText = Files.readString(Path.of(args[2]), StandardCharsets.UTF_8);
-		CcpJsonRepresentation list = new CcpJsonRepresentation(listText);
-		List<CcpJsonRepresentation> rows = list.getAsJsonList(VisEntityRecruiterResumes.Fields.resumes);
-		CcpJsonRepresentation recruiterResumes = CcpOtherConstants.EMPTY_JSON
-				.put(VisEntityRecruiterResumes.Fields.email, email)
-				.put(VisEntityRecruiterResumes.Fields.resumes, rows);
-		VisEntityRecruiterResumes.ENTITY.save(recruiterResumes);
+		// a lista da tela "ver todos", gravada pelo proprio envio em producao, relida para conferir
 		CcpJsonRepresentation key = CcpOtherConstants.EMPTY_JSON.put(VisEntityRecruiterResumes.Fields.email, email);
-		CcpJsonRepresentation saved = VisEntityRecruiterResumes.ENTITY.getOneById(key);
-		int savedRows = saved.getAsJsonList(VisEntityRecruiterResumes.Fields.resumes).size();
+		CcpJsonRepresentation savedList = VisEntityRecruiterResumes.ENTITY.getOneById(key);
+		int savedRows = savedList.getAsJsonList(VisEntityRecruiterResumes.Fields.resumes).size();
 		boolean complete = savedRows == rows.size();
-		System.out.println((complete ? "OK " : "FALHOU ") + "gravar-lista linhas=" + rows.size() + " relidas=" + savedRows);
-		System.exit(complete ? 0 : 4);
+		System.out.println((complete ? "OK " : "FALHOU ") + "lista da tela Ver todos em producao linhas=" + rows.size() + " relidas=" + savedRows);
+		System.exit(complete ? 0 : 5);
 	}
 
-	private static void loadDependencies(CcpInstanceProvider<?> emailProvider) {
+	/** Produção: Elasticsearch e SendGrid de verdade; mensageria síncrona no próprio processo e cache só em memória. */
+	private static void loadDependencies() {
 		CcpDependencyInjection.loadAllDependencies(
 				CcpGsonJsonHandler.INSTANCE,
-				emailProvider,
+				CcpSendGridEmailProvider.INSTANCE,
 				CcpLocalInstances.instantMessenger,
 				CcpLocalInstances.syncMensageriaListener,
 				CcpLocalCacheInstances.mock,

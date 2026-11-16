@@ -8,8 +8,9 @@
 # Sem -Gravar so mostra os contadores e o que mudaria. Com -Gravar so grava se o total atual de vis_resume for 68 (rodar
 # de novo nao desconta outra vez).
 # Depois: os contadores sao lidos com cache de 1 hora (APIs e front, que guarda os totais por 1 hora no navegador).
-# Uso: powershell -NoProfile -ExecutionPolicy Bypass -File 88-curriculo-contado-duas-vezes.ps1 [-Gravar]
-param([switch]$Gravar)
+# Com novos curriculos depois de 2026-11-16, passar -TotalEsperado com o total atual do contador (o ES tem 1 a menos).
+# Uso: powershell -NoProfile -ExecutionPolicy Bypass -File 88-curriculo-contado-duas-vezes.ps1 [-Gravar] [-TotalEsperado <n>]
+param([switch]$Gravar, [string]$TotalEsperado = '68')
 $ErrorActionPreference = 'Stop'
 $deploy = $PSScriptRoot
 $workspace = (Resolve-Path (Join-Path $deploy '..\..')).Path
@@ -17,7 +18,7 @@ $tests = Join-Path $workspace 'ccp_rest-api-tests_jobsnow'
 $java = 'C:\Program Files\Java\jdk-17\bin\java.exe'
 $executor = Join-Path $workspace 'documentation\roteiros-de-teste\automacao\SubtractAResumeCountedTwice.java'
 $resumeId = '-749d8720e968a32759405b91b8468e6521e64cef'
-$expectedTotal = '68'
+$expectedTotal = $TotalEsperado
 $localProperties = $env:application_properties
 $state = @{ exitCode = 9 }
 Push-Location $tests

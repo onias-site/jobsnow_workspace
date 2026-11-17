@@ -112,7 +112,8 @@ for r in recruiters:
         continue
     source = r.get("source", "")
     signup = source == "login"
-    if signup and h not in first_email:
+    # desde 2026-11-17 o cadastrado pelo suporte espera o 1o e-mail empatado com o do cadastro (login)
+    if (signup or source == "support") and h not in first_email:
         first.append((h, r, "2-cadastro aguardando 1o e-mail"))
         continue
     tg = int(float(r["lastTelegramAppearance"])) if "lastTelegramAppearance" in r else 0

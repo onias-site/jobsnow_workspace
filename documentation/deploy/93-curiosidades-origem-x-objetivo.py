@@ -1,15 +1,12 @@
-# Tela Curiosidades (2026-11-17): dois contadores novos do jn_grouper, que so contam o que for gravado depois do deploy
-# da js. Este script calcula do zero o que ja existe em producao:
-#   1. a origem cruzada com o objetivo do usuario: parentName js_virtual_login_channel_goal_counter, parentJson
-#      {"counter": "channelGoal"}, childName js_login_answers, child {"<channel>|<goal>": n} (as respostas do cadastro);
-#   2. os chamados ainda sem resposta por tipo: parentName js_virtual_contact_us_pending_type_counter, parentJson
-#      {"counter": "pendingType"}, childName js_contact_us, child {"<tipo>": n}, contando so js_contact_us (os
-#      respondidos ficam em js_contact_us_solved e nao contam).
-# Os contadores sao virtuais: nao ha indice novo, so os 2 grupos do jn_grouper.
-# Roda DEPOIS do deploy da js e dos consumidores (antes dele, uma resposta ou chamado gravado pelo codigo antigo nao
-# entraria na conta). Idempotente: sobrescreve os 2 grupos.
-# Uso: powershell -File com-tunel-de-producao.ps1 -Script 93-curiosidades-origem-x-objetivo-e-chamados-pendentes.py
-#      ou: ES_DESTINO_AUTH=<valor> python 93-curiosidades-origem-x-objetivo-e-chamados-pendentes.py [destino]
+# Tela Curiosidades (2026-11-17): o contador novo do jn_grouper da origem cruzada com o objetivo do usuario, que so conta
+# o que for gravado depois do deploy da js. Este script calcula do zero o que ja existe em producao: parentName
+# js_virtual_login_channel_goal_counter, parentJson {"counter": "channelGoal"}, childName js_login_answers, child
+# {"<channel>|<goal>": n} (as respostas do cadastro).
+# O contador e virtual: nao ha indice novo, so o grupo do jn_grouper.
+# Roda DEPOIS do deploy da js e dos consumidores (antes dele, uma resposta gravada pelo codigo antigo nao entraria na
+# conta). Idempotente: sobrescreve o grupo.
+# Uso: powershell -File com-tunel-de-producao.ps1 -Script 93-curiosidades-origem-x-objetivo.py
+#      ou: ES_DESTINO_AUTH=<valor> python 93-curiosidades-origem-x-objetivo.py [destino]
 # Imprime so contagens, sem dados pessoais.
 import hashlib
 import json
@@ -90,7 +87,6 @@ def write_group(parent_name, parent_json, child_name, counts):
 
 failures = 0
 
-# 1. origem x objetivo
 channel_goals = {}
 answers = 0
 for hit in scroll("js_login_answers", {"size": 500, "_source": ["channel", "goal"]}):
@@ -104,18 +100,6 @@ for hit in scroll("js_login_answers", {"size": 500, "_source": ["channel", "goal
     channel_goals[key] = channel_goals.get(key, 0) + 1
 print("js_login_answers:", answers, "respostas com origem e objetivo")
 failures += write_group("js_virtual_login_channel_goal_counter", {"counter": "channelGoal"}, "js_login_answers", channel_goals)
-
-# 2. chamados ainda sem resposta, por tipo
-pending = {}
-tickets = 0
-for hit in scroll("js_contact_us", {"size": 500, "_source": ["type"]}):
-    ticket_type = hit["_source"].get("type")
-    if not ticket_type:
-        continue
-    tickets += 1
-    pending[ticket_type] = pending.get(ticket_type, 0) + 1
-print("js_contact_us:", tickets, "chamados sem resposta")
-failures += write_group("js_virtual_contact_us_pending_type_counter", {"counter": "pendingType"}, "js_contact_us", pending)
 
 print("OK" if failures == 0 else f"FALHAS: {failures}")
 sys.exit(0 if failures == 0 else 1)

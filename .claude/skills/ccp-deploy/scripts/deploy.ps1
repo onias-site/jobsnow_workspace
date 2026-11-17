@@ -1,6 +1,6 @@
 # Compila o que cada alvo pede, na ordem dos pom.xml, e publica: front, vis e js no Cloud Run por
 # documentation\deploy\08-publicar-cloud-run.ps1; consumidores na VM por documentation\deploy\07-publicar-na-vm.ps1 -SoConsumidores;
-# cron (o processo diario, Cloud Run Job jobsnow-processo-diario) por documentation\deploy\32-processo-diario-no-cloud-run.ps1.
+# cron (Cloud Run Jobs jobsnow-backup-diario e jobsnow-curriculos-aos-recrutadores) por documentation\deploy\32-processo-diario-no-cloud-run.ps1.
 # Uso: deploy.ps1 front | vis | js | consumidores | cron | todos (aceita mais de um). Com -SoListar so mostra a ordem de build, sem compilar nem publicar.
 param(
 	[Parameter(Mandatory = $true, Position = 0, ValueFromRemainingArguments = $true)]

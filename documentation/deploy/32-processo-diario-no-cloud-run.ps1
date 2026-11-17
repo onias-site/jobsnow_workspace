@@ -1,10 +1,11 @@
 # Processos agendados do cron.jar no Cloud Run, fora da VM (nao disputam a memoria da VM com o Elasticsearch e os
 # consumidores). Desde 2026-11-17 a mesma imagem (processo-diario.Dockerfile) serve a dois Cloud Run Jobs, cada um com o
 # seu agendamento no Cloud Scheduler e o processo (a classe) e a entrada JSON nos args do job:
-#   jobsnow-processo-diario              todo dia as 00:10  JnBusinessBackupTheDatabase (backup por snapshot)
+#   jobsnow-backup-diario                todo dia as 00:10  JnBusinessBackupTheDatabase (backup por snapshot)
 #   jobsnow-curriculos-aos-recrutadores  todo dia as 10:00  VisBusinessSendResumesToRecruiters (pula sabado e domingo sozinho)
-# Antes de 2026-11-17 o jobsnow-processo-diario rodava VisBusinessDailyScheduledProcess (o e-mail e depois o backup) as
-# 00:10. O expurgo dos disposable e as supressoes do SendGrid rodam de hora em hora no jobsnow-reenvio-token-login (54).
+# Antes de 2026-11-17 havia um job so, jobsnow-processo-diario, com VisBusinessDailyScheduledProcess (o e-mail e depois o
+# backup) as 00:10; o backup virou jobsnow-backup-diario (Cloud Run nao renomeia: o script cria o novo e apaga o antigo
+# e o seu agendamento, com o historico de execucoes). O expurgo dos disposable e as supressoes do SendGrid rodam de hora em hora no jobsnow-reenvio-token-login (54).
 # Um agendamento que ja existe mantem a pausa (ou a retomada); um novo nasce ligado.
 # Rodar uma vez:  gcloud run jobs execute <job> --region=southamerica-east1 --project=jobsnow-prd
 # O crontab da VM nunca foi instalado; com os jobs, ele nao deve ser instalado.
@@ -34,7 +35,7 @@ $receiver = '{"mensageriaReceiver":"com.jn.mensageria.JnMensageriaReceiver","ope
 
 # cada job: nome, agendamento e processo (a classe executada pelo cron.jar)
 $jobs = @(
-	@{ Name = 'jobsnow-processo-diario'; Schedule = '10 0 * * *'; Process = 'com.jn.business.database.JnBusinessBackupTheDatabase' },
+	@{ Name = 'jobsnow-backup-diario'; Schedule = '10 0 * * *'; Process = 'com.jn.business.database.JnBusinessBackupTheDatabase' },
 	@{ Name = 'jobsnow-curriculos-aos-recrutadores'; Schedule = '0 10 * * *'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendResumesToRecruiters' }
 )
 
@@ -94,6 +95,16 @@ foreach ($definition in $jobs) {
 		Run "agendamento de $job (atualizado, estado mantido)" (@('scheduler', 'jobs', 'update', 'http') + $schedulerArguments)
 	} else {
 		Run "agendamento de $job" (@('scheduler', 'jobs', 'create', 'http') + $schedulerArguments)
+	}
+}
+
+# jobs aposentados: apagados (agendamento e job) depois que os novos ja estao no ar
+foreach ($retired in @('jobsnow-processo-diario')) {
+	if (Exists @('scheduler', 'jobs', 'describe', $retired, "--project=$Project", "--location=$Region")) {
+		Run "agendamento aposentado $retired" @('scheduler', 'jobs', 'delete', $retired, "--project=$Project", "--location=$Region", '--quiet')
+	}
+	if (Exists @('run', 'jobs', 'describe', $retired, "--project=$Project", "--region=$Region")) {
+		Run "job aposentado $retired" @('run', 'jobs', 'delete', $retired, "--project=$Project", "--region=$Region", '--quiet')
 	}
 }
 

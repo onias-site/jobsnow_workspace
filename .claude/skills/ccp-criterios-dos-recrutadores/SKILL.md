@@ -35,5 +35,5 @@ Cada recrutador entra só no primeiro critério que atende; quem visualizou há 
 
 ## Limites
 
-- É uma simulação: o envio de verdade roda às 00:10 (America/Sao_Paulo) no Cloud Run Job `jobsnow-processo-diario`; quem visualizar ou se cadastrar até lá muda a lista. Recrutador cuja lista de currículos sai vazia (todos proíbem a empresa do domínio) não recebe, e o simulador não desconta isso.
+- É uma simulação: o envio de verdade roda às 10:00 (America/Sao_Paulo, desde 2026-11-18; era 00:10) no Cloud Run Job `jobsnow-curriculos-aos-recrutadores`; quem visualizar ou se cadastrar até lá muda a lista. Recrutador cuja lista de currículos sai vazia (todos proíbem a empresa do domínio) não recebe, e o simulador não desconta isso.
 - Se a ordem de `VisBusinessSendResumesToRecruiters.getRecruitersInOrder` mudar, atualize o script junto.

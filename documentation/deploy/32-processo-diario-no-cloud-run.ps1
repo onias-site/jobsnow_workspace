@@ -1,17 +1,18 @@
-# Tira o processo diario (VisBusinessDailyScheduledProcess: e-mail de curriculos aos recrutadores, expurgo dos disposable
-# e backup por snapshot; as supressoes do SendGrid vem do reenvio do token, de hora em hora) da VM: vira o Cloud Run Job jobsnow-processo-diario,
-# disparado pelo Cloud Scheduler, e deixa de disputar a memoria da VM com o Elasticsearch e os consumidores.
-# O agendamento nasce PAUSADO (decisao do usuario em 2026-11-04): o envio aos recrutadores so comeca por ordem dele.
-# Para ligar:     gcloud scheduler jobs resume jobsnow-processo-diario --location=southamerica-east1 --project=jobsnow-prd
-# Rodar uma vez:  gcloud run jobs execute jobsnow-processo-diario --region=southamerica-east1 --project=jobsnow-prd
-# Horario: todo dia as 00:10 (America/Sao_Paulo) desde 2026-11-15 (era 22h); o envio aos recrutadores pula sabado e
-# domingo sozinho. O crontab da VM nunca foi instalado; com o job, ele nao deve ser instalado.
-# Pode rodar de novo: atualiza a imagem do job e o agendamento, e mantem a pausa (ou a retomada) que ja existir.
-# Concessoes de IAM: a conta jobsnow-vm@ dispara o job (roles/run.invoker no proprio job) e quem roda este script precisa
-# de iam.serviceAccounts.actAs sobre ela; como as demais concessoes, roda como administrador.
+# Processos agendados do cron.jar no Cloud Run, fora da VM (nao disputam a memoria da VM com o Elasticsearch e os
+# consumidores). Desde 2026-11-17 a mesma imagem (processo-diario.Dockerfile) serve a dois Cloud Run Jobs, cada um com o
+# seu agendamento no Cloud Scheduler e o processo (a classe) e a entrada JSON nos args do job:
+#   jobsnow-processo-diario              todo dia as 00:10  JnBusinessBackupTheDatabase (backup por snapshot)
+#   jobsnow-curriculos-aos-recrutadores  todo dia as 10:00  VisBusinessSendResumesToRecruiters (pula sabado e domingo sozinho)
+# Antes de 2026-11-17 o jobsnow-processo-diario rodava VisBusinessDailyScheduledProcess (o e-mail e depois o backup) as
+# 00:10. O expurgo dos disposable e as supressoes do SendGrid rodam de hora em hora no jobsnow-reenvio-token-login (54).
+# Um agendamento que ja existe mantem a pausa (ou a retomada); um novo nasce ligado.
+# Rodar uma vez:  gcloud run jobs execute <job> --region=southamerica-east1 --project=jobsnow-prd
+# O crontab da VM nunca foi instalado; com os jobs, ele nao deve ser instalado.
+# Concessoes de IAM: a conta jobsnow-vm@ dispara cada job (roles/run.invoker no proprio job) e quem roda este script
+# precisa de iam.serviceAccounts.actAs sobre ela; como as demais concessoes, roda como administrador.
 # Uso: .\32-processo-diario-no-cloud-run.ps1 [-JarDoProcesso <cron.jar>] [-SemImagem]
 #   -JarDoProcesso: outro jar (um montado so com o codigo ja comitado, quando ha trabalho em andamento no workspace).
-#   -SemImagem: mantem a imagem atual do job e so refaz configuracao, permissao e agendamento.
+#   -SemImagem: mantem a imagem atual e so refaz configuracao, permissao e agendamento.
 param(
 	[string]$Project = 'jobsnow-prd',
 	[string]$Region = 'southamerica-east1',
@@ -19,8 +20,6 @@ param(
 	[string]$Network = 'jobsnow-vpc',
 	[string]$Subnet = 'jobsnow-subnet',
 	[string]$PropertiesSecret = 'jobsnow-application-properties',
-	[string]$Job = 'jobsnow-processo-diario',
-	[string]$Schedule = '10 0 * * *',
 	[string]$TimeZone = 'America/Sao_Paulo',
 	[string]$JarDoProcesso = '',
 	[switch]$SemImagem
@@ -31,6 +30,13 @@ $workspace = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $registry = "$Region-docker.pkg.dev/$Project/$Repository"
 $runtimeAccount = "jobsnow-vm@$Project.iam.gserviceaccount.com"
 $tag = Get-Date -Format 'yyyyMMdd-HHmmss'
+$receiver = '{"mensageriaReceiver":"com.jn.mensageria.JnMensageriaReceiver","operation":""}'
+
+# cada job: nome, agendamento e processo (a classe executada pelo cron.jar)
+$jobs = @(
+	@{ Name = 'jobsnow-processo-diario'; Schedule = '10 0 * * *'; Process = 'com.jn.business.database.JnBusinessBackupTheDatabase' },
+	@{ Name = 'jobsnow-curriculos-aos-recrutadores'; Schedule = '0 10 * * *'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendResumesToRecruiters' }
+)
 
 function Run([string]$label, [string[]]$arguments) {
 	Write-Host "== $label"
@@ -45,10 +51,11 @@ function Exists([string[]]$arguments) {
 
 Run 'APIs do Cloud Scheduler e do Cloud Run' @('services', 'enable', 'cloudscheduler.googleapis.com', 'run.googleapis.com', "--project=$Project", '--quiet')
 
-$jobExists = Exists @('run', 'jobs', 'describe', $Job, "--project=$Project", "--region=$Region")
+$firstJob = $jobs[0].Name
+$firstJobExists = Exists @('run', 'jobs', 'describe', $firstJob, "--project=$Project", "--region=$Region")
 $image = ''
-if ($SemImagem -and $jobExists) {
-	$image = (& $gcloud run jobs describe $Job "--project=$Project" "--region=$Region" '--format=value(spec.template.spec.template.spec.containers[0].image)' 2>$null)
+if ($SemImagem -and $firstJobExists) {
+	$image = (& $gcloud run jobs describe $firstJob "--project=$Project" "--region=$Region" '--format=value(spec.template.spec.template.spec.containers[0].image)' 2>$null)
 } else {
 	$jar = $JarDoProcesso
 	if (-not $jar) { $jar = Join-Path $workspace 'ccp_cron-tasks_jobsnow\target\ccp_cron-tasks_jobsnow-0.0.1-SNAPSHOT-all.jar' }
@@ -63,26 +70,36 @@ if ($SemImagem -and $jobExists) {
 	Remove-Item $context -Recurse -Force -Confirm:$false
 }
 
-# uma tarefa por execucao, sem paralelismo; 1 h de limite (o e-mail aos recrutadores e o snapshot passam dos 10 min
-# padrao) e uma nova tentativa se falhar. Mesma rede e mesma conta das APIs, para chegar ao ES e ao Valkey da VPC.
-Run "job $Job" @('run', 'jobs', 'deploy', $Job, "--image=$image", "--project=$Project", "--region=$Region",
-	"--service-account=$runtimeAccount", '--memory=1Gi', '--cpu=1', '--tasks=1', '--parallelism=1', '--max-retries=1',
-	'--task-timeout=3600s', "--network=$Network", "--subnet=$Subnet", '--vpc-egress=private-ranges-only',
-	"--set-secrets=application_properties=${PropertiesSecret}:latest", '--quiet')
+foreach ($definition in $jobs) {
+	$job = $definition.Name
+	# os args vao num arquivo de flags: o PowerShell 5.1 estraga as aspas da entrada JSON quando a passa ao gcloud.cmd
+	$flagsFile = Join-Path $env:TEMP "jobsnow-args-$job.yaml"
+	$yaml = "--args:`n- $($definition.Process)`n- '$receiver'`n"
+	[System.IO.File]::WriteAllText($flagsFile, $yaml, (New-Object System.Text.UTF8Encoding $false))
+	$jobArguments = "--flags-file=$flagsFile"
+	# uma tarefa por execucao, sem paralelismo; 1 h de limite (o e-mail aos recrutadores e o snapshot passam dos 10 min
+	# padrao) e uma nova tentativa se falhar. Mesma rede e mesma conta das APIs, para chegar ao ES e ao Valkey da VPC.
+	Run "job $job" @('run', 'jobs', 'deploy', $job, "--image=$image", "--project=$Project", "--region=$Region", $jobArguments,
+		"--service-account=$runtimeAccount", '--memory=1Gi', '--cpu=1', '--tasks=1', '--parallelism=1', '--max-retries=1',
+		'--task-timeout=3600s', "--network=$Network", "--subnet=$Subnet", '--vpc-egress=private-ranges-only',
+		"--set-secrets=application_properties=${PropertiesSecret}:latest", '--quiet')
 
-Run 'permissao de disparar o job' @('run', 'jobs', 'add-iam-policy-binding', $Job, "--project=$Project", "--region=$Region",
-	"--member=serviceAccount:$runtimeAccount", '--role=roles/run.invoker', '--quiet')
+	Run "permissao de disparar o job $job" @('run', 'jobs', 'add-iam-policy-binding', $job, "--project=$Project", "--region=$Region",
+		"--member=serviceAccount:$runtimeAccount", '--role=roles/run.invoker', '--quiet')
 
-$uri = "https://run.googleapis.com/v2/projects/$Project/locations/$Region/jobs/${Job}:run"
-$schedulerArguments = @($Job, "--project=$Project", "--location=$Region", "--schedule=$Schedule", "--time-zone=$TimeZone",
-	"--uri=$uri", '--http-method=POST', "--oauth-service-account-email=$runtimeAccount", '--attempt-deadline=180s', '--quiet')
-if (Exists @('scheduler', 'jobs', 'describe', $Job, "--project=$Project", "--location=$Region")) {
-	Run 'agendamento (atualizado, estado mantido)' (@('scheduler', 'jobs', 'update', 'http') + $schedulerArguments)
-} else {
-	Run 'agendamento' (@('scheduler', 'jobs', 'create', 'http') + $schedulerArguments)
-	Run 'agendamento pausado' @('scheduler', 'jobs', 'pause', $Job, "--project=$Project", "--location=$Region", '--quiet')
+	$uri = "https://run.googleapis.com/v2/projects/$Project/locations/$Region/jobs/${job}:run"
+	$schedulerArguments = @($job, "--project=$Project", "--location=$Region", "--schedule=$($definition.Schedule)", "--time-zone=$TimeZone",
+		"--uri=$uri", '--http-method=POST', "--oauth-service-account-email=$runtimeAccount", '--attempt-deadline=180s', '--quiet')
+	if (Exists @('scheduler', 'jobs', 'describe', $job, "--project=$Project", "--location=$Region")) {
+		Run "agendamento de $job (atualizado, estado mantido)" (@('scheduler', 'jobs', 'update', 'http') + $schedulerArguments)
+	} else {
+		Run "agendamento de $job" (@('scheduler', 'jobs', 'create', 'http') + $schedulerArguments)
+	}
 }
 
 '== situacao'
-& $gcloud run jobs describe $Job "--project=$Project" "--region=$Region" '--format=value(metadata.name,spec.template.spec.template.spec.containers[0].image)' 2>&1 | ForEach-Object { "$_" }
-& $gcloud scheduler jobs describe $Job "--project=$Project" "--location=$Region" '--format=value(schedule,timeZone,state)' 2>&1 | ForEach-Object { "$_" }
+foreach ($definition in $jobs) {
+	$job = $definition.Name
+	& $gcloud run jobs describe $job "--project=$Project" "--region=$Region" '--format=value(metadata.name,spec.template.spec.template.spec.containers[0].image,spec.template.spec.template.spec.containers[0].args)' 2>&1 | ForEach-Object { "$_" }
+	& $gcloud scheduler jobs describe $job "--project=$Project" "--location=$Region" '--format=value(schedule,timeZone,state)' 2>&1 | ForEach-Object { "$_" }
+}

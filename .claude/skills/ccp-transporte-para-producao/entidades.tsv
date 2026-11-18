@@ -75,6 +75,7 @@ vis_recruiter_first_email	VisEntityRecruiterFirstEmail	nao-levar		nao
 vis_recruiter_queue_cursor	VisEntityRecruiterQueueCursor	nao-levar		nao
 vis_recruiter_resumes	VisEntityRecruiterResumes	nao-levar		nao
 vis_recruiter_sign_up_return	VisEntityRecruiterSignUpReturn	nao-levar		nao
+vis_recruiter_unsubscribed	VisEntityRecruiterUnsubscribed	nao-levar		nao
 vis_resume	VisEntityResume	nao-levar		nao
 vis_inactive_resume	VisEntityResume (gemea)	nao-levar		nao
 vis_resume_daily_action	VisEntityResumeDailyAction	nao-levar		nao

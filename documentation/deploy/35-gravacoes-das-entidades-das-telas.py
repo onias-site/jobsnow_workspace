@@ -306,6 +306,15 @@ fieldset label input{padding:0;margin:0}fieldset .muted{font-size:11.5px}
 h2{font-size:15px;margin:0 0 10px}
 table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 th{color:var(--muted);position:sticky;top:0;background:var(--card);cursor:pointer}td.num,th.num{text-align:right;white-space:nowrap}
+.ms{position:relative;flex:1 1 360px;min-width:0}
+.ms-box{display:flex;flex-wrap:wrap;gap:4px;align-items:center;border:1px solid var(--line);border-radius:7px;background:var(--bg);padding:3px 5px;cursor:text;min-height:34px}
+.ms-box:focus-within{border-color:var(--accent)}
+.ms-chip{display:inline-flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1px 4px 1px 9px;font-size:12px}
+.ms-chip button{background:transparent;color:var(--muted);border:0;padding:0 4px;font-size:14px;line-height:1}.ms-chip button:hover{color:#d92d20}
+.ms-box input{border:0;background:transparent;padding:4px;flex:1 1 140px;min-width:100px;outline:none}
+.ms-list{position:absolute;left:0;right:0;top:100%;margin-top:3px;background:var(--card);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.15);max-height:300px;overflow:auto;z-index:5;display:none}
+.ms-opt{display:flex;gap:8px;align-items:center;padding:5px 9px;font-size:13px;cursor:pointer;word-break:break-all}.ms-opt.on{font-weight:600}.ms-opt.hi{background:var(--grid)}
+.ms-opt .muted{margin-left:auto;font-size:11.5px;white-space:nowrap}.ms-opt mark{background:transparent;color:var(--accent);font-weight:700}
 tr.zero td{color:var(--muted)}.scroll{max-height:620px;overflow:auto}.muted{color:var(--muted)}.err{color:#d92d20;white-space:pre-wrap}
 </style></head><body>
 <header><h1>Gravações das entidades das telas · __PROJECT__</h1></header>
@@ -319,7 +328,11 @@ tr.zero td{color:var(--muted)}.scroll{max-height:620px;overflow:auto}.muted{colo
 <div class="bar" style="margin-top:10px"><b style="font-size:13px">Operações</b><span id="operations" style="display:contents"></span></div>
 </div>
 <div id="out"><div class="card muted">Abrindo o túnel até o Elasticsearch de produção e lendo as gravações…</div></div>
-<div class="card"><h2>Índices de produção <span class="muted" style="font-weight:normal;font-size:12px">(<code>_cat/indices?s=docs.count:desc,index:asc&amp;v=true</code>, só as entidades marcadas no filtro)</span></h2>
+<div class="card"><h2>Índices de produção <span class="muted" style="font-weight:normal;font-size:12px">(<code>_cat/indices?s=docs.count:desc,index:asc&amp;v=true</code>, só os índices escolhidos abaixo)</span></h2>
+<div class="bar" style="margin:0 0 8px;align-items:flex-start"><div class="ms" id="indexPicker"><div class="ms-box" id="indexBox"><input id="indexInput" placeholder="digite para buscar um índice…" autocomplete="off"></div><div class="ms-list" id="indexList"></div></div>
+<button type="button" class="ghost" id="indexFollow" title="troca a escolha pelos índices das entidades marcadas no filtro de cima">as do filtro</button>
+<button type="button" class="ghost" id="indexAll">todos</button><button type="button" class="ghost" id="indexNone">nenhum</button>
+<span class="muted" id="indexCount" style="align-self:center"></span></div>
 <div class="bar" style="margin:0 0 8px"><button type="button" class="ghost" id="reloadIndices">Atualizar</button>
 <button type="button" class="ghost" id="autoIndices">Auto atualizar: desligado</button>
 <label style="flex-direction:row;align-items:center;gap:6px">a cada<select id="autoEvery"><option value="10">10 s</option><option value="30">30 s</option><option value="60">1 min</option><option value="300">5 min</option></select></label>
@@ -437,13 +450,73 @@ async function loadIndices(){
   catch(e){$('indicesAt').innerHTML=`<span class="err">${esc(e.message)}</span>`;}
   finally{indicesLoading=false;}
 }
-function showIndices(){
-  if(!indicesText||!selected)return;
-  // o cabecalho e as linhas das entidades marcadas no filtro (a coluna index e a terceira), na ordem do _cat
-  const lines=indicesText.split('\n').filter(Boolean),header=lines[0];
-  const marked=lines.slice(1).filter(line=>selected&&selected.has(line.trim().split(/\s+/)[2]));
-  $('indices').textContent=marked.length?[header,...marked].join('\n'):'Nenhuma entidade marcada no filtro.';
+// indices escolhidos no multiselect, salvos no localStorage; sem nada salvo, a primeira escolha vem das entidades marcadas no filtro
+const INDEX_STORE='painel35.indices';
+let chosenIndices=null,indexRows=[],indexCols=[],indexHi=0;
+try{const saved=JSON.parse(localStorage.getItem(INDEX_STORE)||'null');if(Array.isArray(saved))chosenIndices=new Set(saved);}catch(e){}
+function saveIndices(){try{localStorage.setItem(INDEX_STORE,JSON.stringify([...chosenIndices]));}catch(e){}}
+function shownIndices(){return chosenIndices||selected||new Set();}
+function parseIndices(){
+  // as colunas pelo cabecalho do _cat; no grid ficam so index, docs.count e as de tamanho (*size*)
+  const lines=indicesText.split('\n').filter(Boolean),cols=(lines[0]||'').trim().split(/\s+/);
+  const keep=cols.map((c,i)=>[c,i]).filter(([c])=>c==='index'||c==='docs.count'||c.includes('size'));
+  const ix=cols.indexOf('index'),dx=cols.indexOf('docs.count');
+  indexCols=keep.map(([c])=>c);
+  indexRows=lines.slice(1).map(line=>{const p=line.trim().split(/\s+/);return {name:p[ix<0?2:ix],docs:dx<0?'':p[dx],cells:keep.map(([,i])=>p[i]==null?'':p[i])};});
 }
+function grid(rows){
+  // texto alinhado: a coluna index a esquerda, as demais a direita
+  const all=[indexCols,...rows.map(r=>r.cells)],width=indexCols.map((c,k)=>Math.max(...all.map(r=>r[k].length)));
+  return all.map(r=>r.map((v,k)=>indexCols[k]==='index'?v.padEnd(width[k]):v.padStart(width[k])).join('   ')).join('\n');
+}
+function showIndices(){
+  if(!indicesText)return;
+  parseIndices();
+  if(!chosenIndices&&selected){chosenIndices=new Set(selected);saveIndices();}
+  const shown=shownIndices(),marked=indexRows.filter(r=>shown.has(r.name));
+  $('indices').textContent=marked.length?grid(marked):'Nenhum índice escolhido.';
+  renderPicker();
+}
+function setChosen(set){chosenIndices=set;saveIndices();showIndices();}
+function toggleIndex(name){const set=new Set(shownIndices());set.has(name)?set.delete(name):set.add(name);setChosen(set);}
+function renderPicker(){
+  const shown=shownIndices(),known=new Set(indexRows.map(r=>r.name));
+  const chips=[...shown].filter(n=>known.has(n)).sort();
+  const box=$('indexBox'),input=$('indexInput');box.querySelectorAll('.ms-chip').forEach(c=>c.remove());
+  chips.forEach(n=>{const chip=document.createElement('span');chip.className='ms-chip';chip.innerHTML=`${esc(n)}<button type="button" title="ocultar">×</button>`;chip.querySelector('button').onclick=e=>{e.stopPropagation();toggleIndex(n);};box.insertBefore(chip,input);});
+  $('indexCount').textContent=`${chips.length} de ${indexRows.length} índices`;
+  renderOptions();
+}
+function matches(){
+  // acha o texto em qualquer parte do nome, inclusive nas palavras depois de "_" (token acha js_login_token, js_login_token_attempts...), em ordem alfabetica
+  const q=$('indexInput').value.trim().toLowerCase();
+  return indexRows.filter(r=>!q||r.name.toLowerCase().includes(q)).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function renderOptions(){
+  const list=$('indexList');if(list.style.display!=='block')return;
+  const q=$('indexInput').value.trim().toLowerCase(),shown=shownIndices(),found=matches();
+  indexHi=Math.min(indexHi,Math.max(found.length-1,0));
+  const mark=n=>{if(!q)return esc(n);const i=n.toLowerCase().indexOf(q);return esc(n.slice(0,i))+'<mark>'+esc(n.slice(i,i+q.length))+'</mark>'+esc(n.slice(i+q.length));};
+  list.innerHTML=found.length?found.map((r,i)=>`<div class="ms-opt${shown.has(r.name)?' on':''}${i===indexHi?' hi':''}" data-name="${esc(r.name)}"><input type="checkbox" tabindex="-1" ${shown.has(r.name)?'checked':''}>${mark(r.name)}<span class="muted">${esc(r.docs)} docs</span></div>`).join(''):'<div class="ms-opt muted">nenhum índice com esse texto</div>';
+  list.querySelectorAll('.ms-opt[data-name]').forEach(o=>o.onmousedown=e=>{e.preventDefault();toggleIndex(o.dataset.name);});
+  const hi=list.querySelector('.hi');if(hi)hi.scrollIntoView({block:'nearest'});
+}
+function openList(open){$('indexList').style.display=open?'block':'none';if(open)renderOptions();}
+$('indexBox').onclick=()=>$('indexInput').focus();
+$('indexInput').onfocus=()=>openList(true);
+$('indexInput').onblur=()=>openList(false);
+$('indexInput').oninput=()=>{indexHi=0;openList(true);};
+$('indexInput').onkeydown=e=>{
+  const found=matches();
+  if(e.key==='ArrowDown'){e.preventDefault();indexHi=Math.min(indexHi+1,found.length-1);return openList(true);}
+  if(e.key==='ArrowUp'){e.preventDefault();indexHi=Math.max(indexHi-1,0);return renderOptions();}
+  if(e.key==='Enter'){e.preventDefault();if(found[indexHi])toggleIndex(found[indexHi].name);return;}
+  if(e.key==='Escape'){$('indexInput').value='';return openList(false);}
+  if(e.key==='Backspace'&&!e.target.value){const last=[...$('indexBox').querySelectorAll('.ms-chip')].pop();if(last)last.querySelector('button').click();}
+};
+$('indexFollow').onclick=()=>setChosen(new Set(selected||[]));
+$('indexAll').onclick=()=>setChosen(new Set(indexRows.map(r=>r.name)));
+$('indexNone').onclick=()=>setChosen(new Set());
 function setAuto(on){
   clearInterval(autoTimer);autoTimer=null;
   if(on)autoTimer=setInterval(loadIndices,+$('autoEvery').value*1000);

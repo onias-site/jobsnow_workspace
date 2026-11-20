@@ -26,7 +26,8 @@ import com.vis.entities.VisEntitySkillFixHierarchyItemApproved;
  * Executor do script 103 (2026-11-20): aplica no vis_skill, pelos mesmos businesses do bot de suporte (save da
  * entidade, que atualiza os agrupamentos de iniciais do jn_grouper e o dicionario), toda decisao aprovada que ainda nao
  * esta la: cada item de hierarquia aprovado (o parent entra na associacao, sai na desassociacao) e cada sugestao de
- * habilidade aprovada (a skill existe com os sinonimos sugeridos). Sem --gravar so mostra o que falta.
+ * habilidade aprovada (a skill existe com os sinonimos sugeridos). Desde 2026-11-20 a associacao de uma skill sem
+ * registro cria a skill com o parent. Sem --gravar so mostra o que falta.
  */
 public class ApplyApprovedSkillDecisions {
 
@@ -54,11 +55,12 @@ public class ApplyApprovedSkillDecisions {
 					+ item.getAsString(VisEntitySkillFixHierarchyItemApproved.Fields.parent) + " / "
 					+ item.getAsString(VisEntitySkillFixHierarchyItemApproved.Fields.skill);
 			Boolean applied = isItemApplied(item);
-			if(applied == null) {
-				System.out.println(label + ": skill sem registro em vis_skill (nada a aplicar)");
+			boolean association = "add".equals(item.getAsString(VisEntitySkillFixHierarchyItemApproved.Fields.type));
+			if(applied == null && false == association) {
+				System.out.println(label + ": skill sem registro em vis_skill (desassociacao: nada a aplicar)");
 				continue;
 			}
-			if(applied) {
+			if(Boolean.TRUE.equals(applied)) {
 				System.out.println(label + ": ja aplicado");
 				continue;
 			}

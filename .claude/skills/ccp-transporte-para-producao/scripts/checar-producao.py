@@ -1,8 +1,8 @@
 # Checagem do transporte para producao (skill ccp-transporte-para-producao). So le: nao grava nada em nenhum ES.
 # 1. Indices: os do codigo (configuradores de entidade e suas gemeas) contra os do destino e os da origem.
 # 2. Campos: o mapeamento de cada indice na origem contra o do destino (dynamic strict: campo novo sem mapeamento
-#    em producao faz a escrita falhar la). Objeto dynamic: true conta como um campo so, sem os subcampos que os dados
-#    criaram em cada ES.
+#    em producao faz a escrita falhar la). Objeto "enabled": false conta como um campo so; "dynamic": "true", em
+#    qualquer dos lados, e pendencia (proibido desde 2026-11-20).
 # 3. Nomes de classe: toda string com cara de classe do projeto (com.ccp|jn|vis|jb|js...) gravada nos indices
 #    marcados com varrer_classes=sim no entidades.tsv precisa existir no codigo; senao houve renomeio sem script.
 # 4. Registros: as entidades de regra igual/adaptar/merge/carga do entidades.tsv, origem contra destino.
@@ -106,13 +106,17 @@ def code_indices(classes):
 
 
 def flatten_mapping(properties, prefix=""):
-    # um objeto dynamic: true (json, headers) conta como um campo so: os subcampos nascem dos dados gravados em cada ES
-    # e nao da definicao da entidade, entao nao entram na comparacao (decisao do usuario em 2026-11-08)
+    # um objeto guardado inteiro (json, headers, moreParameters) conta como um campo so. Desde 2026-11-20 ele e
+    # "enabled": false; "dynamic": "true" e proibido nos mapeamentos (os subcampos nasciam dos dados e o mapeamento
+    # crescia) e aparece como "object (dynamic: true, proibido)", diferente do local, para cair no passo 2
     fields = {}
     for name, definition in properties.items():
         path = prefix + name
         if str(definition.get("dynamic", "")).lower() == "true":
-            fields[path] = "object (dynamic)"
+            fields[path] = "object (dynamic: true, proibido)"
+            continue
+        if definition.get("enabled") is False:
+            fields[path] = "object (enabled: false)"
             continue
         if "properties" in definition:
             fields.update(flatten_mapping(definition["properties"], path + "."))
@@ -208,7 +212,13 @@ for index in sorted(set(code) & target_indices & source_indices):
         report("%s.%s (%s) falta no destino: falta script que acrescente o campo" % (index, field, source_fields[field]))
     for field in sorted(set(target_fields) - set(source_fields)):
         print("  aviso: %s.%s existe so no destino (campo retirado do codigo?)" % (index, field))
+    for field in sorted(set(source_fields) | set(target_fields)):
+        for side, side_fields in (("origem", source_fields), ("destino", target_fields)):
+            if "proibido" in side_fields.get(field, ""):
+                report("%s.%s tem \"dynamic\": \"true\" na %s: proibido, reindexar como \"enabled\": false" % (index, field, side))
     for field in sorted(set(source_fields) & set(target_fields)):
+        if "proibido" in source_fields[field] or "proibido" in target_fields[field]:
+            continue
         if source_fields[field] != target_fields[field]:
             report("%s.%s e %s na origem e %s no destino: tipo nao muda no lugar, exige reindexar" % (index, field, source_fields[field], target_fields[field]))
 

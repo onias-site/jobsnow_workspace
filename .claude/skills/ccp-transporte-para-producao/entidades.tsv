@@ -50,7 +50,6 @@ jn_jobsnow_warning	JnEntityJobsnowWarning	nao-levar		nao
 jn_login_email	JnEntityLoginEmail	nao-levar		nao
 jn_message_did_not_sent	JnEntityMessageDidNotSent	nao-levar		nao
 jn_ticket_daily_limit	JnEntityTicketDailyLimit	nao-levar		nao
-jn_versionable	JnEntityVersionable	nao-levar		nao
 js_contact_us	JsEntityContactUs	nao-levar		nao
 js_contact_us_solved	JsEntityContactUs (gemea)	nao-levar		nao
 js_login_answers	JsEntityLoginAnswers	nao-levar		nao

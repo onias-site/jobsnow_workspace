@@ -4,7 +4,8 @@
 #   2. com o tunel aberto: o Python lista o LinkedIn legivel de cada visualizacao (filhos do grupo
 #      vis_viewed_resumes_of_the_recruiter); o DeleteViewsAndLoginOfARecruiter.java apaga pela entidade (deleteAnyWhere,
 #      com os decorators que descontam os contadores do jn_grouper) as visualizacoes, o token, a senha, as respostas do
-#      cadastro e o jn_login_email; o Python apaga o historico em jn_versionable e os grupos de sessoes ja expurgadas.
+#      cadastro e o jn_login_email; o Python apaga os grupos de sessoes ja expurgadas (o historico de cada registro, um grupo do jn_grouper desde
+#      2026-11-20, sai com o registro).
 # Sem -Gravar so mostra o que existe. O e-mail vai por variavel de ambiente, nunca e impresso.
 # Depois: o cache (Memorystore) das APIs guarda os registros lidos por ate 1 hora.
 # Uso: powershell -NoProfile -ExecutionPolicy Bypass -File 100-visualizacoes-e-login-de-um-recrutador.ps1 -Email <e-mail> [-Gravar]

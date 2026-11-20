@@ -18,7 +18,7 @@ import com.vis.entities.VisEntityViewedResume;
  * Apaga, pela entidade ({@code deleteAnyWhere}: principal e gêmea, com os decorators que corrigem os grupos e os
  * contadores do {@code jn_grouper}), as visualizações de um currículo feitas pelos recrutadores informados. Roda contra
  * o Elasticsearch da {@code application_properties} do processo (o .ps1 troca pelo de produção, pelo túnel). O histórico
- * ({@code jn_versionable}) fica com o script Python que acompanha esta tarefa.
+ * de cada visualização (um grupo do {@code jn_grouper} desde 2026-11-20) sai com ela.
  *
  * <p>Uso: {@code <endereço do LinkedIn do currículo> <e-mail do recrutador> [<e-mail do recrutador>...]}
  */

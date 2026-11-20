@@ -50,7 +50,7 @@ Os freelancers de A, B e C somam 2, 3 e 1; os do mesmo domínio, 2, 1 e 2; o de 
 |---|---|---|
 | Q1.1 | `node 13-quem-me-viu-por-tipo-de-recrutador.mjs candidates` | 3 candidatos com sessão `ok` e save `200` |
 | Q1.2 | `node 13-quem-me-viu-por-tipo-de-recrutador.mjs sessions` | 6 recrutadores `ok` |
-| Q1.3 | `curl -XPOST "localhost:9200/jn_versionable,vis_resume,vis_recruiter,vis_viewed_resume/_refresh"` e, em `ccp_rest-api-tests_jobsnow`: `java @target/create-entities-args.txt ../documentation/roteiros-de-teste/automacao/SendResumesToRecruiters.java <os 6 recrutadores>` | `emailsSent: 6`; um e-mail por recrutador em `C:\logs\email\<recrutador>\` |
+| Q1.3 | `curl -XPOST "localhost:9200/jn_grouper,vis_resume,vis_recruiter,vis_viewed_resume/_refresh"` e, em `ccp_rest-api-tests_jobsnow`: `java @target/create-entities-args.txt ../documentation/roteiros-de-teste/automacao/SendResumesToRecruiters.java <os 6 recrutadores>` | `emailsSent: 6`; um e-mail por recrutador em `C:\logs\email\<recrutador>\` |
 | Q1.4 | `node 13-quem-me-viu-por-tipo-de-recrutador.mjs links` | cada recrutador com `candidatos do roteiro A,B,C` |
 | Q2 | `node 13-quem-me-viu-por-tipo-de-recrutador.mjs views` | 18 visualizações com 200 |
 | Q3 | `node 13-quem-me-viu-por-tipo-de-recrutador.mjs check` | `OK` para A, B e C (sai com 0) |

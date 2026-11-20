@@ -37,7 +37,7 @@ Vários recrutadores de tipos diferentes recebem o e-mail de currículos e abrem
 
 ## D1 — Envio
 
-- [ ] 1.1 `curl -XPOST "localhost:9200/jn_versionable,vis_resume,vis_recruiter,vis_viewed_resume/_refresh"` e rode `SendResumesToRecruiters.java` com os 6 recrutadores. Esperado: `emailsSent: 6` e um e-mail por recrutador em `C:\logs\email\<recrutador>\`.
+- [ ] 1.1 `curl -XPOST "localhost:9200/jn_grouper,vis_resume,vis_recruiter,vis_viewed_resume/_refresh"` e rode `SendResumesToRecruiters.java` com os 6 recrutadores. Esperado: `emailsSent: 6` e um e-mail por recrutador em `C:\logs\email\<recrutador>\`.
 - [ ] 1.2 `node 09-dinamica-candidato-recrutador.mjs sessions` e depois `links`. Esperado: cada recrutador com `lista N` e `candidatos de teste 6`.
 
 ## D2 — Visualizações

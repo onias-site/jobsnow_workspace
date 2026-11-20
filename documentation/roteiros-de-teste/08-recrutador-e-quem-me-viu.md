@@ -22,7 +22,7 @@
 | `automacao/SendResumesToRecruiters.java` | faz o papel do agendador: grava os recrutadores dos argumentos em `vis_recruiter` (fonte "roteiro") e roda o processo só para eles; os e-mails vão para `C:\logs\email\<recrutador>\com.vis.messages.VisMessages$VisNotifyRecruiterAboutResumes.html` |
 
 ```bash
-curl -XPOST "localhost:9200/jn_versionable,vis_resume,vis_recruiter,vis_viewed_resume/_refresh"
+curl -XPOST "localhost:9200/jn_grouper,vis_resume,vis_recruiter,vis_viewed_resume/_refresh"
 cd ccp_rest-api-tests_jobsnow
 java @target/create-entities-args.txt ../documentation/roteiros-de-teste/automacao/SendResumesToRecruiters.java \
   recrutador08.20261026@empresa08.com.br recrutador08.20261026@gmail.com roteiro03.20261026@teste.com

@@ -25,7 +25,7 @@ import com.vis.entities.VisEntityRecruiter;
  *
  * <p>Precisa de {@code recruiterLinksSecret} na variável de ambiente {@code application_properties} e do refresh dos
  * índices antes de rodar (o processo consulta o que acabou de ser gravado):
- * <pre>curl -XPOST "localhost:9200/jn_versionable,vis_resume,vis_recruiter,vis_viewed_resume/_refresh"</pre>
+ * <pre>curl -XPOST "localhost:9200/jn_grouper,vis_resume,vis_recruiter,vis_viewed_resume/_refresh"</pre>
  *
  * <p>Uso (pasta de trabalho em {@code ccp_rest-api-tests_jobsnow}, como o {@code SupportBotCommand.java}):
  * <pre>java @target/create-entities-args.txt ../documentation/roteiros-de-teste/automacao/SendResumesToRecruiters.java a@empresa.com.br b@gmail.com</pre>

@@ -4,10 +4,11 @@
 #   listar <arquivo>: grava no arquivo o LinkedIn legivel de cada visualizacao do recrutador, tirado dos filhos do grupo
 #       vis_viewed_resumes_of_the_recruiter do jn_grouper (vis_viewed_resume guarda o LinkedIn como SHA-1); confere que
 #       cada SHA-1 bate com uma visualizacao gravada. O executor Java apaga pela entidade com essas chaves.
-#   limpar [--gravar]: depois do Java, apaga o que sobrar do historico em jn_versionable (o delete da entidade ja o expurga
-#       por @CcpEntityVersionablePurge: na rodada de 2026-11-20 nao sobrou nada) e os
+#   limpar [--gravar]: depois do Java, apaga os
 #       grupos jn_login_email das sessoes ja expurgadas (js_login_session_validation, principal e inativo), que nao tem
-#       mais registro para a entidade apagar. Mostra o que sobrou do recrutador em cada indice.
+#       mais registro para a entidade apagar. Mostra o que sobrou do recrutador em cada indice. O historico dos registros
+#       apagados (desde 2026-11-20 um grupo jn_virtual_versionable_history do jn_grouper por registro; antes, linhas do
+#       jn_versionable) sai junto com cada registro, pelo @CcpEntityVersionablePurge do deleteAnyWhere do Java.
 # Uso: RECRUTADOR_EMAIL=<e-mail> ES_DESTINO_AUTH=<Authorization> python 100-...py listar <arquivo> | limpar [--gravar]
 import hashlib
 import json
@@ -20,7 +21,6 @@ target_url = "http://127.0.0.1:9210"
 auth = os.environ.get("ES_DESTINO_AUTH", "")
 email = os.environ["RECRUTADOR_EMAIL"]
 opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-HISTORY_ENTITIES = ["vis_viewed_resume", "js_login_password", "js_login_answers", "js_login_token", "jn_login_email"]
 RECRUITER_INDICES = ["vis_viewed_resume", "vis_inactive_viewed_resume", "js_login_token", "js_login_token_locked",
                      "js_login_password", "js_login_password_locked", "js_login_answers", "jn_login_email"]
 
@@ -76,21 +76,11 @@ def list_linkedins(output):
     return 0 if len(matched) == len(stored) else 2
 
 
-def history_query():
-    return {"bool": {"filter": [{"terms": {"entity": HISTORY_ENTITIES}}],
-                     "must": [{"query_string": {"query": '"%s" OR "%s"' % (email_hash, email), "lenient": True}}]}}
-
-
 def clean(write):
-    _, answer = call("POST", "/jn_versionable/_search", {"size": 0, "query": history_query(),
-                                                        "aggs": {"e": {"terms": {"field": "entity"}}}})
-    print("historico em jn_versionable:", {b["key"]: b["doc_count"] for b in answer["aggregations"]["e"]["buckets"]})
     session_groups = [(index, hit) for index, hit in groups(["jn_login_email"])
                       if hit["_source"].get("childName") == "js_login_session_validation"]
     print("grupos de sessao:", [(index, hit["_source"].get("childCount")) for index, hit in session_groups])
     if write:
-        _, answer = call("POST", "/jn_versionable/_delete_by_query?refresh=true", {"query": history_query()})
-        print("historico apagado:", answer.get("deleted"), "falhas:", answer.get("failures"))
         for index, hit in session_groups:
             status, _ = call("DELETE", "/" + index + "/_doc/" + hit["_id"] + "?refresh=true")
             print("grupo de sessao apagado em", index, status)

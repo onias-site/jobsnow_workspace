@@ -191,7 +191,7 @@ O e-mail é gravado como **hash** — por isso as consultas filtram pela habilid
 | Usuários ignorados pelo suporte (o e-mail legível fica dentro de `description`) | `http://localhost:9200/jn_command_not_allowed_to_user/_search?pretty` |
 | … que voltaram a ser atendidos | `http://localhost:9200/jn_command_reallowed_to_user/_search?pretty` |
 | Caixa de tickets do operador | `http://localhost:9200/jn_support_pending_command/_search?pretty` e `http://localhost:9200/jb_pending_tickets/_search?pretty` |
-| Histórico de versões | `http://localhost:9200/jn_versionable/_search?pretty&q=entity:vis_skill_pending` |
+| Histórico de versões | `http://localhost:9200/jn_grouper/_search?pretty&q=parentName:jn_virtual_versionable_history%20AND%20childName:vis_skill_pending` (um grupo por registro, uma versão por gravação, desde 2026-11-20) |
 
 ### 6.4 Rede do navegador
 

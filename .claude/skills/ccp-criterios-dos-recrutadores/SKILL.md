@@ -15,7 +15,7 @@ No PowerShell (timeout de 400000 ms; o túnel leva até 90 s), com a data do dia
 powershell -NoProfile -ExecutionPolicy Bypass -File C:\eclipse-workspaces\ccp\documentation\deploy\com-tunel-de-producao.ps1 -Script C:\eclipse-workspaces\ccp\.claude\skills\ccp-criterios-dos-recrutadores\scripts\criterios-dos-recrutadores.py -Argumentos C:\logs\curriculos-aos-recrutadores\proximos-recrutadores-<aaaa-mm-dd>.tsv
 ```
 
-O script simula `getRecruitersInOrder` (ordem de 2026-11-15) com os dados de produção: recrutadores ativos de `vis_recruiter` (campos `legacyActive`, `lastLegacyView`, `lastTelegramAppearance`, `source`, `professional`), última visualização do `jn_versionable` e de `vis_recruiter_sign_up_return`, `vis_recruiter_first_email` e os cursores do rodízio em `vis_recruiter_queue_cursor`. Depois aplica o filtro de endereço inválido e corta em 2.000 (`RECRUITERS_PER_DAY`).
+O script simula `getRecruitersInOrder` (ordem de 2026-11-15) com os dados de produção: recrutadores ativos de `vis_recruiter` (campos `legacyActive`, `lastLegacyView`, `lastTelegramAppearance`, `source`, `professional`), última visualização do histórico de `vis_viewed_resume` (grupos `jn_virtual_versionable_history` do `jn_grouper`, desde 2026-11-20) e de `vis_recruiter_sign_up_return`, `vis_recruiter_first_email` e os cursores do rodízio em `vis_recruiter_queue_cursor`. Depois aplica o filtro de endereço inválido e corta em 2.000 (`RECRUITERS_PER_DAY`).
 
 ## Resposta
 

@@ -26,8 +26,9 @@ import com.vis.entities.VisEntityViewedResume;
  * contadores do {@code jn_grouper}), as visualizações de currículo de um recrutador (uma por LinkedIn do arquivo) e o
  * login do mesmo e-mail: token, senha, respostas do cadastro e {@code jn_login_email}. O recrutador
  * ({@code vis_recruiter}) fica. Roda contra o Elasticsearch da {@code application_properties} do processo (o .ps1 troca
- * pelo de produção, pelo túnel). Nem o e-mail nem os LinkedIns são impressos. O histórico ({@code jn_versionable}) e os
- * grupos de sessão já expurgada ficam com o script Python que acompanha esta tarefa.
+ * pelo de produção, pelo túnel). Nem o e-mail nem os LinkedIns são impressos. O histórico de cada registro (um grupo do
+ * {@code jn_grouper} desde 2026-11-20) sai com o registro; os grupos de sessão já expurgada ficam com o script Python
+ * que acompanha esta tarefa.
  * <p>
  * Sem {@code --gravar} só mostra onde cada registro está. Rodar de novo não muda nada.
  * <p>

@@ -1,7 +1,7 @@
 # Simula, so lendo o ES, a ordem de VisBusinessSendResumesToRecruiters.getRecruitersInOrder + o filtro de endereco
 # invalido do VisResumesToTheRecruiterSender e grava os primeiros N e-mails (padrao 2000) num TSV.
 # Uso (pelo com-tunel-de-producao.ps1): -Script este -Argumentos <saida.tsv>; destino padrao o tunel (9210), N padrao 2000.
-# So leitura de producao: vis_recruiter (com legacyActive, lastLegacyView, lastTelegramAppearance), jn_versionable,
+# So leitura de producao: vis_recruiter (com legacyActive, lastLegacyView, lastTelegramAppearance), historico no jn_grouper,
 # vis_recruiter_sign_up_return, vis_recruiter_first_email e vis_recruiter_queue_cursor. Nenhum e-mail e impresso.
 import hashlib, json, os, re, sys, time, urllib.request, urllib.error
 
@@ -84,12 +84,17 @@ def is_valid(email):
     return True
 
 
+# o historico de cada registro e um grupo do jn_grouper desde 2026-11-20 (antes, linhas do jn_versionable): uma versao
+# (texto JSON com json e timestamp) por gravacao
+HISTORY_QUERY = {"bool": {"must": [{"term": {"parentName": "jn_virtual_versionable_history"}},
+                                   {"term": {"childName": "vis_viewed_resume"}}]}}
 last_view = {}
-for hit in search_all("jn_versionable", {"term": {"entity": "vis_viewed_resume"}}, ["json", "timestamp"]):
-    record = json.loads(hit["_source"]["json"])
-    email_hash = record.get("email")
-    timestamp = int(float(hit["_source"]["timestamp"]))
-    last_view[email_hash] = max(last_view.get(email_hash, 0), timestamp)
+for hit in search_all("jn_grouper", HISTORY_QUERY, ["child"]):
+    for child in hit["_source"].get("child", []):
+        version = json.loads(child)
+        email_hash = version["json"].get("email")
+        timestamp = int(float(version["timestamp"]))
+        last_view[email_hash] = max(last_view.get(email_hash, 0), timestamp)
 for hit in search_all("vis_recruiter_sign_up_return", {"match_all": {}}):
     source = hit["_source"]
     h = source["email"]

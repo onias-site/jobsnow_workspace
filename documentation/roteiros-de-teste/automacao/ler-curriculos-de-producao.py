@@ -4,7 +4,7 @@ e grava tudo num arquivo JSON, para o SendProductionResumesToRecruiter.java mont
 Conteudo do arquivo:
   resumes         todos os registros de vis_resume, como estao gravados
   rankings        skill -> ranking de vis_skill, so das skills desses curriculos
-  dates           hash do e-mail do curriculo -> [insercao, ultima alteracao], do historico (jn_versionable)
+  dates           hash do e-mail do curriculo -> [insercao, ultima alteracao], do historico (grupos do jn_grouper)
   lastViewByPair  "hash do e-mail do recrutador|hash do LinkedIn" -> ultima visualizacao, do historico
   aliasByPair     "hash do e-mail do recrutador|hash do LinkedIn" -> apelido, de vis_viewed_resume
   inactivePairs   ["hash do e-mail do recrutador|hash do LinkedIn"], de vis_inactive_viewed_resume (curriculos que nao vao mais ao recrutador)
@@ -38,8 +38,12 @@ def read_all(index, body):
 
 
 def history_of(entity):
-    rows = read_all("jn_versionable", {"_source": ["json", "timestamp"], "query": {"term": {"entity": entity}}})
-    return [(json.loads(row["json"]), int(row["timestamp"])) for row in rows]
+    # o historico de cada registro e um grupo do jn_grouper desde 2026-11-20 (antes, linhas do jn_versionable): uma
+    # versao (texto JSON com json e timestamp) por gravacao
+    query = {"bool": {"must": [{"term": {"parentName": "jn_virtual_versionable_history"}}, {"term": {"childName": entity}}]}}
+    groups = read_all("jn_grouper", {"_source": ["child"], "query": query})
+    versions = [json.loads(child) for group in groups for child in group.get("child", [])]
+    return [(version["json"], int(float(version["timestamp"]))) for version in versions]
 
 
 target = sys.argv[1]

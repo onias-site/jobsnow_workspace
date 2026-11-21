@@ -1,8 +1,9 @@
 # Painel local das gravacoes, em producao (jobsnow-prd), das 18 entidades alimentadas pelas telas do site (levantamento
 # de 2026-11-05: as que um endpoint chamado pelo front grava na requisicao ou manda gravar por fila). O "quando" de cada
 # gravacao vem, por entidade:
-#   - versionable (@CcpEntityVersionable): jn_versionable, uma linha por gravacao com operation (create, update, delete) e
-#     timestamp, ate o expurgo do historico;
+#   - versionable (@CcpEntityVersionable): o historico de cada registro, um grupo do jn_grouper (parentName
+#     jn_virtual_versionable_history, childName = entidade) com uma versao por gravacao (operation e timestamp), ate o
+#     expurgo do historico (ate 2026-11-20, uma linha por gravacao no jn_versionable);
 #   - expurgable (@CcpEntityDisposable): jn_disposable_record, uma copia por chave com trueTimestamp, o momento da ULTIMA
 #     gravacao daquela chave (as anteriores nao ficam);
 #   - nenhum dos dois: logs das chamadas de escrita ao Elasticsearch (linha jobsnowDbCalls das APIs e log mensagens dos
@@ -158,19 +159,34 @@ def histogram(field, interval, offset):
 
 
 def read_versionable(start, end, interval, offset):
-    body = {"size": 0, "track_total_hits": False,
-            "query": {"bool": {"filter": [{"terms": {"entity": NAMES_BY_SOURCE["versionable"]}}, {"range": {"timestamp": {"gte": start, "lt": end}}}]}},
-            "aggs": {"entity": {"terms": {"field": "entity", "size": 100}, "aggs": {
-                "last": {"max": {"field": "timestamp"}},
-                "operation": {"terms": {"field": "operation", "size": 10}, "aggs": {"time": histogram("timestamp", interval, offset)}}}}}}
-    result = es_search("jn_versionable", body)
-    rows, last = [], {}
-    for entity in result["aggregations"]["entity"]["buckets"]:
-        last[entity["key"]] = entity["last"]["value"]
-        for operation in entity["operation"]["buckets"]:
-            label = VERSIONABLE_OPERATIONS.get(operation["key"], operation["key"])
-            for bucket in operation["time"]["buckets"]:
-                rows.append({"entity": entity["key"], "operation": label, "bucket": int(bucket["key"]), "count": bucket["doc_count"]})
+    # as versoes sao textos JSON dentro dos grupos (campo child, sem indice): o histograma e montado aqui, com a mesma
+    # regra do histogram do Elasticsearch (chave = piso((valor - offset) / intervalo) * intervalo + offset)
+    query = {"bool": {"filter": [{"term": {"parentName": "jn_virtual_versionable_history"}},
+                                 {"terms": {"childName": NAMES_BY_SOURCE["versionable"]}}]}}
+    counts, last, after = {}, {}, None
+    while True:
+        body = {"size": 1000, "track_total_hits": False, "query": query, "_source": ["childName", "child"],
+                "sort": [{"parentId": "asc"}, {"childName": "asc"}]}
+        if after is not None:
+            body["search_after"] = after
+        hits = es_search("jn_grouper", body)["hits"]["hits"]
+        if not hits:
+            break
+        for hit in hits:
+            entity = hit["_source"]["childName"]
+            for child in hit["_source"].get("child", []):
+                version = json.loads(child)
+                timestamp = int(float(version["timestamp"]))
+                if timestamp < start or timestamp >= end:
+                    continue
+                last[entity] = max(last.get(entity, 0), timestamp)
+                label = VERSIONABLE_OPERATIONS.get(version["operation"], version["operation"])
+                bucket = (timestamp - offset) // interval * interval + offset
+                key = (entity, label, bucket)
+                counts[key] = counts.get(key, 0) + 1
+        after = hits[-1]["sort"]
+    rows = [{"entity": entity, "operation": label, "bucket": bucket, "count": count}
+            for (entity, label, bucket), count in counts.items()]
     return rows, last
 
 
@@ -337,6 +353,7 @@ tr.zero td{color:var(--muted)}.scroll{max-height:620px;overflow:auto}.muted{colo
 <button type="button" class="ghost" id="autoIndices">Auto atualizar: desligado</button>
 <label style="flex-direction:row;align-items:center;gap:6px">a cada<select id="autoEvery"><option value="10">10 s</option><option value="30">30 s</option><option value="60">1 min</option><option value="300">5 min</option></select></label>
 <span class="muted" id="indicesAt"></span></div>
+<div id="indicesPie" style="margin-bottom:12px"></div>
 <pre id="indices" style="margin:0;overflow:auto;max-height:620px;font:12px/1.4 Consolas,monospace">…</pre></div>
 </main>
 <script>
@@ -349,7 +366,7 @@ const when=ms=>ms?new Date(ms).toLocaleString('pt-BR'):'–';
 const PALETTE=['#2563eb','#7c3aed','#db2777','#0d9488','#ca8a04','#ea580c','#16a34a','#0891b2','#be123c','#4f46e5','#64748b','#94a3b8'];
 const OPERATIONS=['cria','atualiza','apaga','grava','bulk','última gravação'];
 const OP_COLORS={'cria':'#16a34a','atualiza':'#2563eb','apaga':'#dc2626','grava':'#0d9488','bulk':'#7c3aed','última gravação':'#ca8a04'};
-const SOURCES={versionable:'Versionable (jn_versionable): cada gravação',expurgable:'Expurgable (jn_disposable_record): última gravação de cada chave',logs:'Logs das chamadas ao ES (desde 05/11/2026)'};
+const SOURCES={versionable:'Versionable (histórico no jn_grouper): cada gravação',expurgable:'Expurgable (jn_disposable_record): última gravação de cada chave',logs:'Logs das chamadas ao ES (desde 05/11/2026)'};
 const SOURCE_SHORT={versionable:'versionable',expurgable:'expurgable',logs:'logs'};
 const STORE='painel35.selecao';
 let data=null,entities=[],selected=null,ops=new Set(OPERATIONS);
@@ -375,7 +392,7 @@ $('all').onclick=()=>pick(()=>true);$('none').onclick=()=>pick(()=>false);$('scr
 async function run(){
   const start=+new Date($('start').value),end=+new Date($('end').value),interval=step(end-start);
   const offset=((new Date().getTimezoneOffset()*60000)%interval+interval)%interval;
-  $('out').innerHTML='<div class="card muted">Lendo jn_versionable e jn_disposable_record pelo túnel e os logs das chamadas ao ES…</div>';
+  $('out').innerHTML='<div class="card muted">Lendo o histórico do jn_grouper e o jn_disposable_record pelo túnel e os logs das chamadas ao ES…</div>';
   try{const r=await fetch('/api/writes?'+new URLSearchParams({start,end,interval,offset}));const d=await r.json();if(!r.ok)throw new Error(d.error);
     data={...d,start,end};entities=d.entities;if(!selected)selected=new Set(entities.map(e=>e.entity));checks();render();
   }catch(e){$('out').innerHTML=`<div class="card err">${esc(e.message)}</div>`;}
@@ -402,17 +419,33 @@ function wireCharts(){
       tip.innerHTML=`<div class="muted">${at}</div>${rows||'<div class="muted">nenhuma gravação</div>'}`;tip.style.display='block';const px=e.clientX-r.left;tip.style.left=Math.max(0,Math.min(px+12,r.width-tip.offsetWidth-4))+'px';tip.style.top='10px';cur.setAttribute('x1',vx);cur.setAttribute('x2',vx);cur.setAttribute('visibility','visible');};
     el.onmouseleave=()=>{tip.style.display='none';cur.setAttribute('visibility','hidden');};});
 }
-function pie(title,items){
+// opts: max (fatias antes de agrupar o resto em "outras"; Infinity = uma por item), fmt (formato do valor), empty (texto sem dados), bare (sem o card)
+function pie(title,items,opts={}){
+  const max=opts.max||10,fmt=opts.fmt||fmtInt,empty=opts.empty||'nenhuma gravação no período';
   items=items.filter(i=>i.value>0).sort((a,b)=>b.value-a.value);
-  if(items.length>10){const rest=items.slice(9).reduce((a,b)=>a+b.value,0);items=items.slice(0,9).concat([{label:'outras',value:rest,color:'#94a3b8'}]);}
-  items.forEach((it,i)=>it.color=it.color||PALETTE[i%PALETTE.length]);
+  // restLabel: texto, ou funcao que recebe quantos itens foram somados na ultima fatia
+  if(items.length>max){const others=items.slice(max-1),rest=others.reduce((a,b)=>a+b.value,0);const restLabel=typeof opts.restLabel==='function'?opts.restLabel(others.length):(opts.restLabel||'outras');items=items.slice(0,max-1).concat([{label:restLabel,value:rest,color:'#94a3b8'}]);}
+  // passada a paleta, cores pelo angulo de ouro, para nao repetir quando ha uma fatia por item
+  items.forEach((it,i)=>it.color=it.color||(i<PALETTE.length?PALETTE[i]:`hsl(${Math.round(i*137.508)%360},55%,52%)`));
   const total=items.reduce((a,b)=>a+b.value,0);let angle=-Math.PI/2;const r=80,c=90;let paths='';
   items.forEach(it=>{const a=it.value/total*2*Math.PI;
     if(a>=2*Math.PI-1e-9){paths+=`<circle cx="${c}" cy="${c}" r="${r}" fill="${it.color}"><title>${esc(it.label)}</title></circle>`;return;}
     const x1=c+r*Math.cos(angle),y1=c+r*Math.sin(angle);angle+=a;const x2=c+r*Math.cos(angle),y2=c+r*Math.sin(angle);
-    paths+=`<path d="M${c},${c} L${x1},${y1} A${r},${r} 0 ${a>Math.PI?1:0} 1 ${x2},${y2} Z" fill="${it.color}" stroke="var(--card)" stroke-width="1.5"><title>${esc(it.label)}: ${fmtInt(it.value)} (${(it.value/total*100).toFixed(1)}%)</title></path>`;});
-  const legend=items.map(i=>`<div><i style="background:${i.color}"></i>${esc(i.label)} — <b>${fmtInt(i.value)}</b> <span class="muted">(${(i.value/total*100).toFixed(1)}%)</span></div>`).join('');
-  return `<div class="card"><h2>${title}</h2><div class="pie"><svg width="180" height="180" viewBox="0 0 180 180">${paths||'<circle cx="90" cy="90" r="80" fill="var(--line)"/>'}</svg><div class="legend">${legend||'<span class="muted">nenhuma gravação no período</span>'}</div></div></div>`;
+    paths+=`<path d="M${c},${c} L${x1},${y1} A${r},${r} 0 ${a>Math.PI?1:0} 1 ${x2},${y2} Z" fill="${it.color}" stroke="var(--card)" stroke-width="1.5"><title>${esc(it.label)}: ${fmt(it.value)} (${(it.value/total*100).toFixed(1)}%)</title></path>`;});
+  const legend=items.map(i=>`<div><i style="background:${i.color}"></i>${esc(i.label)} — <b>${fmt(i.value)}</b> <span class="muted">(${(i.value/total*100).toFixed(1)}%)</span></div>`).join('');
+  const body=`<div class="pie"><svg width="180" height="180" viewBox="0 0 180 180">${paths||'<circle cx="90" cy="90" r="80" fill="var(--line)"/>'}</svg><div class="legend"${opts.bare?' style="max-height:320px;overflow:auto;flex:1 1 300px"':''}>${legend||`<span class="muted">${empty}</span>`}</div></div>`;
+  return opts.bare?`<h2 style="font-size:13.5px">${title}</h2>${body}`:`<div class="card"><h2>${title}</h2>${body}</div>`;
+}
+// tamanho do _cat (225b, 8.3kb, 157.4mb, 1.2gb) em bytes, e de volta em texto
+const SIZE_UNITS={b:1,kb:1024,mb:1024**2,gb:1024**3,tb:1024**4,pb:1024**5};
+function toBytes(text){const m=/^([\d.]+)([kmgtp]?b)$/i.exec(text||'');return m?parseFloat(m[1])*SIZE_UNITS[m[2].toLowerCase()]:0;}
+function fmtBytes(v){const units=['B','KB','MB','GB','TB'];let k=0;while(v>=1024&&k<units.length-1){v/=1024;k++;}return (k?v.toLocaleString('pt-BR',{maximumFractionDigits:1}):Math.round(v))+' '+units[k];}
+function indicesPie(rows){
+  const col=indexCols.indexOf('store.size');
+  if(col<0)return '<div class="muted">o _cat não trouxe a coluna store.size</div>';
+  const items=rows.map(r=>({label:r.name,value:toBytes(r.cells[col])}));
+  const total=items.reduce((a,b)=>a+b.value,0);
+  return pie(`Tamanho do banco por entidade <span class="muted" style="font-weight:normal;font-size:12px">(store.size de todos os ${rows.length} índices, total ${fmtBytes(total)}; as 10 maiores e as outras somadas, sem seguir o filtro)</span>`,items,{max:11,restLabel:n=>`Outras ${n} Somadas`,fmt:fmtBytes,empty:'nenhum índice com dados',bare:true});
 }
 const sumBy=(rows,key)=>{const m={};rows.forEach(r=>m[key(r)]=(m[key(r)]||0)+r.count);return Object.entries(m).map(([label,value])=>({label,value}));};
 function series(rows,key,top,colors){
@@ -465,9 +498,10 @@ function parseIndices(){
   indexRows=lines.slice(1).map(line=>{const p=line.trim().split(/\s+/);return {name:p[ix<0?2:ix],docs:dx<0?'':p[dx],cells:keep.map(([,i])=>p[i]==null?'':p[i])};});
 }
 function grid(rows){
-  // texto alinhado: a coluna index a esquerda, as demais a direita
-  const all=[indexCols,...rows.map(r=>r.cells)],width=indexCols.map((c,k)=>Math.max(...all.map(r=>r[k].length)));
-  return all.map(r=>r.map((v,k)=>indexCols[k]==='index'?v.padEnd(width[k]):v.padStart(width[k])).join('   ')).join('\n');
+  // texto alinhado: a coluna # (numero da linha, a partir de 1) primeiro, a coluna index a esquerda, as demais a direita
+  const cols=['#',...indexCols];
+  const all=[cols,...rows.map((r,i)=>[String(i+1),...r.cells])],width=cols.map((c,k)=>Math.max(...all.map(r=>r[k].length)));
+  return all.map(r=>r.map((v,k)=>cols[k]==='index'?v.padEnd(width[k]):v.padStart(width[k])).join('   ')).join('\n');
 }
 function showIndices(){
   if(!indicesText)return;
@@ -475,6 +509,7 @@ function showIndices(){
   if(!chosenIndices&&selected){chosenIndices=new Set(selected);saveIndices();}
   const shown=shownIndices(),marked=indexRows.filter(r=>shown.has(r.name));
   $('indices').textContent=marked.length?grid(marked):'Nenhum índice escolhido.';
+  $('indicesPie').innerHTML=indicesPie(indexRows);
   renderPicker();
 }
 function setChosen(set){chosenIndices=set;saveIndices();showIndices();}

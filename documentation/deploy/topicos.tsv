@@ -5,6 +5,7 @@ com.vis.entities.VisEntitySkillFixHierarchyPending	2	120
 com.js.entities.JsEntityLoginToken	4	120
 com.js.entities.JsEntityLoginTokenRequestResend	2	120
 com.js.entities.JsEntityLoginTokenRequestUnlock	2	120
+com.js.entities.JsEntityLoginPassword	1	120
 com.jn.entities.JnEntityJobsnowError	2	120
 com.jn.entities.JnEntityJobsnowWarning	2	120
 com.js.business.login.JsBusinessExecuteLogin	4	120

@@ -47,6 +47,7 @@ jn_http_api_retry_send_request	JnEntityHttpApiRetrySendRequest	nao-levar		nao
 jn_instant_messenger_bot_locked	JnEntityInstantMessengerBotLocked	nao-levar		nao
 jn_instant_messenger_message_sent	JnEntityInstantMessengerMessageSent	nao-levar		nao
 jn_jobsnow_error	JnEntityJobsnowError	nao-levar		nao
+jn_jobsnow_error_solved	JnEntityJobsnowError (gemea)	nao-levar		nao
 jn_jobsnow_warning	JnEntityJobsnowWarning	nao-levar		nao
 jn_login_email	JnEntityLoginEmail	nao-levar		nao
 jn_message_did_not_sent	JnEntityMessageDidNotSent	nao-levar		nao

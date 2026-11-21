@@ -11,7 +11,7 @@ Enum que não implementa nenhuma interface: opções e tipos do framework e valo
 
 ## Exemplos
 
-`CcpEntityExpurgableOptions`, `CcpEntityOperationType`, `CcpHttpMethods`, `TimeOptions`, `JnTicketQuotaGroups`, `VisSeniorityType`, `VisSkillSuggestionStatus`, `SalaryType`
+`CcpEntityExpurgableOptions`, `CcpEntityOperationType`, `CcpHttpMethods`, `TimeOptions`, `JnTicketQuotaGroups`, `VisSeniorityType`, `VisSkillSuggestionStatus`, `SalaryType`, `VisTelegramSystemParameters`
 
 ## Lugar na taxonomia
 

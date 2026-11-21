@@ -17,7 +17,7 @@ Inserir, alterar ou apagar um registro numa entidade de regra `igual`, `adaptar`
 
 | Regra | O que o script faz | Entidades |
 |---|---|---|
-| `igual` | copia da origem para o destino, sobrescrevendo | templates de e-mail e Telegram, `jn_system_message`, os 8 `jn_bot_command*` e `jn_bot_update_handler`, `jb_bot`, `jb_bot_explanation`, `jn_session_validator`, `jn_write_event_subscribers`, `vis_skill_dictionary` |
+| `igual` | copia da origem para o destino, sobrescrevendo | templates de e-mail e Telegram, `jn_system_message`, `jn_system_parameter`, os 8 `jn_bot_command*` e `jn_bot_update_handler`, `jb_bot`, `jb_bot_explanation`, `jn_session_validator`, `jn_write_event_subscribers`, `vis_skill_dictionary` |
 | `adaptar` | copia, mas os campos de ambiente recebem o valor de produção | `jn_email_parameters_to_send` (`sender`, `moreParameters`), `jn_instant_messenger_parameters_to_send` (`chatId`, `moreParameters`), `jb_bot_allowed_user` (`allowedUser`) |
 | `merge` | só acrescenta ou atualiza, nunca substitui o índice (produção também escreve nele) | `vis_skill` (aprovações do operador), `vis_recruiter` e `vis_inactive_recruiter` (cadastro, inativação e reativação) |
 | `carga` | vai em bloco, com os grupos do `jn_grouper`, pela sequência dos scripts 10, 11 e 21 | `vis_telegram_position`, `vis_statis_skill_line_chart`, `vis_statis_skill_pie_chart` |
@@ -33,7 +33,7 @@ Vários registros guardam o nome de uma classe, de um tipo aninhado (`Outer$Inne
 - `business` do `jn_session_validator` e do `jn_bot_update_handler`;
 - o motor dos passos em `jn_bot_command_step`;
 - os assinantes de `jn_write_event_subscribers`;
-- `systemMessageName` da `jn_system_message`.
+- `systemMessageName` da `jn_system_message` e da `jn_system_parameter`.
 
 Em produção, renomear ou mover uma dessas classes deixa o nome antigo gravado. Depois do deploy, o `Class.forName` ou a busca pelo id falha em toda requisição que depende dele: a validação da sessão na vis, um passo do bot, o envio de um e-mail.
 

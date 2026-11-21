@@ -11,7 +11,7 @@ Enum que implementa alguma interface e não foi capturado por uma categoria de m
 
 ## Exemplos
 
-`VisTelegramSystemMessages`, `JsPrivacyPolicyMessages`, `JbLanguageNames`, `CcpJsonValidatorDefaults`, `CcpJsonFieldDefaultTypes`, `CcpTemplateFunctions`, `JsonConditions`, `JnMessageSenderExceptionHandler`
+`JsPrivacyPolicyMessages`, `JbLanguageNames`, `CcpJsonValidatorDefaults`, `CcpJsonFieldDefaultTypes`, `CcpTemplateFunctions`, `JsonConditions`, `JnMessageSenderExceptionHandler`
 
 ## Lugar na taxonomia
 

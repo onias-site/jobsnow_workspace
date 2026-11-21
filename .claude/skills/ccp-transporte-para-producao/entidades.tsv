@@ -2,6 +2,7 @@ indice	entidade	regra	campos_do_ambiente	varrer_classes
 jn_email_template_message	JnEntityEmailTemplateMessage	igual		sim
 jn_instant_messenger_template_message	JnEntityInstantMessengerTemplateMessage	igual		sim
 jn_system_message	JnEntitySystemMessage	igual		sim
+jn_system_parameter	JnEntitySystemParameter	igual		sim
 jn_bot_command	JnEntityBotCommand	igual		sim
 jn_bot_command_name	JnEntityBotCommandName	igual		sim
 jn_bot_command_explanation	JnEntityBotCommandExplanation	igual		sim

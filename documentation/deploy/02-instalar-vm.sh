@@ -44,7 +44,17 @@ YML
 cat > /etc/elasticsearch/jvm.options.d/heap.options <<'HEAP'
 -Xms3g
 -Xmx3g
+-XX:MaxDirectMemorySize=512m
 HEAP
+
+# divisao de memoria da VM de 8 GB (2026-11-22): ES com 3 GB de heap e 512 MB de memoria direta, consumidores com ate
+# 1,5 GB (05-iniciar-consumidores.sh); se o ES cair (o OOM killer do Linux o escolhe primeiro), o systemd o levanta
+mkdir -p /etc/systemd/system/elasticsearch.service.d
+cat > /etc/systemd/system/elasticsearch.service.d/restart.conf <<'UNIT'
+[Service]
+Restart=on-failure
+RestartSec=10
+UNIT
 
 # the password is the bootstrap one: it only takes effect before the security index exists
 /usr/share/elasticsearch/bin/elasticsearch-keystore add -f -x bootstrap.password < "$PASSWORD_FILE"

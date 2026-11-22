@@ -1,6 +1,7 @@
 # Campos novos da vaga (2026-11-21): por ordem do usuario, VisEntityPosition passa a ter so os campos clt, disponibility,
 # ddd, recruiter e title (chave primaria; recruiter = sha1 do e-mail do recrutador), resumeType, seniority, hash, skill, spokenLanguage, negotiableClaim,
 # pcd, pj, temporallyJobTime, travel, title, expiration, description, sort, mustSendInGroups, mustSendToResumes,
+# visibleToCandidates (2026-11-22, a vaga visivel ou nao aos candidatos), insertionDate,
 # frequencyType e contact. clt, pj e expiration viram objetos {min, max}; sort e contact, listas de objetos. Tipo de campo
 # nao muda no lugar, e o mapeamento strict de producao recusaria toda escrita da vaga nova.
 # Como nenhuma vaga foi gravada (o front nao publica vagas), vis_position e a gemea vis_inactive_position sao apagadas e

@@ -41,3 +41,4 @@ run	scope	tests	covered	missed	total	coverage
 2026-11-19 10:27	full	3328 (passed: 3328, failures: 0, errors: 0, skipped: 0)	220731	66574	287305	76,8 %
 2026-11-20 11:14	full	3336 (passed: 3335, failures: 1, errors: 0, skipped: 0)	222213	66986	289199	76,8 %
 2026-11-21 11:52	full	3339 (passed: 3320, failures: 2, errors: 0, skipped: 17)	221828	69583	291411	76,1 %
+2026-11-22 10:16	full	3369 (passed: 3346, failures: 4, errors: 2, skipped: 17)	225139	72877	298016	75,5 %

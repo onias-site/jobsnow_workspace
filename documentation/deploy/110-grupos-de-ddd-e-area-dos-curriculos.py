@@ -3,9 +3,13 @@
 # os de vis_virtual_ddd_resume_type_grouper: um grupo por ddd e por area (resumeType) do curriculo, com o mesmo child do
 # grupo por ddd mais as empresas que o candidato proibe (btc, clt, disponibility, experience, spokenLanguage,
 # negotiableClaim, notAllowedCompany, pcd, pj, resumeType, temporallyJobTime, travel, a lista skill das skillsFromResume e
-# o id do curriculo). O POST positions/resumes-of-the-filters filtra esses grupos com um script Painless. E o que o terceiro
+# o id do curriculo; desde a tarde de 2026-11-22 tambem o email, ja em hash como o vis_resume o guarda, que o script devolve
+# como id e com que a lista de curriculos do recrutador os le). O POST positions/resumes-of-the-filters filtra esses grupos
+# com um script Painless. E o que o terceiro
 # @CcpEntityGrouperChild de VisEntityResume mantem a cada escrita depois do deploy da vis e dos consumidores; os
-# curriculos ja gravados so entram por esta carga.
+# curriculos ja gravados so entram por esta carga. Desde a noite de 2026-11-22 o curriculo que os recrutadores nao podem
+# ver fica fora dos grupos (como VisResumeDddResumeTypeCombinations): o de LinkedIn confirmado como invalido
+# (invalidLinkedinAddress) e o de restricao a corrigir (e-mail em vis_resume_restriction).
 # Le os vis_resume (ativos -> jn_grouper) e os vis_inactive_resume (inativos -> jn_inactive_grouper). Idempotente:
 # recalcula cada grupo do zero e o sobrescreve; um par ddd/area sem curriculo tem o grupo apagado (so os grupos de
 # vis_virtual_ddd_resume_type_grouper sao tocados). Rodar logo DEPOIS do deploy da vis e dos consumidores: um curriculo
@@ -24,7 +28,7 @@ import urllib.request
 
 PARENT_NAME = "vis_virtual_ddd_resume_type_grouper"
 CHILD_NAME = "vis_resume"
-CHILD_FIELDS = ["btc", "clt", "disponibility", "experience", "spokenLanguage", "negotiableClaim", "notAllowedCompany", "pcd", "pj",
+CHILD_FIELDS = ["btc", "clt", "disponibility", "email", "experience", "spokenLanguage", "negotiableClaim", "notAllowedCompany", "pcd", "pj",
                 "resumeType", "temporallyJobTime", "travel"]
 SIDES = [("vis_resume", "jn_grouper"), ("vis_inactive_resume", "jn_inactive_grouper")]
 # os valores permitidos de VisJsonCommonsFields.ddd e de VisJsonCommonsFields.resumeType
@@ -77,7 +81,7 @@ def call(method, path, body=None):
 
 
 def resumes(index):
-    status, page = call("POST", "/" + index + "/_search?scroll=2m", {"size": 500, "_source": ["ddd"] + CHILD_FIELDS + ["skill"]})
+    status, page = call("POST", "/" + index + "/_search?scroll=2m", {"size": 500, "_source": ["ddd"] + CHILD_FIELDS + ["skill", "invalidLinkedinAddress"]})
     if status == 404:
         return
     if status != 200:
@@ -97,14 +101,37 @@ def to_int(value):
         return None
 
 
+def restricted_emails():
+    # os e-mails (em hash, como o curriculo os guarda) dos curriculos com restricao a corrigir
+    emails = set()
+    status, page = call("POST", "/vis_resume_restriction/_search?scroll=2m", {"size": 500, "_source": ["email"]})
+    if status == 404:
+        return emails
+    if status != 200:
+        print("falha ao ler vis_resume_restriction", status, page)
+        sys.exit(1)
+    while page["hits"]["hits"]:
+        for hit in page["hits"]["hits"]:
+            emails.add(hit["_source"].get("email"))
+        status, page = call("POST", "/_search/scroll", {"scroll": "2m", "scroll_id": page["_scroll_id"]})
+    call("DELETE", "/_search/scroll", {"scroll_id": page["_scroll_id"]})
+    return emails
+
+
+RESTRICTED = restricted_emails()
 failures = 0
-print("lado\tcurriculos\tsem ddd ou area valida\tgrupos gravados\tgrupos apagados\tchildren gravados\tconferidos")
+print("lado\tcurriculos\tsem ddd ou area valida\tfora (restricao ou LinkedIn invalido)\tgrupos gravados\tgrupos apagados\tchildren gravados\tconferidos")
 for resume_index, grouper_index in SIDES:
     children_by_group = {key: [] for key in GROUPS}
     total = 0
     without_group = 0
+    hidden = 0
     for resume_id, source in resumes(resume_index):
         total += 1
+        # como VisResumeDddResumeTypeCombinations: o curriculo que os recrutadores nao podem ver fica fora dos grupos
+        if source.get("invalidLinkedinAddress") is True or source.get("email") in RESTRICTED:
+            hidden += 1
+            continue
         child = {field: source[field] for field in CHILD_FIELDS if field in source and source[field] is not None}
         child["skill"] = skills_from_resume(source)
         child["id"] = resume_id
@@ -161,7 +188,7 @@ for resume_index, grouper_index in SIDES:
         else:
             failures += 1
             print("grupo do ddd/area", key, "em", grouper_index, "nao confere:", status)
-    print(f"{grouper_index}\t{total}\t{without_group}\t{written}\t{deleted}\t{children_count}\t{checked}")
+    print(f"{grouper_index}\t{total}\t{without_group}\t{hidden}\t{written}\t{deleted}\t{children_count}\t{checked}")
 
 print("OK" if failures == 0 else f"FALHAS: {failures}")
 sys.exit(0 if failures == 0 else 1)

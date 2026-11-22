@@ -1,8 +1,9 @@
 # Carga dos grupos de ddd e area dos curriculos (2026-11-22): o endpoint publico da aba "Filtros" do formulario de vagas
-# (GET positions/resumes-of-the-ddds/{resumeType}/{ddds}) passou a ler, em vez dos grupos de vis_virtual_ddd_grouper,
+# (POST positions/resumes-of-the-filters) passou a ler, em vez dos grupos de vis_virtual_ddd_grouper,
 # os de vis_virtual_ddd_resume_type_grouper: um grupo por ddd e por area (resumeType) do curriculo, com o mesmo child do
-# grupo por ddd (btc, clt, disponibility, experience, spokenLanguage, negotiableClaim, pcd, pj, resumeType,
-# temporallyJobTime, travel, a lista skill das skillsFromResume e o id do curriculo). E o que o terceiro
+# grupo por ddd mais as empresas que o candidato proibe (btc, clt, disponibility, experience, spokenLanguage,
+# negotiableClaim, notAllowedCompany, pcd, pj, resumeType, temporallyJobTime, travel, a lista skill das skillsFromResume e
+# o id do curriculo). O POST positions/resumes-of-the-filters filtra esses grupos com um script Painless. E o que o terceiro
 # @CcpEntityGrouperChild de VisEntityResume mantem a cada escrita depois do deploy da vis e dos consumidores; os
 # curriculos ja gravados so entram por esta carga.
 # Le os vis_resume (ativos -> jn_grouper) e os vis_inactive_resume (inativos -> jn_inactive_grouper). Idempotente:
@@ -23,8 +24,8 @@ import urllib.request
 
 PARENT_NAME = "vis_virtual_ddd_resume_type_grouper"
 CHILD_NAME = "vis_resume"
-CHILD_FIELDS = ["btc", "clt", "disponibility", "experience", "spokenLanguage", "negotiableClaim", "pcd", "pj", "resumeType",
-                "temporallyJobTime", "travel"]
+CHILD_FIELDS = ["btc", "clt", "disponibility", "experience", "spokenLanguage", "negotiableClaim", "notAllowedCompany", "pcd", "pj",
+                "resumeType", "temporallyJobTime", "travel"]
 SIDES = [("vis_resume", "jn_grouper"), ("vis_inactive_resume", "jn_inactive_grouper")]
 # os valores permitidos de VisJsonCommonsFields.ddd e de VisJsonCommonsFields.resumeType
 DDDS = [10, 61, 62, 64, 65, 66, 67, 82, 71, 73, 74, 75, 77, 85, 88, 98, 99, 83, 81, 87, 86, 89, 84, 79, 68, 96, 92, 97, 91, 93, 94, 69, 95, 63, 27, 28, 31, 32, 33, 34, 35, 37, 38, 21, 22, 24, 11, 12, 13, 14, 15, 16, 17, 18, 19, 41, 42, 43, 44, 45, 46, 51, 53, 54, 55, 47, 48, 49]

@@ -6,6 +6,8 @@
 #   B) recarrega as supressoes do SendGrid e tira os e-mails de jn_email_suppressed;
 #   C) tira os e-mails de js_login_password;
 #   D) roda JsServiceLogin.ResendLoginToken (o de POST /login/{email}/token/request/resending) para cada um que sobrou.
+# Desde 2026-11-24 o mesmo job roda depois VisBusinessSendHourlyResumesOfThePositions (e-mail de hora em hora dos curriculos
+# das vagas de frequencia hourly; o topico vai no ENTRYPOINT do reenvio-do-token-de-login.Dockerfile).
 # Diferente do processo diario, o agendamento nasce ATIVO.
 # Concessoes de IAM (rodar como administrador, como as demais): a conta jobsnow-vm@ precisa de roles/logging.viewer no
 # projeto (passo A) e de roles/run.invoker no proprio job (o Cloud Scheduler dispara o job com ela).

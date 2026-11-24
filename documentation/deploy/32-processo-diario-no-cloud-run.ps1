@@ -1,8 +1,12 @@
 # Processos agendados do cron.jar no Cloud Run, fora da VM (nao disputam a memoria da VM com o Elasticsearch e os
 # consumidores). Desde 2026-11-17 a mesma imagem (processo-diario.Dockerfile) serve a dois Cloud Run Jobs, cada um com o
-# seu agendamento no Cloud Scheduler e o processo (a classe) e a entrada JSON nos args do job:
+# seu agendamento no Cloud Scheduler (4 jobs desde 2026-11-24) e o processo (a classe) e a entrada JSON nos args do job:
 #   jobsnow-backup-diario                todo dia as 00:10  JnBusinessBackupTheDatabase (backup por snapshot)
+#   (desde 2026-11-24 o backup e seguido, no mesmo job, do e-mail diario dos curriculos das vagas de frequencia daily;
+#   o processo aceita varios topicos separados por virgula, cada um roda mesmo que o anterior falhe)
 #   jobsnow-curriculos-aos-recrutadores  todo dia as 10:00  VisBusinessSendResumesToRecruiters (pula sabado e domingo sozinho)
+#   jobsnow-publicacao-das-vagas         todo dia as 10:00  VisBusinessPublishPositionsInTheGroups (vagas do dia nos grupos do bot user)
+#   jobsnow-curriculos-semanais-das-vagas segunda as 09:30  VisBusinessSendWeeklyResumesOfThePositions (vagas de frequencia weekly)
 # Antes de 2026-11-17 havia um job so, jobsnow-processo-diario, com VisBusinessDailyScheduledProcess (o e-mail e depois o
 # backup) as 00:10; o backup virou jobsnow-backup-diario (Cloud Run nao renomeia: o script cria o novo e apaga o antigo
 # e o seu agendamento, com o historico de execucoes). O expurgo dos disposable e as supressoes do SendGrid rodam de hora em hora no jobsnow-reenvio-token-login (54).
@@ -35,8 +39,10 @@ $receiver = '{"mensageriaReceiver":"com.jn.mensageria.JnMensageriaReceiver","ope
 
 # cada job: nome, agendamento e processo (a classe executada pelo cron.jar)
 $jobs = @(
-	@{ Name = 'jobsnow-backup-diario'; Schedule = '10 0 * * *'; Process = 'com.jn.business.database.JnBusinessBackupTheDatabase' },
-	@{ Name = 'jobsnow-curriculos-aos-recrutadores'; Schedule = '0 10 * * *'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendResumesToRecruiters' }
+	@{ Name = 'jobsnow-backup-diario'; Schedule = '10 0 * * *'; Process = 'com.jn.business.database.JnBusinessBackupTheDatabase,com.vis.business.recruiter.resumes.VisBusinessSendDailyResumesOfThePositions' },
+	@{ Name = 'jobsnow-curriculos-aos-recrutadores'; Schedule = '0 10 * * *'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendResumesToRecruiters' },
+	@{ Name = 'jobsnow-publicacao-das-vagas'; Schedule = '0 10 * * *'; Process = 'com.vis.business.position.VisBusinessPublishPositionsInTheGroups' },
+	@{ Name = 'jobsnow-curriculos-semanais-das-vagas'; Schedule = '30 9 * * 1'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendWeeklyResumesOfThePositions' }
 )
 
 function Run([string]$label, [string[]]$arguments) {

@@ -15,6 +15,7 @@ com.js.business.login.JsBusinessSavePassword	4	120
 com.jn.entities.decorators.engine.JnBusinessDeleteVersionableRecords	1	600
 com.vis.business.recruiter.VisBusinessInactivateSuppressedRecruiter	2	120
 com.vis.business.recruiter.VisBusinessSaveRecruiterFromLoginAnswers	2	120
+com.vis.business.position.VisBusinessMoveTheResumesSentToTheRenamedPosition	1	600
 com.vis.business.skill.VisBusinessDiscardPendingRequestsOfIgnoredUser	1	600
 com.js.business.contact.us.JsBusinessDiscardContactUsOfIgnoredUser	1	600
 com.jn.business.bots.JnBusinessHandleBotUpdate~support	1	600	com.ccp.implementations.mensageria.sender.gcp.pubsub.CcpGcpPubSubMensageriaSender

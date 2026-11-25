@@ -66,7 +66,7 @@ public class SendCopyOfRecruiterEmail {
 		List<CcpJsonRepresentation> rows = recruiterResumes.getAsJsonList(new CcpFieldName("resumes"));
 		String subject = sent.getAsString(new CcpFieldName("subject"));
 
-		Pattern subjectPattern = Pattern.compile("^\\[DE GRAÇA!!!\\] (\\d+) currículos de (.*) e mais outras (\\d+) habilidades gratuitos pra você!!!$");
+		Pattern subjectPattern = Pattern.compile("^(?:\\[DE GRAÇA!!!\\] )?(\\d+) currículos de (.*) e mais outras (\\d+) habilidades gratuitos pra você!!!$");
 		Matcher matcher = subjectPattern.matcher(subject);
 		boolean unknownSubject = false == matcher.matches();
 		if(unknownSubject) {

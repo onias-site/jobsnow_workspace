@@ -73,7 +73,7 @@ Abra no navegador um e-mail do C1 (ou o da prévia, no C6). Esperado, nesta orde
 - [ ] 2.3 O parágrafo "O JobsNow foi refeito e agora se chama Onias.Site. O seu cadastro antigo não aparece para os recrutadores do novo sistema..." e o botão **Cadastrar meu currículo** para `<endereço do front>/meus-dados/sobre-mim` (`http://localhost:3000` na simulação, `https://onias.site` na prévia; nunca `www.jobsnow.com.br`).
 - [ ] 2.4 "No cadastro, você também pode informar as empresas para as quais não quer que o seu currículo seja enviado."
 - [ ] 2.5 O título "Como o recrutador verá o seu currículo", o parágrafo da prévia ("feita com os dados do seu cadastro antigo...") e a tabela de uma linha, com as 5 colunas dos recrutadores.
-- [ ] 2.6 "Este convite é único: se você não se cadastrar, não enviaremos outro e-mail sobre este assunto." e o rodapé com **Política de privacidade**, sem endereço.
+- [ ] 2.6 Nenhuma frase dizendo que o convite é único (retirada em 2026-11-25: o convite é reenviado toda semana a quem não se cadastrou) e o rodapé com **Política de privacidade**, sem endereço.
 
 ## C3 — Só dado real na tabela
 

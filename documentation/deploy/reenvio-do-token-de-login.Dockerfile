@@ -5,4 +5,4 @@
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 COPY app.jar app.jar
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar", "com.js.business.login.JsBusinessDailyLoginTokenProcess,com.vis.business.recruiter.resumes.VisBusinessSendHourlyResumesOfThePositions", "{\"mensageriaReceiver\":\"com.jn.mensageria.JnMensageriaReceiver\",\"operation\":\"\"}"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar", "com.vis.business.recruiter.resumes.VisBusinessSendTheResumesOfTheInterestedCandidates,com.js.business.login.JsBusinessDailyLoginTokenProcess,com.vis.business.recruiter.resumes.VisBusinessSendHourlyResumesOfThePositions", "{\"mensageriaReceiver\":\"com.jn.mensageria.JnMensageriaReceiver\",\"operation\":\"\"}"]

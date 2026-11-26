@@ -14,7 +14,10 @@
 # Apaga por _id direto nos indices, sem os decorators. Antes de apagar: exige snapshot SUCCESS das ultimas 36 h com os
 # indices tocados e grava o _source de tudo num JSONL local (fora do repositorio: tem hashes de e-mail), para restaurar.
 # Sem "gravar" so conta. Idempotente. Imprime so contagens. O cache das entidades dura 1 h.
-# Uso: powershell -File com-tunel-de-producao.ps1 -Script 126-login-gravado-por-robo-de-email.py -Argumentos "<copia.jsonl>,gravar"
+# Rodado em producao em 2026-11-26 18h: 29 jn_login_email, 26 js_login_answers e 26 historicos apagados, 5 contadores
+# 199 -> 173, 0 falhas (copia em C:\logs\login-robo\producao-2026-11-26.jsonl; snapshot backup-20261126-001015-332).
+# Uso (no PowerShell, com & para o array chegar inteiro; com -File o "gravar" se perde):
+#      & .\com-tunel-de-producao.ps1 -Script .\126-login-gravado-por-robo-de-email.py -Argumentos @('<copia.jsonl>','gravar')
 #      local: python 126-...py <copia.jsonl> [gravar] http://127.0.0.1:9200
 import datetime, json, os, sys, urllib.error, urllib.request
 

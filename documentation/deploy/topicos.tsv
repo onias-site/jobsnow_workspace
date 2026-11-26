@@ -1,6 +1,7 @@
 com.vis.entities.VisEntityResume	4	120
 com.vis.entities.VisEntityPosition	2	120
 com.vis.entities.VisEntityPositionInterest	2	120
+com.vis.entities.VisEntityResumeFilter	2	120
 com.vis.entities.VisEntitySkillPending	2	120
 com.vis.entities.VisEntitySkillFixHierarchyPending	2	120
 com.js.entities.JsEntityLoginToken	4	120

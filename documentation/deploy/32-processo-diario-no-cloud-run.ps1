@@ -4,7 +4,9 @@
 #   jobsnow-backup-diario                todo dia as 00:10  JnBusinessBackupTheDatabase (backup por snapshot)
 #   (desde 2026-11-24 o backup e seguido, no mesmo job, do e-mail diario dos curriculos das vagas de frequencia daily;
 #   o processo aceita varios topicos separados por virgula, cada um roda mesmo que o anterior falhe)
-#   jobsnow-curriculos-aos-recrutadores  todo dia as 10:00  VisBusinessSendResumesToRecruiters (pula sabado e domingo sozinho)
+#   jobsnow-curriculos-aos-recrutadores  de hora em hora, das 04:00 as 23:00, de segunda a sexta (desde 2026-11-27; antes todo
+#                                        dia as 10:00)  VisBusinessSendResumesToRecruiters: cada execucao envia a 20a parte
+#                                        de recruitersPerDay (100 de 2000) e pula quem ja recebeu no dia (e ainda pula sabado e domingo sozinho)
 #   jobsnow-publicacao-das-vagas         todo dia as 10:00  VisBusinessPublishPositionsInTheGroups (vagas do dia nos grupos do bot user)
 #   jobsnow-curriculos-semanais-das-vagas segunda as 09:30  VisBusinessSendWeeklyResumesOfThePositions (vagas de frequencia weekly)
 # Antes de 2026-11-17 havia um job so, jobsnow-processo-diario, com VisBusinessDailyScheduledProcess (o e-mail e depois o
@@ -40,7 +42,7 @@ $receiver = '{"mensageriaReceiver":"com.jn.mensageria.JnMensageriaReceiver","ope
 # cada job: nome, agendamento e processo (a classe executada pelo cron.jar)
 $jobs = @(
 	@{ Name = 'jobsnow-backup-diario'; Schedule = '10 0 * * *'; Process = 'com.jn.business.database.JnBusinessBackupTheDatabase,com.vis.business.recruiter.resumes.VisBusinessSendDailyResumesOfThePositions' },
-	@{ Name = 'jobsnow-curriculos-aos-recrutadores'; Schedule = '0 10 * * *'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendResumesToRecruiters' },
+	@{ Name = 'jobsnow-curriculos-aos-recrutadores'; Schedule = '0 4-23 * * 1-5'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendResumesToRecruiters' },
 	@{ Name = 'jobsnow-publicacao-das-vagas'; Schedule = '0 10 * * *'; Process = 'com.vis.business.position.VisBusinessPublishPositionsInTheGroups' },
 	@{ Name = 'jobsnow-curriculos-semanais-das-vagas'; Schedule = '30 9 * * 1'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendWeeklyResumesOfThePositions' }
 )

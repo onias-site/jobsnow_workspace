@@ -63,7 +63,7 @@ npm test
 
 ## Core Architecture
 
-`CcpJsonRepresentation` (a map-like JSON container, ccp_commons_jobsnow) is the value object that flows through the whole system; every business is a `CcpBusiness` (`Function<CcpJsonRepresentation, CcpJsonRepresentation>`). `CcpDependencyInjection` binds interfaces to implementations at runtime. Persistence goes through `CcpCrud` over Elasticsearch, with the fluent query builder (`CcpQuery`, `CcpQueryBool`, `CcpQueryAggregations`) and `CcpBulkExecutor`. Schema definitions live in `documentation/jb/database/elasticsearch/scripts/entities/`; local logs go to `c:/logs/`.
+`CcpJsonRepresentation` (a map-like JSON container, ccp_commons_jobsnow) is the value object that flows through the whole system; every business is a `CcpBusiness` (`Function<CcpJsonRepresentation, CcpJsonRepresentation>`). `CcpDependencyInjection` binds interfaces to implementations at runtime. The HTTP failures of the external APIs the platform does not host (Telegram and SendGrid, since 2026-11-27; not the Elasticsearch) are recorded with their moment by `JnHttpApiErrors`, around every call to `CcpInstantMessenger` and `CcpEmailProvider`: a 4xx in `jn_http_api_error_client`, thrown as `CcpErrorHttpClientPermanent`, which the Pub/Sub pull consumer notifies and acknowledges instead of rejecting; a 5xx in `jn_http_api_error_server`, thrown as it came. Persistence goes through `CcpCrud` over Elasticsearch, with the fluent query builder (`CcpQuery`, `CcpQueryBool`, `CcpQueryAggregations`) and `CcpBulkExecutor`. Schema definitions live in `documentation/jb/database/elasticsearch/scripts/entities/`; local logs go to `c:/logs/`.
 
 ### Testing
 

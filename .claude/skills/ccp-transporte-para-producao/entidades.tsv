@@ -102,6 +102,7 @@ jn_instant_messenger_user	JnEntityInstantMessengerUser	nao-levar		nao
 vis_position_interest	VisEntityPositionInterest	nao-levar		nao
 vis_resume_filter	VisEntityResumeFilter	nao-levar		nao
 vis_resume_filter_description	VisEntityResumeFilterDescription	nao-levar		nao
+vis_job_posting	VisEntityJobPosting	nao-levar		nao
 vis_position_instant_message_group	VisEntityPositionInstantMessageGroup	igual		nao
 vis_instant_message_group	VisEntityInstantMessageGroup	igual		nao
 vis_position_resumes	VisEntityPositionResumes	nao-levar		nao

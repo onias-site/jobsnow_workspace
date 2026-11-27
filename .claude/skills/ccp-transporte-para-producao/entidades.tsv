@@ -11,6 +11,7 @@ jn_bot_command_step_start_message	JnEntityBotCommandStepStartMessage	igual		sim
 jn_bot_command_step_end_message	JnEntityBotCommandStepEndMessage	igual		sim
 jn_bot_command_step_explanation	JnEntityBotCommandStepExplanation	igual		sim
 jn_bot_update_handler	JnEntityBotUpdateHandler	igual		sim
+jn_bot_group_message_handler	JnEntityBotGroupMessageHandler	igual		sim
 jb_bot	JbEntityBot	igual		sim
 jb_bot_explanation	JbEntityBotExplanation	igual		sim
 jn_session_validator	JnEntitySessionValidator	igual		sim

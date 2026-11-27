@@ -22,6 +22,7 @@ com.vis.business.skill.VisBusinessDiscardPendingRequestsOfIgnoredUser	1	600
 com.js.business.contact.us.JsBusinessDiscardContactUsOfIgnoredUser	1	600
 com.jn.business.bots.JnBusinessHandleBotUpdate~support	1	600	com.ccp.implementations.mensageria.sender.gcp.pubsub.CcpGcpPubSubMensageriaSender
 com.jn.business.bots.JnBusinessHandleBotUpdate~user	1	600	com.ccp.implementations.mensageria.sender.gcp.pubsub.CcpGcpPubSubMensageriaSender
+com.jb.business.bots.engine.JbBusinessHandleGroupMessage~support	1	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~support~allowCommandToUser	1	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~support~answerContactUs	1	600
 com.jb.business.bots.engine.JbBusinessRunBotCommand~support~chatId	1	600

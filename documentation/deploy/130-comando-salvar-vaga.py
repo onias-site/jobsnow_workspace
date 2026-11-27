@@ -4,7 +4,8 @@
 # (skills/fromText), o cruzamento dos grupos de habilidade dos curriculos (vis_virtual_skill_grouper, script 129) e a
 # busca de curriculos da tela curriculos/buscar com essas skills obrigatorias, com o texto compartilhado sob
 # curriculos@onias.site; o registro guarda a contagem, as medias e o link. Cada vaga e child (texto + id) do grupo de
-# vis_virtual_job_posting_hour do seu dia e do milissegundo da gravacao % 24.
+# vis_virtual_job_posting_hour do dia da gravacao e de uma das horas que ainda vem nele, da proxima ate 23, pelo
+# milissegundo: hora + 1 + milissegundo % (23 - hora) (gravada as 19h, de 20 a 23; as 23h, 23).
 #
 # O que faz:
 #   1. cria o indice vis_job_posting com o mapeamento do local

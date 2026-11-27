@@ -12,13 +12,16 @@
 #      (ccp_rest-api-tests_jobsnow/documentation/vis/.../create/vis_job_posting) e confere que ficou igual;
 #   2. grava as sementes de 130-sementes-comando-salvar-vaga.jsonl (mesmo id do local, regra "igual"), semeadas por
 #      VisEntityJobPosting: o comando, os 2 passos, o nome em portugues, as explicacoes, as mensagens de fim e os textos
-#      (jn_system_message).
+#      (jn_system_message), inclusive os da publicacao de hora em hora (VisJobPostingPublishingTexts, job
+#      jobsnow-vagas-do-bot-por-hora do script 32, que publica as vagas do grupo da hora nos grupos de tecnologia do bot
+#      user).
 #
 # Filas novas em topicos.tsv: com.vis.entities.VisEntityJobPosting e JbBusinessRunBotCommand~support~saveJobPosting (esta
 # com o CcpGcpPubSubMensageriaSender, para que o save va para a fila da entidade em vez de rodar na thread do comando).
 #
 # Ordem: depois do script 129 (os grupos de habilidade dos curriculos ja gravados); 03-criar-filas.ps1, este script e o
-# deploy dos consumidores (o bot le os comandos quando inicia; o cache das entidades do bot dura 1 h). Idempotente.
+# deploy dos consumidores (o bot le os comandos quando inicia; o cache das entidades do bot dura 1 h) e o /ccp-deploy cron
+# (o job novo de hora em hora). Idempotente.
 # Uso: ES_DESTINO_AUTH=<valor do Authorization> python 130-comando-salvar-vaga.py [destino]
 #      ou: & .\com-tunel-de-producao.ps1 -Script .\130-comando-salvar-vaga.py
 #      (sem destino: o tunel de producao, http://127.0.0.1:9210; para o ES local, http://127.0.0.1:9200)

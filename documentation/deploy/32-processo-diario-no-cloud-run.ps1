@@ -9,6 +9,10 @@
 #                                        de recruitersPerDay (100 de 2000) e pula quem ja recebeu no dia (e ainda pula sabado e domingo sozinho)
 #   jobsnow-publicacao-das-vagas         todo dia as 10:00  VisBusinessPublishPositionsInTheGroups (vagas do dia nos grupos do bot user)
 #   jobsnow-curriculos-semanais-das-vagas segunda as 09:30  VisBusinessSendWeeklyResumesOfThePositions (vagas de frequencia weekly)
+#   jobsnow-vagas-do-bot-por-hora        de hora em hora, da 01:00 as 23:00 (desde 2026-11-26)  VisBusinessPublishJobPostingsOfTheHour:
+#                                        as vagas do /salvarVaga do grupo da hora (vis_virtual_job_posting_hour) nos grupos de
+#                                        tecnologia do bot user; sem nova tentativa (repetiria as mensagens nos grupos); a hora 0
+#                                        nunca tem vaga (o grupo e sempre uma hora depois da gravacao)
 # Antes de 2026-11-17 havia um job so, jobsnow-processo-diario, com VisBusinessDailyScheduledProcess (o e-mail e depois o
 # backup) as 00:10; o backup virou jobsnow-backup-diario (Cloud Run nao renomeia: o script cria o novo e apaga o antigo
 # e o seu agendamento, com o historico de execucoes). O expurgo dos disposable e as supressoes do SendGrid rodam de hora em hora no jobsnow-reenvio-token-login (54).
@@ -44,7 +48,8 @@ $jobs = @(
 	@{ Name = 'jobsnow-backup-diario'; Schedule = '10 0 * * *'; Process = 'com.jn.business.database.JnBusinessBackupTheDatabase,com.vis.business.recruiter.resumes.VisBusinessSendDailyResumesOfThePositions' },
 	@{ Name = 'jobsnow-curriculos-aos-recrutadores'; Schedule = '0 4-23 * * 1-5'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendResumesToRecruiters' },
 	@{ Name = 'jobsnow-publicacao-das-vagas'; Schedule = '0 10 * * *'; Process = 'com.vis.business.position.VisBusinessPublishPositionsInTheGroups' },
-	@{ Name = 'jobsnow-curriculos-semanais-das-vagas'; Schedule = '30 9 * * 1'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendWeeklyResumesOfThePositions' }
+	@{ Name = 'jobsnow-curriculos-semanais-das-vagas'; Schedule = '30 9 * * 1'; Process = 'com.vis.business.recruiter.resumes.VisBusinessSendWeeklyResumesOfThePositions' },
+	@{ Name = 'jobsnow-vagas-do-bot-por-hora'; Schedule = '0 1-23 * * *'; Process = 'com.vis.business.job.posting.VisBusinessPublishJobPostingsOfTheHour'; Retries = 0 }
 )
 
 function Run([string]$label, [string[]]$arguments) {
@@ -87,9 +92,11 @@ foreach ($definition in $jobs) {
 	[System.IO.File]::WriteAllText($flagsFile, $yaml, (New-Object System.Text.UTF8Encoding $false))
 	$jobArguments = "--flags-file=$flagsFile"
 	# uma tarefa por execucao, sem paralelismo; 1 h de limite (o e-mail aos recrutadores e o snapshot passam dos 10 min
-	# padrao) e uma nova tentativa se falhar. Mesma rede e mesma conta das APIs, para chegar ao ES e ao Valkey da VPC.
+	# padrao) e uma nova tentativa se falhar (Retries muda, 0 no job que publica em grupos). Mesma rede e mesma conta das
+	# APIs, para chegar ao ES e ao Valkey da VPC.
+	$retries = if ($null -ne $definition.Retries) { $definition.Retries } else { 1 }
 	Run "job $job" @('run', 'jobs', 'deploy', $job, "--image=$image", "--project=$Project", "--region=$Region", $jobArguments,
-		"--service-account=$runtimeAccount", '--memory=1Gi', '--cpu=1', '--tasks=1', '--parallelism=1', '--max-retries=1',
+		"--service-account=$runtimeAccount", '--memory=1Gi', '--cpu=1', '--tasks=1', '--parallelism=1', "--max-retries=$retries",
 		'--task-timeout=3600s', "--network=$Network", "--subnet=$Subnet", '--vpc-egress=private-ranges-only',
 		"--set-secrets=application_properties=${PropertiesSecret}:latest", '--quiet')
 

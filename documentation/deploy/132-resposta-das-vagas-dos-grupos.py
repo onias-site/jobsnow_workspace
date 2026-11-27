@@ -1,8 +1,9 @@
-# Resposta do bot user as vagas escritas nos grupos do Telegram (2026-11-27): a entidade sincrona e descartavel diaria
-# vis_instant_message_position_reply (PK chatId, quem postou a vaga; groupChatId, o grupo; replyTo, a mensagem da vaga)
+# Resposta do bot support as vagas escritas nos grupos do Telegram (2026-11-27): a entidade sincrona e descartavel diaria
+# vis_instant_message_position_reply (PK linkToShowResumes, escrito pelo 4o passo antes do save; groupChatId, o grupo;
+# replyTo, a mensagem da vaga)
 # roda antes do save os mesmos 6 businesses da vis_job_posting (recrutadores do texto, skills, cruzamento dos grupos de
 # habilidade, busca de curriculos, descritivo dos filtros, e-mail aos recrutadores), com as mesmas recusas, que so logam e
-# cancelam o save. Depois do save, o bot user responde no grupo a mensagem da vaga com a quantidade de curriculos, as
+# cancelam o save. Depois do save, o bot support responde no grupo a mensagem da vaga com a quantidade de curriculos, as
 # medias e o link (VisJobPostingReplyTexts.resumesFound, html); sem curriculo, nao responde.
 #
 # O que faz:
@@ -12,7 +13,7 @@
 #      semeados por VisEntityInstantMessagePositionReply (132-sementes-resposta-das-vagas-dos-grupos.jsonl).
 #
 # Sem fila nova em topicos.tsv: a entidade e sincrona. Nada chama a entidade ainda: as mensagens dos grupos so passam a
-# ser gravadas nela quando o roteamento das mensagens de grupo do bot user for feito; ate la este script so prepara o
+# ser gravadas nela quando o roteamento das mensagens de grupo do bot support for feito; ate la este script so prepara o
 # indice e os textos. Ordem: antes do deploy dos consumidores que trouxer esse roteamento. Idempotente.
 # Uso: ES_DESTINO_AUTH=<valor do Authorization> python 132-resposta-das-vagas-dos-grupos.py [destino]
 #      ou: & .\com-tunel-de-producao.ps1 -Script .\132-resposta-das-vagas-dos-grupos.py

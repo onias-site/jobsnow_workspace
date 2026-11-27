@@ -107,3 +107,4 @@ vis_position_instant_message_group	VisEntityPositionInstantMessageGroup	igual		n
 vis_instant_message_group	VisEntityInstantMessageGroup	igual		nao
 vis_position_resumes	VisEntityPositionResumes	nao-levar		nao
 vis_position_resume_sent	VisEntityPositionResumeSent	nao-levar		nao
+vis_instant_message_position_reply	VisEntityInstantMessagePositionReply	nao-levar		nao
